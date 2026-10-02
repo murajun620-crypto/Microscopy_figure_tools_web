@@ -64,6 +64,7 @@
             <label>位置<select id="barAnchor" data-setting="scaleBar.anchor" class="anchor-select"></select></label>
             <div class="field-row"><label>文字サイズ（%）<input id="barFont" type="number" min="0.1" max="20" step="0.1" data-setting="scaleBar.fontPercent" value="9"></label><label>線の太さ（%）<input id="barThickness" type="number" min="0.1" max="10" step="0.1" data-setting="scaleBar.thicknessPercent" value="0.8"></label></div>
             <div class="field-row"><label>上下余白補正（%）<input id="barVerticalPadding" type="number" min="0" max="10" step="0.1" value="3" data-setting="scaleBar.verticalPaddingPercent"></label><label>バー－文字間隔（%）<input id="barGap" type="number" min="0" max="10" step="0.1" value="1" data-setting="scaleBar.gapPercent"></label></div>
+            <label>色の選び方（共通）<select id="barColorMode"><option value="simple" selected>簡易モード：代表色から選択</option><option value="detailed">詳細モード：カラーピッカー</option></select></label>
             <div class="field-row"><label class="color-field">線色<input id="barColor" type="color" value="#ffffff" data-setting="scaleBar.color"></label><label class="color-field">文字色<input id="barTextColor" type="color" value="#ffffff" data-setting="scaleBar.textColor"></label></div>
             <div class="field-row"><label class="check"><input id="barTextVisible" type="checkbox" data-setting="scaleBar.showText" checked>長さの文字</label><label class="check"><input id="barBackground" type="checkbox" data-setting="scaleBar.background">個別背景を表示</label></div>
             <label class="color-field">背景色<input id="barBackgroundColor" type="color" value="#000000" data-setting="scaleBar.backgroundColor"></label>
@@ -79,6 +80,7 @@
             <label>補足文字<input id="labelSubtext" type="text" maxlength="120" placeholder="例：CeO$\_2$" data-setting="panelLabel.subtext"></label>
             <label class="check"><input id="labelParentheses" type="checkbox" data-setting="panelLabel.parentheses" checked>ラベルに括弧を付ける</label>
             <label>位置<select id="labelAnchor" data-setting="panelLabel.anchor" class="anchor-select"></select></label>
+            <label>色の選び方（共通）<select id="labelColorMode"><option value="simple" selected>簡易モード：代表色から選択</option><option value="detailed">詳細モード：カラーピッカー</option></select></label>
             <div class="field-row"><label class="color-field">文字色<input id="labelColor" type="color" value="#ffffff" data-setting="panelLabel.color"></label><label class="color-field">背景色<input id="labelBackgroundColor" type="color" value="#000000" data-setting="panelLabel.backgroundColor"></label></div>
             <label class="check"><input id="labelBackground" type="checkbox" data-setting="panelLabel.background">個別背景を表示</label>
             <label>背景の不透明度<input id="labelOpacity" type="range" min="0" max="1" step="0.01" value="0.65" data-setting="panelLabel.opacity"></label>

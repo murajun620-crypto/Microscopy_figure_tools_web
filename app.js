@@ -9,6 +9,45 @@ const items = [];
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
+const representativeColors = [['白','#ffffff'],['黒','#000000'],['赤','#ff0000'],['黄','#ffff00'],['緑','#00ff00'],['水色','#00ffff'],['青','#0000ff'],['紫','#ff00ff']];
+const colorFields = [];
+let colorMode = 'simple';
+for (const input of document.querySelectorAll('input[type="color"]')) {
+  const original = input.parentElement, title = original.firstChild.textContent.trim();
+  const section = input.dataset.setting.split('.')[0];
+  const name = `${section === 'scaleBar' ? 'スケールバー' : 'パネルラベル'}の${title}`;
+  const field = document.createElement('div'); field.className = 'color-field'; field.setAttribute('role','group'); field.setAttribute('aria-label',name);
+  const heading = document.createElement('label'); heading.htmlFor = input.id; heading.textContent = title;
+  input.setAttribute('aria-label',name);
+  const palette = document.createElement('div'); palette.className = 'color-palette';
+  for (const [label,color] of representativeColors) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'color-swatch';
+    button.style.backgroundColor = color; button.dataset.color = color; button.title = `${label} (${color})`; button.setAttribute('aria-label',`${name}：${label}`);
+    button.addEventListener('click',()=>{
+      if (!current || input.matches(':disabled') || input.value === color) return;
+      const settings = copy(current.settings), [section,key] = input.dataset.setting.split('.'); settings[section][key] = color;
+      try { commit(settings,section); } catch (error) { notify(error.message,true); syncInputs(); }
+    });
+    palette.append(button);
+  }
+  const value = document.createElement('span'); value.className = 'color-value';
+  original.replaceWith(field); field.append(heading,input,palette,value); colorFields.push({field,input,palette,value});
+}
+function syncColorFields() {
+  for (const {field,input,palette,value} of colorFields) {
+    const simple = colorMode === 'simple'; field.classList.toggle('simple',simple); input.hidden = simple; palette.hidden = !simple; value.hidden = !simple;
+    const color = input.value.toLowerCase(), selected = representativeColors.find(([,hex])=>hex === color);
+    value.textContent = selected ? selected[0] : `カスタム ${color}`;
+    value.title = color;
+    for (const button of palette.children) { button.disabled = input.matches(':disabled'); button.setAttribute('aria-pressed',String(button.dataset.color === color)); }
+  }
+}
+for (const id of ['barColorMode','labelColorMode']) $(id).addEventListener('change',event=>{
+  colorMode = event.target.value;
+  for (const modeId of ['barColorMode','labelColorMode']) $(modeId).value = colorMode;
+  syncColorFields();
+});
+syncColorFields();
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
 
 function notify(message, error = false) {
@@ -34,6 +73,7 @@ function setBusy(value) {
     for(const id of ['labelBackgroundColor','labelOpacity']) $(id).disabled=value||!p.visible||!p.background;
     $('labelOutsideTransparent').disabled=value||!p.visible||!p.anchor.startsWith('outside-');$('labelOutsideColor').disabled=$('labelOutsideTransparent').disabled||p.outsideTransparent;
   }
+  syncColorFields();
 }
 async function action(fn) {
   if (busy) return;
