@@ -45,6 +45,9 @@ h2{font-size:14px;margin:0}
 .file-button:focus-within{outline:3px solid #78b7a7;outline-offset:2px}
 .file-tools{display:flex;justify-content:space-between;gap:5px;margin-top:6px}
 .file-tools .button{border:0;font-weight:400}
+.sample-actions{display:flex;gap:8px;margin-top:8px}
+.sample-actions>.button{flex:1}
+.empty-state .sample-actions{margin-top:14px}
 .hint{color:var(--muted);font-size:11px;line-height:1.65;margin:6px 0 10px}
 .image-list{padding:0;list-style:none;margin:12px 0;max-height:190px;overflow:auto}
 .image-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px;border-radius:7px;margin-bottom:3px;background:#f6f8f6;border:1px solid transparent}

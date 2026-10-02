@@ -56,7 +56,7 @@ function notify(message, error = false) {
 }
 function setBusy(value) {
   busy = value; document.body.classList.toggle('busy', value);
-  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
+  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton']) $(id).disabled = value || !current;
@@ -532,14 +532,16 @@ $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(
 $('helpButton').addEventListener('click', () => $('helpDialog').showModal()); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
 
 async function demo(count = 1) {
+  // One acquisition scale and image size allow the same calibration and crop.
+  const width = 900, height = 650, pixelSize = 0.02;
   const examples = [
-    { width:900,height:650,pixelSize:0.02,seed:73452,colors:['#152d29','#a2c296','#548b76','#234e42','#80ac84'] },
-    { width:1000,height:700,pixelSize:0.025,seed:21891,colors:['#211d35','#d7b1e5','#8b6dac','#43365f','#b59acc'] },
-    { width:800,height:600,pixelSize:0.01,seed:95127,colors:['#182c3c','#a3d5ec','#538baa','#23455f','#83b5cd'] },
+    { seed:73452,colors:['#152d29','#a2c296','#548b76','#234e42','#80ac84'] },
+    { seed:21891,colors:['#211d35','#d7b1e5','#8b6dac','#43365f','#b59acc'] },
+    { seed:95127,colors:['#182c3c','#a3d5ec','#538baa','#23455f','#83b5cd'] },
   ].slice(0,count);
   const files = [];
   for (const [index,example] of examples.entries()) {
-    const {width,height,pixelSize,colors} = example;
+    const {colors} = example;
     const demo = document.createElement('canvas'); demo.width = width; demo.height = height;
     const c = demo.getContext('2d'); c.fillStyle = colors[0]; c.fillRect(0, 0, width, height);
     // Deterministic synthetic microscopy image; no remote image requests.
@@ -563,17 +565,17 @@ async function demo(count = 1) {
   const added = await addFiles(files);
   for (const item of added) {
     const index = files.findIndex(file=>file===item.file), settings = copy(item.settings);
-    settings.calibration = {pixelSize:examples[index].pixelSize,unit:'µm'}; settings.scaleBar.length = 5;
+    settings.calibration = {pixelSize,unit:'µm'}; settings.scaleBar.length = 5;
     settings.panelLabel.text = item.labelText = String.fromCharCode(97+index);
     item.settings = validateSettings(settings,item.width,item.height); item.history.push(item.settings);
   }
   if (added.length) { $('knownLength').value = 5; syncInputs(); renderList(); render(); }
   if (added.length === files.length) {
-    if (count > 1) { $('batchPanel').open = true; notify('校正済みサンプル3枚を追加しました。画像一覧で切り替え、一括処理も試せます。'); }
+    if (count > 1) { $('batchPanel').open = true; notify('同じスケールのサンプル3枚を追加しました（1 px = 0.02 µm）。共通設定と一括保存を試せます。'); }
     else notify('サンプルは校正済みです。左下の基準線は250 px = 5 µmです。');
   }
 }
-$('demoButton').addEventListener('click', () => action(()=>demo()));
+for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
 for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();
