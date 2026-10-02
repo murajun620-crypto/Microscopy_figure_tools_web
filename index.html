@@ -21,6 +21,7 @@
         <div class="section-heading"><h2>画像</h2><span id="fileCount" class="badge">0</span></div>
         <label class="button primary file-button">＋ 画像を開く<input id="imageInput" type="file" multiple accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff,.svg" aria-label="画像を開く"></label>
         <div class="file-tools"><label class="button quiet small file-button">フォルダを選ぶ<input id="folderInput" type="file" webkitdirectory multiple aria-label="フォルダを選ぶ"></label><button id="demoButton" class="quiet small">サンプルを試す</button></div>
+        <button id="multiDemoButton" class="button full">複数サンプルを試す（3枚）</button>
         <p class="hint">PNG / JPEG / BMP / SVG / TIFF</p>
         <ul id="imageList" class="image-list" aria-label="読み込んだ画像"></ul>
         <button id="removeButton" class="quiet small" disabled>選択中の画像を一覧から外す</button>
@@ -114,7 +115,7 @@
         <label class="zoom-label">表示<select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label>
       </div>
       <div id="previewArea" class="preview-area">
-        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>顕微鏡画像を、伝わる図に。</h1><p>校正からスケールバー、パネルラベルまで。<br>元画像を保持して、仕上がりを確認できます。</p><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><button id="emptyDemoButton" class="quiet">サンプル画像で操作を試す →</button><small>インストール不要 · 画像のアップロード不要</small></div>
+        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>顕微鏡画像を、伝わる図に。</h1><p>校正からスケールバー、パネルラベルまで。<br>元画像を保持して、仕上がりを確認できます。</p><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><button id="emptyDemoButton" class="quiet">3枚のサンプルで操作を試す →</button><small>インストール不要 · 画像のアップロード不要</small></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
       </div>
       <div id="instruction" class="instruction">画像を開くか、サンプルを選んでください。</div>

@@ -56,7 +56,7 @@ function notify(message, error = false) {
 }
 function setBusy(value) {
   busy = value; document.body.classList.toggle('busy', value);
-  for (const id of ['imageInput', 'folderInput', 'demoButton', 'emptyDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
+  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton']) $(id).disabled = value || !current;
@@ -190,6 +190,7 @@ async function addFiles(files) {
   renderList();
   if (errors.length) notify(`${added.length}枚を読み込みました。\n${errors.slice(0, 4).join('\n')}`, true);
   else notify(`${added.length}枚を読み込みました。`);
+  return added;
 }
 
 function render() {
@@ -530,26 +531,49 @@ $('batchExportButton').addEventListener('click', () => action(async () => {
 $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(); $('batchProgress').textContent = '現在の画像の処理後に中止します…'; });
 $('helpButton').addEventListener('click', () => $('helpDialog').showModal()); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
 
-async function demo() {
-  const demo = document.createElement('canvas'); demo.width = 900; demo.height = 650;
-  const c = demo.getContext('2d'); c.fillStyle = '#152d29'; c.fillRect(0, 0, 900, 650);
-  // Deterministic synthetic microscopy image; no remote image requests.
-  let randomState = 73452;
-  const random = () => { randomState = (randomState * 1664525 + 1013904223) >>> 0; return randomState / 4294967296; };
-  for (let i = 0; i < 38; i++) {
-    const x = 25 + random() * 850, y = 35 + random() * 575, r = 17 + random() * 37;
-    const gradient = c.createRadialGradient(x - r * 0.2, y - r * 0.2, 2, x, y, r);
-    gradient.addColorStop(0, '#a2c296'); gradient.addColorStop(0.5, '#548b76'); gradient.addColorStop(0.85, '#234e42'); gradient.addColorStop(1, '#80ac84');
-    c.fillStyle = gradient; c.beginPath(); c.ellipse(x, y, r, r * 0.83, random() * 3, 0, Math.PI * 2); c.fill();
+async function demo(count = 1) {
+  const examples = [
+    { width:900,height:650,pixelSize:0.02,seed:73452,colors:['#152d29','#a2c296','#548b76','#234e42','#80ac84'] },
+    { width:1000,height:700,pixelSize:0.025,seed:21891,colors:['#211d35','#d7b1e5','#8b6dac','#43365f','#b59acc'] },
+    { width:800,height:600,pixelSize:0.01,seed:95127,colors:['#182c3c','#a3d5ec','#538baa','#23455f','#83b5cd'] },
+  ].slice(0,count);
+  const files = [];
+  for (const [index,example] of examples.entries()) {
+    const {width,height,pixelSize,colors} = example;
+    const demo = document.createElement('canvas'); demo.width = width; demo.height = height;
+    const c = demo.getContext('2d'); c.fillStyle = colors[0]; c.fillRect(0, 0, width, height);
+    // Deterministic synthetic microscopy image; no remote image requests.
+    let randomState = example.seed;
+    const random = () => { randomState = (randomState * 1664525 + 1013904223) >>> 0; return randomState / 4294967296; };
+    for (let i = 0; i < 38; i++) {
+      const x = 25 + random() * (width-50), y = 35 + random() * (height-75), r = 17 + random() * 37;
+      const gradient = c.createRadialGradient(x - r * 0.2, y - r * 0.2, 2, x, y, r);
+      gradient.addColorStop(0, colors[1]); gradient.addColorStop(0.5, colors[2]); gradient.addColorStop(0.85, colors[3]); gradient.addColorStop(1, colors[4]);
+      c.fillStyle = gradient; c.beginPath(); c.ellipse(x, y, r, r * 0.83, random() * 3, 0, Math.PI * 2); c.fill();
+    }
+    const referencePixels = 5/pixelSize, y = height-70, right = 80+referencePixels;
+    c.strokeStyle = colors[4]; c.lineWidth = 2; c.beginPath(); c.moveTo(80,y); c.lineTo(right,y); c.moveTo(80,y-12); c.lineTo(80,y+12); c.moveTo(right,y-12); c.lineTo(right,y+12); c.stroke();
+    c.font = '16px FigureSans'; c.fillStyle = colors[1]; c.fillText(`5 µm reference · ${referencePixels} px`,80,y-23);
+    const base = count === 1 ? 'sample_cells' : `sample_cells_${String.fromCharCode(97+index)}`;
+    let name = `${base}.png`, suffix = 2;
+    while (items.some(item=>item.name===name)) name = `${base}_${suffix++}.png`;
+    files.push(new File([await canvasBlob(demo)],name,{type:'image/png'}));
+    demo.width = demo.height = 0;
   }
-  c.strokeStyle = '#8ab69f'; c.lineWidth = 2; c.beginPath(); c.moveTo(80, 580); c.lineTo(330, 580); c.moveTo(80, 568); c.lineTo(80, 592); c.moveTo(330, 568); c.lineTo(330, 592); c.stroke();
-  c.font = '16px FigureSans'; c.fillStyle = '#bfd5c4'; c.fillText('5 µm reference · 250 px', 80, 557);
-  const file = new File([await canvasBlob(demo)], 'sample_cells.png', { type: 'image/png' });
-  await addFiles([file]);
-  const settings = copy(current.settings); settings.calibration = { pixelSize: 0.02, unit: 'µm' };settings.scaleBar.length=5;settings.panelLabel.text='a';$('knownLength').value=5;commit(settings);
-  notify('サンプルは校正済みです。左下の基準線は250 px = 5 µmです。');
-  demo.width = demo.height = 0;
+  const added = await addFiles(files);
+  for (const item of added) {
+    const index = files.findIndex(file=>file===item.file), settings = copy(item.settings);
+    settings.calibration = {pixelSize:examples[index].pixelSize,unit:'µm'}; settings.scaleBar.length = 5;
+    settings.panelLabel.text = item.labelText = String.fromCharCode(97+index);
+    item.settings = validateSettings(settings,item.width,item.height); item.history.push(item.settings);
+  }
+  if (added.length) { $('knownLength').value = 5; syncInputs(); renderList(); render(); }
+  if (added.length === files.length) {
+    if (count > 1) { $('batchPanel').open = true; notify('校正済みサンプル3枚を追加しました。画像一覧で切り替え、一括処理も試せます。'); }
+    else notify('サンプルは校正済みです。左下の基準線は250 px = 5 µmです。');
+  }
 }
-$('demoButton').addEventListener('click', () => action(demo)); $('emptyDemoButton').addEventListener('click', () => action(demo));
+$('demoButton').addEventListener('click', () => action(()=>demo()));
+for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();
