@@ -2,7 +2,7 @@ import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFrom
 import { SUPPORTED, canvasBlob, decodeImage, download, loadScript, releaseImage, thumbnail } from './io.js';
 import { buildPlan, paint, renderCanvas } from './render.js';
 import { addFigureSlide, batchExport, batchSettings, createPresentation, exportImage, presentationBlob } from './export.js';
-import { wheelZoom, zoomText } from './zoom.js';
+import { wheelZoom, zoomText } from './zoom.js?v=eee1f27da674';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');

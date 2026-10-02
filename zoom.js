@@ -7,7 +7,7 @@ export function wheelZoom(current, deltaY, deltaMode = 0, pageHeight = 800) {
   if (!Number.isFinite(deltaY) || deltaY === 0) return scale;
   const page = Number.isFinite(pageHeight) && pageHeight > 0 ? pageHeight : 800;
   const unit = deltaMode === 1 ? 16 : deltaMode === 2 ? page : 1;
-  const change = Math.max(-0.06, Math.min(0.06, -deltaY * unit * 0.0012));
+  const change = Math.max(-0.06, Math.min(0.06, -deltaY * unit * 0.0024));
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale * Math.exp(change)));
 }
 
