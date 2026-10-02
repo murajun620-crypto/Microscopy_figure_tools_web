@@ -1,0 +1,51 @@
+{
+  "files": [
+    {
+      "path": "vendor/pptxgen.bundle.js",
+      "package": "pptxgenjs",
+      "version": "4.0.1",
+      "sha256": "4fb9eac5cfefb213e2d8743c2b7151025f31bfb3f834c73c12062916daa0f3f8",
+      "source": "https://registry.npmjs.org/pptxgenjs/4.0.1"
+    },
+    {
+      "path": "vendor/jszip.min.js",
+      "package": "jszip",
+      "version": "3.10.1",
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+      "source": "https://registry.npmjs.org/jszip/3.10.1"
+    },
+    {
+      "path": "vendor/pdf-lib.min.js",
+      "package": "pdf-lib",
+      "version": "1.17.1",
+      "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+      "source": "https://registry.npmjs.org/pdf-lib/1.17.1"
+    },
+    {
+      "path": "vendor/pako.min.js",
+      "package": "pako",
+      "version": "1.0.11",
+      "sha256": "29cfa0542b9864b6640cfdcc8f15b184db6431b532db2702a3ce97e5f2a7fc1c",
+      "source": "https://registry.npmjs.org/pako/1.0.11"
+    },
+    {
+      "path": "vendor/UTIF.js",
+      "package": "utif",
+      "version": "3.1.0",
+      "sha256": "e3e76115f49571e39624c3316a76b3c4c5b2c5ca518dfec4b66a9f7af8c6d059",
+      "source": "https://registry.npmjs.org/utif/3.1.0"
+    },
+    {
+      "path": "assets/NotoSans-Regular.ttf",
+      "package": "Noto Sans",
+      "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+      "source": "assets/fonts/NotoSans-Regular.ttf"
+    },
+    {
+      "path": "assets/NotoSans-Bold.ttf",
+      "package": "Noto Sans",
+      "sha256": "c976e4b1b99edc88775377fcc21692ca4bfa46b6d6ca6522bfda505b28ff9d6a",
+      "source": "assets/fonts/NotoSans-Bold.ttf"
+    }
+  ]
+}
