@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=8f0a1199c226">
-  <script type="module" src="./app.js?v=ad272f7dbab5"></script>
+  <link rel="stylesheet" href="./styles.css?v=a0864659874c">
+  <script type="module" src="./app.js?v=01437d67e00a"></script>
 </head>
 <body>
   <header class="app-header">
@@ -117,9 +117,12 @@
         <div class="tool-group"><button id="rawPreviewButton" class="tool" disabled>元画像</button><button id="processedPreviewButton" class="tool active" disabled>処理後</button></div>
         <label class="zoom-label">表示<select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label>
       </div>
+      <div class="preview-shell">
       <div id="previewArea" class="preview-area">
         <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>顕微鏡画像を、伝わる図に。</h1><p>校正からスケールバー、パネルラベルまで。<br>元画像を保持して、仕上がりを確認できます。</p><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p><small>インストール不要 · 画像のアップロード不要</small></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
+      </div>
+      <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>‹</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>›</button></div>
       </div>
       <div id="instruction" class="instruction">画像を開くか、サンプルを選んでください。</div>
       <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>

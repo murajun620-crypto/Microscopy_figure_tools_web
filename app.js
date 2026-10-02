@@ -2,12 +2,15 @@ import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFrom
 import { SUPPORTED, canvasBlob, decodeImage, download, loadScript, releaseImage, thumbnail } from './io.js';
 import { buildPlan, paint, renderCanvas } from './render.js';
 import { addFigureSlide, batchExport, batchSettings, createPresentation, exportImage, presentationBlob } from './export.js';
+import { wheelZoom, zoomText } from './zoom.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
+let wheelZoomFrame = 0, wheelZoomAnchor = null;
+function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
 const representativeColors = [['白','#ffffff'],['黒','#000000'],['赤','#ff0000'],['黄','#ffff00'],['緑','#00ff00'],['水色','#00ffff'],['青','#0000ff'],['紫','#ff00ff']];
 const colorFields = [];
@@ -54,7 +57,21 @@ function notify(message, error = false) {
   clearTimeout(toastTimer); $('status').textContent = message; $('status').classList.toggle('error', error); $('status').hidden = false;
   toastTimer = setTimeout(() => { $('status').hidden = true; }, error ? 12000 : 6000);
 }
+function syncImageNavigation() {
+  const index = items.indexOf(current);
+  $('previewNavigator').hidden = !current || items.length < 2;
+  const counter = current ? `${index + 1} / ${items.length}` : '';
+  if ($('previewImageCounter').textContent !== counter) $('previewImageCounter').textContent = counter;
+  $('previousImage').disabled = busy || index <= 0;
+  $('nextImage').disabled = busy || index < 0 || index >= items.length - 1;
+}
+for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEventListener('click',()=>{
+  if (busy || !current) return;
+  const next = items[items.indexOf(current) + offset];
+  if (next) action(()=>selectItem(next));
+});
 function setBusy(value) {
+  if (value) cancelWheelZoom();
   busy = value; document.body.classList.toggle('busy', value);
   for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
@@ -74,6 +91,7 @@ function setBusy(value) {
     $('labelOutsideTransparent').disabled=value||!p.visible||!p.anchor.startsWith('outside-');$('labelOutsideColor').disabled=$('labelOutsideTransparent').disabled||p.outsideTransparent;
   }
   syncColorFields();
+  syncImageNavigation();
 }
 async function action(fn) {
   if (busy) return;
@@ -147,7 +165,7 @@ function renderList() {
     }
     row.append(checkbox, button,controls); $('imageList').append(row);
   }
-  $('fileCount').textContent = items.length; updateBatch();
+  $('fileCount').textContent = items.length; updateBatch(); syncImageNavigation();
 }
 function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
@@ -211,7 +229,7 @@ function render() {
     const finalPlan = buildPlan(settings,context,false,settings.output.scale);
     const metrics = rasterMetrics(finalPlan, settings.output);
     $('outputInfo').textContent = `PNG ${metrics.width} × ${metrics.height} px · ${metrics.widthCm.toFixed(2)} × ${metrics.heightCm.toFixed(2)} cm · 300 dpi`;
-    $('viewInfo').textContent = `${tool==='crop'?'現在の画像（トリミング選択）':previewRaw?'元画像':'処理後画像'} · 表示 ${Math.round(displayScale * 100)}%`;
+    $('viewInfo').textContent = `${tool==='crop'?'現在の画像（トリミング選択）':previewRaw?'元画像':'処理後画像'} · 表示 ${zoomText(displayScale)}`;
     const warnings = finalPlan.warnings;
     $('instruction').classList.toggle('warning', warnings.length > 0 && tool === 'move');
     $('instruction').textContent = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。四隅・辺でサイズ、中央で位置を調整し適用します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
@@ -349,7 +367,27 @@ canvas.addEventListener('pointerup', event => {
 });
 canvas.addEventListener('pointercancel', () => { if (drag?.before) current.settings = drag.before; drag = null; measurementStart = null; syncInputs(); render(); });
 canvas.addEventListener('contextmenu',event=>{if(tool==='crop'){event.preventDefault();pendingCrop=cropStart=drag=null;current.settings.cropOptions.pending=null;current.history.push(current.settings);syncInputs();render();}});
-canvas.addEventListener('wheel',event=>{if(!event.ctrlKey||!plan)return;event.preventDefault();const bounds=canvas.getBoundingClientRect(),zoom=clamp(bounds.width/plan.width*(event.deltaY<0?1.2:1/1.2),.05,8),select=$('zoomSelect');let option=select.querySelector('[data-custom-zoom]');if(!option){option=document.createElement('option');option.dataset.customZoom='true';select.add(option);}option.value=String(zoom);option.textContent=`${Math.round(zoom*100)}%`;select.value=String(zoom);render();},{passive:false});
+canvas.addEventListener('wheel',event=>{
+  if (!event.ctrlKey || !plan || busy) return;
+  event.preventDefault();
+  const bounds = canvas.getBoundingClientRect(), select = $('zoomSelect'), area = $('previewArea');
+  const scale = select.value === 'fit' ? bounds.width / plan.width : Number(select.value);
+  const zoom = wheelZoom(scale,event.deltaY,event.deltaMode,area.clientHeight);
+  if (zoom === scale) return;
+  let option = select.querySelector('[data-custom-zoom]');
+  if (!option) { option = document.createElement('option'); option.dataset.customZoom = 'true'; select.add(option); }
+  option.value = String(zoom); option.textContent = zoomText(zoom); select.value = String(zoom);
+  wheelZoomAnchor = { x:event.clientX,y:event.clientY,u:(event.clientX-bounds.left)/bounds.width,v:(event.clientY-bounds.top)/bounds.height };
+  if (!wheelZoomFrame) wheelZoomFrame = requestAnimationFrame(()=>{
+    wheelZoomFrame = 0;
+    const anchor = wheelZoomAnchor; wheelZoomAnchor = null;
+    if (!plan || !current || !anchor) return;
+    render();
+    const after = canvas.getBoundingClientRect();
+    area.scrollLeft += after.left + after.width * anchor.u - anchor.x;
+    area.scrollTop += after.top + after.height * anchor.v - anchor.y;
+  });
+},{passive:false});
 
 for (const input of document.querySelectorAll('[data-setting]')) {
   // Text previews update while typing; a later change/blur commits one history
@@ -441,7 +479,7 @@ function undo(redo = false) {
   measurement=measurementStart=drag=cropStart=null;pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
 }
 $('undoButton').addEventListener('click', () => undo()); $('redoButton').addEventListener('click', () => undo(true));
-$('zoomSelect').addEventListener('change', render);
+$('zoomSelect').addEventListener('change',()=>{ cancelWheelZoom(); render(); });
 for(const [id,raw] of [['rawPreviewButton',true],['processedPreviewButton',false]]) $(id).addEventListener('click',()=>{setTool('move');previewRaw=raw;$('rawPreviewButton').classList.toggle('active',raw);$('processedPreviewButton').classList.toggle('active',!raw);render();});
 let resizeFrame; new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(render); }).observe($('previewArea'));
 document.addEventListener('keydown', event => {
