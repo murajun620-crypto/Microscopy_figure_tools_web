@@ -1,4 +1,5 @@
-import { copy, outputMetrics, pyRound, relativeCrop, sequenceLabel, serializeProject, uniqueName } from './core.js';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js';
+import { numberedLabel } from './label-numbering.js?v=265331117fbe';
 import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js';
 import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js';
 import { inlinePlain } from './inline-text.js';
@@ -85,11 +86,8 @@ export function batchSettings(template, original, target, index, numbering) {
   settings.panelLabel.visible = target.labelVisible ?? template.panelLabel.visible;
   if(target.labelText!==undefined) settings.panelLabel.text=target.labelText;
   if(target.subtext!==undefined) settings.panelLabel.subtext=target.subtext;
-  if (numbering.enabled && settings.panelLabel.visible) {
-    const start=numbering.mode==='alphabet'&&numbering.startLetter?Math.max(1,numbering.startLetter.toLowerCase().charCodeAt(0)-96):numbering.start;
-    const prefix=(numbering.prefix||'')+(numbering.prefix?numbering.separator??'':'');
-    const text = sequenceLabel(index, numbering.mode, start, prefix,numbering.uppercase);
-    settings.panelLabel.text = numbering.parentheses ? `(${text})` : text;
+  if (numbering.enabled && (settings.panelLabel.visible || numbering.mode==='none')) {
+    settings.panelLabel.text = numberedLabel(index, numbering);
     settings.panelLabel.parentheses=numbering.parentheses;
   }
   return settings;

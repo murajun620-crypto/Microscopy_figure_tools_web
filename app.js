@@ -1,8 +1,9 @@
-import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, sequenceLabel, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js';
+import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js';
 import { SUPPORTED, canvasBlob, decodeImage, download, loadScript, releaseImage, thumbnail } from './io.js';
 import { buildPlan, paint, renderCanvas } from './render.js';
-import { addFigureSlide, batchExport, batchSettings, createPresentation, exportImage, presentationBlob } from './export.js';
+import { addFigureSlide, batchExport, batchSettings, createPresentation, exportImage, presentationBlob } from './export.js?v=1ae5db51707c';
 import { wheelZoom, pinchZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=5f8b230a1363';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=265331117fbe';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -604,8 +605,36 @@ $('newButton').addEventListener('click',()=>{if(busy)return;if(source)releaseIma
 for(const [id,offset] of [['moveImageUp',-1],['moveImageDown',1]]) $(id).addEventListener('click',()=>{if(busy||!current)return;const index=items.indexOf(current),target=index+offset;if(target<0||target>=items.length)return;[items[index],items[target]]=[items[target],items[index]];renderList();});
 for(const [id,key,value] of [['batchAll','enabled',true],['batchNone','enabled',false],['batchBarsOn','barVisible',true],['batchBarsOff','barVisible',false],['batchLabelsOn','labelVisible',true],['batchLabelsOff','labelVisible',false]]) $(id).addEventListener('click',()=>{if(busy)return;for(const item of items){item[key]=value;if(key!=='enabled')item.settings[key==='barVisible'?'scaleBar':'panelLabel'].visible=value;}renderList();syncInputs();render();});
 $('batchBarFirst').addEventListener('click',()=>{if(busy)return;let first=true;for(const item of items){item.barVisible=item.enabled&&first;if(item.enabled)first=false;item.settings.scaleBar.visible=item.barVisible;}renderList();syncInputs();render();});
-function numbering(enabled=true){return {enabled,cropMode:'individual',mode:$('batchSequence').value,start:$('batchStart').valueAsNumber,startLetter:$('batchStartLetter').value,prefix:$('batchPrefix').value,separator:$('batchSeparator').value,uppercase:$('batchUppercase').checked,parentheses:$('batchParentheses').checked};}
-$('generateLabels').addEventListener('click',()=>{if(busy)return;try{const n=numbering(),start=n.mode==='alphabet'?Math.max(1,n.startLetter.toLowerCase().charCodeAt(0)-96):n.start;let index=0;for(const item of items)if(item.enabled&&item.labelVisible){const label=sequenceLabel(index++,n.mode,start,n.prefix+(n.prefix?n.separator:''),n.uppercase);item.labelText=n.parentheses?`(${label})`:label;item.settings.panelLabel.text=item.labelText;item.settings.panelLabel.parentheses=n.parentheses;item.history.push(item.settings);}renderList();syncInputs();render();}catch(error){notify(error.message,true);}});
+function numbering(enabled=true){
+  if (!enabled) return { enabled:false, cropMode:'individual' };
+  return { enabled, cropMode:'individual', ...panelNumbering($('panelFormat').value,{parent:$('panelBranchParent').value,mode:$('batchSequence').value,start:$('batchStart').valueAsNumber,startLetter:$('batchStartLetter').value,prefix:$('batchPrefix').value,separator:$('batchSeparator').value,uppercase:$('batchUppercase').checked,parentheses:$('batchParentheses').checked}) };
+}
+function updateLabelFormat() {
+  const preset=$('panelFormat').value;
+  $('panelBranchRow').hidden=!['branch-number','branch-roman'].includes(preset);
+  $('panelCustomOptions').hidden=preset!=='custom';
+  $('panelStartRow').hidden=!['branch-number','branch-roman','number','custom'].includes(preset);
+  try { const n=numbering(); $('labelFormatPreview').textContent=preset==='none'?'本文ラベルなし（補足文字は保持）':`連番の例：${[0,1,2].map(index=>numberedLabel(index,n)).join(', ')}`; }
+  catch(error){$('labelFormatPreview').textContent=error.message;}
+}
+for(const id of ['panelFormat','panelBranchParent','batchSequence','batchStart','batchStartLetter','batchPrefix','batchSeparator','batchUppercase','batchParentheses']) {
+  $(id).addEventListener('input',updateLabelFormat); $(id).addEventListener('change',updateLabelFormat);
+}
+updateLabelFormat();
+function applyPanelLabels(onlyEnabled) {
+  if(busy||!current)return;
+  try {
+    const n=numbering(), changes=labelSequenceChanges(items,n,onlyEnabled).map(({item,text})=>{
+      const settings=copy(item.settings);settings.panelLabel.text=text;settings.panelLabel.parentheses=n.parentheses;
+      const next=validateSettings(settings,item.width,item.height);buildPlan(next,context);
+      return {item,text,settings:next};
+    });
+    for(const {item,text,settings} of changes){item.labelText=text;item.settings=settings;item.history.push(settings);}
+    renderList();syncInputs();render();notify('ラベル形式を適用しました。');
+  }catch(error){notify(error.message,true);}
+}
+$('applyPanelLabels').addEventListener('click',()=>applyPanelLabels(false));
+$('generateLabels').addEventListener('click',()=>applyPanelLabels(true));
 $('saveSettingsButton').addEventListener('click', () => {
   try { download(new Blob([JSON.stringify(serializeProject(current.settings, current), null, 2)], { type: 'application/json' }), `${current.name.replace(/\.[^.]+$/, '')}_settings.json`); notify('設定JSONを保存しました。'); } catch (error) { notify(error.message, true); }
 });
@@ -646,12 +675,11 @@ $('copyButton').addEventListener('click',()=>action(async()=>{
   notify('表示中の画像をクリップボードへコピーしました。');
 }));
 $('batchExportButton').addEventListener('click', () => action(async () => {
-  const start = $('batchStart').valueAsNumber;
-  if (!Number.isSafeInteger(start) || start < 1 || start > 10000) throw new Error('開始番号は1〜10,000の整数にしてください。');
+  const labelNumbering = numbering($('batchNumbering').checked);
   batchController = new AbortController(); $('cancelBatchButton').hidden = false;
   try {
     const formats=exportFormats(),template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
-    const result = await batchExport(items.filter(item => item.enabled), template, current, formats.length>1?formats:formats[0], numbering($('batchNumbering').checked), batchController.signal, message => { $('batchProgress').textContent = message; });
+    const result = await batchExport(items.filter(item => item.enabled), template, current, formats.length>1?formats:formats[0], labelNumbering, batchController.signal, message => { $('batchProgress').textContent = message; });
     download(result.blob, result.name);
     const message = `${result.saved}枚を保存しました。${result.failures.length ? ` ${result.failures.length}枚失敗：${result.failures.map(f => `${f.name}（${f.error}）`).join('、')}` : ''}`;
     renderList();
