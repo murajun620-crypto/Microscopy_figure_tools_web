@@ -1,0 +1,38 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MiFiTo 簡易マニュアル</title><link rel="stylesheet" href="manual.css"></head><body class="mifito"><header class="top"><a class="brand" href="index.html">MiFiTo マニュアル</a><div class="top-links"><nav class="editions" aria-label="マニュアルの種類"><a href="quick.html" aria-current="page">簡易版</a><a href="detailed.html" >詳細版</a></nav><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/" target="_blank" rel="noopener">アプリを開く ↗</a><a data-package href="manual.zip" download>esa投稿用一式</a></div></header><div class="layout"><aside class="toc"><h2>簡易版の目次</h2><nav class="toc-links" aria-label="目次"><a href="#1-画像を開く">1. 画像を開く</a><a href="#2-長さを校正する">2. 長さを校正する</a><a href="#3-範囲と表示を整える">3. 範囲と表示を整える</a><a href="#4-完成図を保存する">4. 完成図を保存する</a><a href="#5-プロジェクトも保存する">5. プロジェクトも保存する</a></nav><p class="tip">画像はクリックで拡大。<br>拡大画面の＋・−で調整できます。<br>GIFは再生ボタンで開始。<br>赤い輪はクリック、破線はドラッグです。</p></aside><main class="article"><h1>MiFiTo 簡易マニュアル</h1>
+<p>顕微鏡画像を整え、正しい長さのスケールバーとパネルラベルを付けます。初めての方は、このページの順番で操作してください。</p>
+<p><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/">MiFiToを開く</a> ｜ <a href="detailed.html">詳しい操作を見る</a></p>
+<h2 id="1-画像を開く">1. 画像を開く</h2>
+<p>左の「＋ 画像を開く」で元画像を選びます。複数枚を同時に選べます。練習には「サンプル3枚」を押してください。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="画像を開くボタンと画像一覧を拡大した画像を拡大"><img src="assets/image-list.jpg" alt="画像を開くボタンと画像一覧を拡大した画像" width="315" height="600" loading="lazy"></button><figcaption>画像を開くボタンと画像一覧を拡大した画像</figcaption></figure>
+<p>一覧のファイル名で表示画像を切り替えます。<strong>画像名の左のチェックは、一括保存する対象を選ぶものです。</strong></p>
+<h2 id="2-長さを校正する">2. 長さを校正する</h2>
+<p>校正とは、画像の <strong>1 pxが実際の何µmに相当するか</strong> を決めることです。</p>
+<ol>
+<li>「↔ 2点を測定」または「↔ 測定」を押します。</li>
+<li>実際の長さが分かる基準線の、両端をクリックします。</li>
+<li>「既知の長さ」と単位を入力し、<strong>「測定から校正」</strong> を押します。</li>
+</ol>
+<figure class="media focus"><button class="image-open" type="button" aria-label="基準線を測った後、既知の長さと単位を設定する操作部を拡大"><img src="assets/calibration-controls.jpg" alt="基準線を測った後、既知の長さと単位を設定する操作部" width="271" height="371" loading="lazy"></button><figcaption>基準線を測った後、既知の長さと単位を設定する操作部</figcaption></figure>
+<p>サンプルで練習するときは、一度「校正をリセット」してから、画像左下の <strong>5 µm reference</strong> の線を測り、<strong>5・µm</strong> と入力します。約0.02 µm/pxになれば校正できています。</p>
+<figure class="media animation"><div class="media-head"><span>マウス操作ガイド · 12.2秒</span><button class="play" type="button" data-gif="assets/calibration-guide.gif" data-poster="assets/calibration-guide.jpg" aria-pressed="false">▶ 操作を再生</button></div><button class="image-open" type="button" aria-label="測定する両端と校正ボタンを、カーソルの動きで示す操作ガイドGIFを拡大"><img src="assets/calibration-guide.jpg" alt="測定する両端と校正ボタンを、カーソルの動きで示す操作ガイドGIF" width="1000" height="700" loading="lazy"></button><figcaption>測定する両端と校正ボタンを、カーソルの動きで示す操作ガイドGIF</figcaption></figure>
+<p>GIFの赤い輪はクリック、破線はドラッグを示します。画像とGIFはクリックすると拡大できます。</p>
+<p><strong>自分の画像は、撮影情報や基準線から分かる値で校正してください。長さを推測して入力しないでください。</strong></p>
+<h2 id="3-範囲と表示を整える">3. 範囲と表示を整える</h2>
+<ul>
+<li>「2 トリミング」で縦横比・適用方法を選び、残す範囲を確認して「範囲を適用」を押します。</li>
+<li>「3 スケールバー」で長さ・単位・位置・色を設定します。</li>
+<li>「4 パネルラベル」で形式を選び、<strong>「ラベルを適用」</strong> を押します。</li>
+</ul>
+<figure class="media focus"><button class="image-open" type="button" aria-label="スケールバーの長さ・単位・位置・色を設定する部分を拡大"><img src="assets/scale-controls.jpg" alt="スケールバーの長さ・単位・位置・色を設定する部分" width="271" height="393" loading="lazy"></button><figcaption>スケールバーの長さ・単位・位置・色を設定する部分</figcaption></figure>
+<p>トリミングやバーの見た目は、他の画像にも反映されます。画像を切り替え、校正値と残す範囲を一枚ずつ確認しましょう。</p>
+<h2 id="4-完成図を保存する">4. 完成図を保存する</h2>
+<p>1枚なら <strong>「この画像を保存」</strong>、チェックした画像をまとめるなら <strong>「一括保存」</strong> を押します。形式・保存先を選び、保存画面の下のボタンを押します。初めは <strong>PNG</strong> で大丈夫です。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="一括保存の形式・保存先・対象枚数を確認するダイアログを拡大"><img src="assets/save-popup.jpg" alt="一括保存の形式・保存先・対象枚数を確認するダイアログ" width="531" height="576" loading="lazy"></button><figcaption>一括保存の形式・保存先・対象枚数を確認するダイアログ</figcaption></figure>
+<p>「元ファイルと同じフォルダ」を使うとき、初回にフォルダ選択が出たら、元画像の入ったフォルダを選びます。フォルダ選択に対応しないブラウザでは「ダウンロード」を使います。</p>
+<p>「画像をコピー」→ WordやPowerPointで <strong>Ctrl＋V</strong>（Macは <strong>Cmd＋V</strong>）でも貼り付けられます。</p>
+<h2 id="5-プロジェクトも保存する">5. プロジェクトも保存する</h2>
+<p>上部の <strong>「プロジェクトを保存」</strong> で、元画像と編集状態を <code>.mifito</code> にまとめて保存します。次回は「プロジェクトを開く」で再開できます。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="元画像と設定をまとめて保存・再開する上部のボタンを拡大"><img src="assets/project-controls.jpg" alt="元画像と設定をまとめて保存・再開する上部のボタン" width="583" height="52" loading="lazy"></button><figcaption>元画像と設定をまとめて保存・再開する上部のボタン</figcaption></figure>
+<p>PNGを保存しても、編集を再開するためのプロジェクトは保存されません。<strong>作業を終える前に、完成図とプロジェクトの両方を保存しましょう。</strong></p>
+<p>校正方法・一括操作・設定の保存などは <a href="detailed.html">詳細マニュアル</a> を参照してください。</p>
+<p class="back-link"><a href="detailed.html">詳細版で設定と対処方法を見る →</a></p></main></div><dialog id="viewer"><div class="viewer-toolbar"><span id="viewer-title"></span><div class="viewer-controls"><button type="button" id="viewer-zoom-out" aria-label="画像を縮小">−</button><button type="button" id="viewer-zoom-in" aria-label="画像を拡大">＋</button><button type="button" id="viewer-fit">画面に合わせる</button><button type="button" id="viewer-close">閉じる</button></div></div><img id="viewer-image" alt=""></dialog><footer class="footer">MiFiTo Web v1.1.0 · 2026年10月4日更新</footer><script src="manual.js" defer></script></body></html>

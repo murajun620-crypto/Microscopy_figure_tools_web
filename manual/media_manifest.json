@@ -1,0 +1,533 @@
+{
+  "application": "MiFiTo",
+  "updated_on": "2026-10-04",
+  "gifs": {
+    "assets/calibration-guide.gif": {
+      "title": "測定モードで、基準線の左端をクリックする",
+      "poster": "assets/calibration-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "frames": 36,
+      "duration_ms": 12240,
+      "illustrated_cursor": true,
+      "steps": [
+        {
+          "instruction": "測定モードで、基準線の左端をクリックする",
+          "kind": "click",
+          "source_before": "mifito-calibration-reset.jpg",
+          "source_after": "mifito-calibration-point1.jpg",
+          "click": [
+            578,
+            590
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "同じ線の右端をクリックする",
+          "kind": "click",
+          "source_before": "mifito-calibration-point1.jpg",
+          "source_after": "mifito-03-measure.jpg",
+          "click": [
+            725,
+            590
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "既知の長さに 5、単位に µm を指定する",
+          "kind": "click",
+          "source_before": "mifito-03-measure.jpg",
+          "source_after": "mifito-03-measure.jpg",
+          "click": [
+            80,
+            184
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "「測定から校正」をクリックする",
+          "kind": "click",
+          "source_before": "mifito-03-measure.jpg",
+          "source_after": "mifito-04-calibrated.jpg",
+          "click": [
+            148,
+            229
+          ],
+          "drag_end": null
+        }
+      ]
+    },
+    "assets/crop-guide.gif": {
+      "title": "縦横比 3：2 と、画像幅を使う設定を選ぶ",
+      "poster": "assets/crop-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "frames": 18,
+      "duration_ms": 6120,
+      "illustrated_cursor": true,
+      "steps": [
+        {
+          "instruction": "縦横比 3：2 と、画像幅を使う設定を選ぶ",
+          "kind": "click",
+          "source_before": "mifito-crop-ready.jpg",
+          "source_after": "mifito-crop-ready.jpg",
+          "click": [
+            146,
+            287
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "範囲を確認し「範囲を適用」をクリックする",
+          "kind": "click",
+          "source_before": "mifito-crop-ready.jpg",
+          "source_after": "mifito-crop-applied.jpg",
+          "click": [
+            81,
+            592
+          ],
+          "drag_end": null
+        }
+      ]
+    },
+    "assets/labels-guide.gif": {
+      "title": "パネルラベルの種別で (a-1), (a-2), (a-3) を選ぶ",
+      "poster": "assets/labels-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "frames": 27,
+      "duration_ms": 9180,
+      "illustrated_cursor": true,
+      "steps": [
+        {
+          "instruction": "パネルラベルの種別で (a-1), (a-2), (a-3) を選ぶ",
+          "kind": "click",
+          "source_before": "mifito-label-alpha.jpg",
+          "source_after": "mifito-label-format.jpg",
+          "click": [
+            141,
+            295
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "「ラベルを適用」をクリックする",
+          "kind": "click",
+          "source_before": "mifito-label-format.jpg",
+          "source_after": "mifito-08-label.jpg",
+          "click": [
+            148,
+            520
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "右上の › を押し、次の画像の (a-2) を確認する",
+          "kind": "click",
+          "source_before": "mifito-08-label.jpg",
+          "source_after": "mifito-label-next.jpg",
+          "click": [
+            1225,
+            254
+          ],
+          "drag_end": null
+        }
+      ]
+    },
+    "assets/batch-guide.gif": {
+      "title": "「一括保存（3枚）」をクリックする",
+      "poster": "assets/batch-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "frames": 27,
+      "duration_ms": 9180,
+      "illustrated_cursor": true,
+      "steps": [
+        {
+          "instruction": "「一括保存（3枚）」をクリックする",
+          "kind": "click",
+          "source_before": "mifito-batch-ready.jpg",
+          "source_after": "mifito-09-batch-save.jpg",
+          "click": [
+            541,
+            157
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "形式・設定JSON・保存先・対象枚数を確認する",
+          "kind": "click",
+          "source_before": "mifito-09-batch-save.jpg",
+          "source_after": "mifito-09-batch-save.jpg",
+          "click": [
+            657,
+            247
+          ],
+          "drag_end": null
+        },
+        {
+          "instruction": "「3枚を一括保存」をクリックする",
+          "kind": "click",
+          "source_before": "mifito-09-batch-save.jpg",
+          "source_after": "mifito-batch-saved.jpg",
+          "click": [
+            641,
+            601
+          ],
+          "drag_end": null
+        }
+      ]
+    }
+  },
+  "crops": {
+    "assets/calibration-controls.jpg": {
+      "source": "mifito-03-measure.jpg",
+      "rectangle": [
+        12,
+        73,
+        283,
+        444
+      ]
+    },
+    "assets/reference-line.jpg": {
+      "source": "mifito-03-measure.jpg",
+      "rectangle": [
+        546,
+        549,
+        747,
+        617
+      ]
+    },
+    "assets/crop-controls.jpg": {
+      "source": "mifito-crop-ready.jpg",
+      "rectangle": [
+        12,
+        205,
+        283,
+        620
+      ]
+    },
+    "assets/crop-preview.jpg": {
+      "source": "mifito-05-crop-selection.jpg",
+      "rectangle": [
+        523,
+        242,
+        1066,
+        641
+      ]
+    },
+    "assets/scale-controls.jpg": {
+      "source": "mifito-07-scale.jpg",
+      "rectangle": [
+        12,
+        301,
+        283,
+        694
+      ]
+    },
+    "assets/label-controls.jpg": {
+      "source": "mifito-08-label.jpg",
+      "rectangle": [
+        12,
+        81,
+        283,
+        430
+      ]
+    },
+    "assets/batch-targets.jpg": {
+      "source": "mifito-10-batch-targets.jpg",
+      "rectangle": [
+        12,
+        78,
+        283,
+        595
+      ]
+    },
+    "assets/save-popup.jpg": {
+      "source": "mifito-09-batch-save.jpg",
+      "rectangle": [
+        375,
+        73,
+        906,
+        649
+      ]
+    },
+    "assets/settings-menu.jpg": {
+      "source": "mifito-11-settings-menu.jpg",
+      "rectangle": [
+        920,
+        58,
+        1199,
+        169
+      ]
+    },
+    "assets/color-custom.jpg": {
+      "source": "mifito-color-lower.jpg",
+      "rectangle": [
+        16,
+        329,
+        365,
+        620
+      ]
+    },
+    "assets/image-list.jpg": {
+      "source": "new browser screenshot clipped at capture"
+    },
+    "assets/project-controls.jpg": {
+      "source": "new browser screenshot clipped at capture"
+    },
+    "assets/color-popup.jpg": {
+      "source": "new browser screenshot clipped at capture"
+    }
+  },
+  "attachments": [
+    {
+      "file": "assets/batch-guide.gif",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 244024,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/batch-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 84183,
+      "articles": []
+    },
+    {
+      "file": "assets/batch-targets.jpg",
+      "dimensions": [
+        271,
+        517
+      ],
+      "bytes": 35226,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/calibration-controls.jpg",
+      "dimensions": [
+        271,
+        371
+      ],
+      "bytes": 24775,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/calibration-guide.gif",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 270588,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/calibration-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 82889,
+      "articles": []
+    },
+    {
+      "file": "assets/color-custom.jpg",
+      "dimensions": [
+        349,
+        291
+      ],
+      "bytes": 15286,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/color-popup.jpg",
+      "dimensions": [
+        377,
+        628
+      ],
+      "bytes": 25425,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/crop-controls.jpg",
+      "dimensions": [
+        271,
+        415
+      ],
+      "bytes": 25606,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/crop-guide.gif",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 204546,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/crop-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 95238,
+      "articles": []
+    },
+    {
+      "file": "assets/crop-preview.jpg",
+      "dimensions": [
+        543,
+        399
+      ],
+      "bytes": 50764,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/image-list.jpg",
+      "dimensions": [
+        315,
+        600
+      ],
+      "bytes": 19271,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/label-controls.jpg",
+      "dimensions": [
+        271,
+        349
+      ],
+      "bytes": 18964,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/labels-guide.gif",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 320341,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/labels-guide.jpg",
+      "dimensions": [
+        1000,
+        700
+      ],
+      "bytes": 96129,
+      "articles": []
+    },
+    {
+      "file": "assets/overview.jpg",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "bytes": 79839,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/project-controls.jpg",
+      "dimensions": [
+        583,
+        52
+      ],
+      "bytes": 5564,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/reference-line.jpg",
+      "dimensions": [
+        201,
+        68
+      ],
+      "bytes": 4561,
+      "articles": [
+        "detailed.md"
+      ]
+    },
+    {
+      "file": "assets/save-popup.jpg",
+      "dimensions": [
+        531,
+        576
+      ],
+      "bytes": 39956,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/scale-controls.jpg",
+      "dimensions": [
+        271,
+        393
+      ],
+      "bytes": 22427,
+      "articles": [
+        "detailed.md",
+        "quick.md"
+      ]
+    },
+    {
+      "file": "assets/settings-menu.jpg",
+      "dimensions": [
+        279,
+        111
+      ],
+      "bytes": 6498,
+      "articles": [
+        "detailed.md"
+      ]
+    }
+  ]
+}

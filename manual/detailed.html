@@ -1,0 +1,274 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MiFiTo 詳細マニュアル</title><link rel="stylesheet" href="manual.css"></head><body class="mifito"><header class="top"><a class="brand" href="index.html">MiFiTo マニュアル</a><div class="top-links"><nav class="editions" aria-label="マニュアルの種類"><a href="quick.html" >簡易版</a><a href="detailed.html" aria-current="page">詳細版</a></nav><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/" target="_blank" rel="noopener">アプリを開く ↗</a><a data-package href="manual.zip" download>esa投稿用一式</a></div></header><div class="layout"><aside class="toc"><h2>詳細版の目次</h2><nav class="toc-links" aria-label="目次"><a href="#1-画面と画像を開く操作">1. 画面と画像を開く操作</a><a href="#2-校正の考え方">2. 校正の考え方</a><a href="#3-2点を測定して校正する">3. 2点を測定して校正する</a><a href="#4-トリミングする">4. トリミングする</a><a href="#5-スケールバーを整える">5. スケールバーを整える</a><a href="#6-パネルラベルを付ける">6. パネルラベルを付ける</a><a href="#7-個別の表示と位置を調整する">7. 個別の表示と位置を調整する</a><a href="#8-表示倍率と出力サイズ">8. 表示倍率と出力サイズ</a><a href="#9-1枚または複数枚を保存する">9. 1枚または複数枚を保存する</a><a href="#10-保存先を選ぶ">10. 保存先を選ぶ</a><a href="#11-画像をコピーする">11. 画像をコピーする</a><a href="#12-プロジェクトを保存して再開する">12. プロジェクトを保存して再開する</a><a href="#13-設定だけを保存して使い回す">13. 設定だけを保存して使い回す</a><a href="#14-うまくいかないとき">14. うまくいかないとき</a><a href="#練習の確認">練習の確認</a></nav><p class="tip">画像はクリックで拡大。<br>拡大画面の＋・−で調整できます。<br>GIFは再生ボタンで開始。<br>赤い輪はクリック、破線はドラッグです。</p></aside><main class="article"><h1>MiFiTo 詳細マニュアル</h1>
+<p>元画像を開き、長さの校正、トリミング、スケールバーとパネルラベルの配置、保存、作業の再開を行う手順です。</p>
+<p><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/">MiFiToを開く</a> ｜ <a href="quick.html">最初の操作だけを見る</a></p>
+<h2 id="1-画面と画像を開く操作">1. 画面と画像を開く操作</h2>
+<p>PCのブラウザでアプリを開きます。左に画像一覧と設定、右にプレビューが表示されます。設定の見出しはクリックで開閉できます。</p>
+<figure class="media "><button class="image-open" type="button" aria-label="MiFiToの全体画面。左の画像一覧と設定、右の処理後プレビューを拡大"><img src="assets/overview.jpg" alt="MiFiToの全体画面。左の画像一覧と設定、右の処理後プレビュー" width="1280" height="720" loading="lazy"></button><figcaption>MiFiToの全体画面。左の画像一覧と設定、右の処理後プレビュー</figcaption></figure>
+<p>「＋ 画像を開く」で元画像を選びます。複数選択や、プレビューへのドラッグ＆ドロップでも開けます。PNG・JPEG・BMP・SVG・TIFFに対応しています。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="画像を開くボタン、サンプル、画像一覧の拡大を拡大"><img src="assets/image-list.jpg" alt="画像を開くボタン、サンプル、画像一覧の拡大" width="315" height="600" loading="lazy"></button><figcaption>画像を開くボタン、サンプル、画像一覧の拡大</figcaption></figure>
+<p>一覧のファイル名、またはプレビュー右上の「‹」「›」で表示画像を切り替えます。画像名の左のチェックは、一括保存の対象です。表示画像を切り替える操作とは役割が違います。</p>
+<p>練習には「サンプル3枚」を使います。サンプルは同じサイズ・校正値の模式画像で、最初から校正されています。自分の測定結果として使わないでください。</p>
+<h2 id="2-校正の考え方">2. 校正の考え方</h2>
+<p>校正とは、<strong>画像の1 pxが実際の何µmなどに相当するか</strong> を決めることです。正しい長さのスケールバーを描くため、最初に確認します。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>分かっている情報</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>画像内の基準線の実際の長さ</td>
+<td>両端を測定し、「既知の長さ」と単位を入力する</td>
+</tr>
+<tr>
+<td>画像全体の実際の幅・高さ</td>
+<td>「画像幅を使う」「画像高さを使う」で測定し、実際の長さを入力する</td>
+</tr>
+<tr>
+<td>撮影情報から分かる1 pxあたりの長さ</td>
+<td>「1 pxあたりの長さ」を入力し、「数値を直接設定」を押す</td>
+</tr>
+</tbody></table></div>
+<p>例えば、5 µmの線が250 pxなら、<code>5 ÷ 250 = 0.02 µm/px</code> です。この校正で2 µmのバーは100 pxに相当します。</p>
+<p><strong>分からない長さを推測して入力しないでください。</strong> 撮影装置の記録や元画像の基準線を確認します。倍率や画素サイズが違う画像では、画像を切り替え、一枚ずつ校正値を確認します。</p>
+<h2 id="3-2点を測定して校正する">3. 2点を測定して校正する</h2>
+<ol>
+<li>「↔ 2点を測定」またはプレビュー上部の「↔ 測定」を押します。</li>
+<li>既知の長さの基準線の、両端をクリックします。端から端までドラッグしても測れます。</li>
+<li>「既知の長さ」と単位を入力します。</li>
+<li><strong>「測定から校正」</strong> を押します。</li>
+<li>「1 px = …」の値とスケールバーを確認します。</li>
+</ol>
+<figure class="media focus"><button class="image-open" type="button" aria-label="測定距離、既知の長さ、単位、校正ボタンを拡大を拡大"><img src="assets/calibration-controls.jpg" alt="測定距離、既知の長さ、単位、校正ボタンを拡大" width="271" height="371" loading="lazy"></button><figcaption>測定距離、既知の長さ、単位、校正ボタンを拡大</figcaption></figure>
+<figure class="media focus"><button class="image-open" type="button" aria-label="サンプルの5 µmの基準線と、測定した両端を拡大を拡大"><img src="assets/reference-line.jpg" alt="サンプルの5 µmの基準線と、測定した両端を拡大" width="201" height="68" loading="lazy"></button><figcaption>サンプルの5 µmの基準線と、測定した両端を拡大</figcaption></figure>
+<p>サンプルで練習するときは「校正をリセット」を押し、画像左下の <code>5 µm reference · 250 px</code> の線を測り、長さ <strong>5</strong>・単位 <strong>µm</strong> で校正します。</p>
+<figure class="media animation"><div class="media-head"><span>マウス操作ガイド · 12.2秒</span><button class="play" type="button" data-gif="assets/calibration-guide.gif" data-poster="assets/calibration-guide.jpg" aria-pressed="false">▶ 操作を再生</button></div><button class="image-open" type="button" aria-label="基準線の両端をクリックして、既知の長さで校正する操作ガイドGIFを拡大"><img src="assets/calibration-guide.jpg" alt="基準線の両端をクリックして、既知の長さで校正する操作ガイドGIF" width="1000" height="700" loading="lazy"></button><figcaption>基準線の両端をクリックして、既知の長さで校正する操作ガイドGIF</figcaption></figure>
+<p>端をマウスで選ぶため、練習では約0.02 µm/pxになれば校正できています。大きく表示すると端を選びやすくなります。やり直すときはEscapeで選択を取り消し、測定し直します。</p>
+<h2 id="4-トリミングする">4. トリミングする</h2>
+<p>「2 トリミング」を開き、縦横比と適用方法を選びます。範囲を確認して <strong>「範囲を適用」</strong> を押します。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="トリミングの縦横比・適用方法・範囲設定の拡大を拡大"><img src="assets/crop-controls.jpg" alt="トリミングの縦横比・適用方法・範囲設定の拡大" width="271" height="415" loading="lazy"></button><figcaption>トリミングの縦横比・適用方法・範囲設定の拡大</figcaption></figure>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>やりたいこと</th>
+<th>選ぶ設定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>幅を保って3：2にそろえる</td>
+<td>縦横比「3：2」・適用方法「画像幅を使う（幅を維持）」</td>
+</tr>
+<tr>
+<td>高さを保ってそろえる</td>
+<td>必要な縦横比・適用方法「画像高さを使う（高さを維持）」</td>
+</tr>
+<tr>
+<td>自由に範囲を切り抜く</td>
+<td>「自由」・「範囲指定した部分」→「範囲を指定」でプレビューをドラッグ</td>
+</tr>
+</tbody></table></div>
+<figure class="media focus"><button class="image-open" type="button" aria-label="残す範囲を確認するトリミング枠と補助線の拡大を拡大"><img src="assets/crop-preview.jpg" alt="残す範囲を確認するトリミング枠と補助線の拡大" width="543" height="399" loading="lazy"></button><figcaption>残す範囲を確認するトリミング枠と補助線の拡大</figcaption></figure>
+<figure class="media animation"><div class="media-head"><span>マウス操作ガイド · 6.1秒</span><button class="play" type="button" data-gif="assets/crop-guide.gif" data-poster="assets/crop-guide.jpg" aria-pressed="false">▶ 操作を再生</button></div><button class="image-open" type="button" aria-label="縦横比と適用方法を選び、範囲を適用する操作ガイドGIFを拡大"><img src="assets/crop-guide.jpg" alt="縦横比と適用方法を選び、範囲を適用する操作ガイドGIF" width="1000" height="700" loading="lazy"></button><figcaption>縦横比と適用方法を選び、範囲を適用する操作ガイドGIF</figcaption></figure>
+<p>失敗したら「全体に戻す」を押します。「元画像」「処理後」で見比べられます。元の画像ファイルは変更されません。</p>
+<p><strong>トリミング範囲は他の画像にも反映されます。</strong> 保存前に画像を切り替え、必要な部分が残っているか確認してください。</p>
+<h2 id="5-スケールバーを整える">5. スケールバーを整える</h2>
+<p>「3 スケールバー」で、長さ・単位・位置・文字サイズ・太さ・色を設定します。数値は入力後にTabキーや別の項目のクリックで確定します。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="スケールバーの長さ・単位・位置・文字サイズ・色の設定部分の拡大を拡大"><img src="assets/scale-controls.jpg" alt="スケールバーの長さ・単位・位置・文字サイズ・色の設定部分の拡大" width="271" height="393" loading="lazy"></button><figcaption>スケールバーの長さ・単位・位置・文字サイズ・色の設定部分の拡大</figcaption></figure>
+<ul>
+<li>暗い画像では白、明るい画像では黒など、読み取れる色にします。</li>
+<li>画像に重なる場合は「画像外・下中央」などの位置も使えます。</li>
+<li>「個別背景を表示」で、バーの周囲に背景を付けられます。</li>
+<li>「長さの文字」のチェックで数値表示を切り替えます。</li>
+</ul>
+<p>色の四角を押すと、色パネルが開きます。パネルの色・カラーピッカー・カラーコードから選べます。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="スケールバーの線色を選ぶ色パネルの拡大を拡大"><img src="assets/color-popup.jpg" alt="スケールバーの線色を選ぶ色パネルの拡大" width="377" height="628" loading="lazy"></button><figcaption>スケールバーの線色を選ぶ色パネルの拡大</figcaption></figure>
+<figure class="media focus"><button class="image-open" type="button" aria-label="色パネル下部のカラーピッカーとカラーコードを拡大を拡大"><img src="assets/color-custom.jpg" alt="色パネル下部のカラーピッカーとカラーコードを拡大" width="349" height="291" loading="lazy"></button><figcaption>色パネル下部のカラーピッカーとカラーコードを拡大</figcaption></figure>
+<p>練習では2 µm・左下に変更してみましょう。バーの長さや見た目は他の画像にも反映されますが、校正値は画像ごとに保持されます。同じ2 µmでも、校正値によって必要な画素数が変わります。</p>
+<p>サンプルの薄い基準線は元画像に描かれている線です。アプリで追加した大きなスケールバーとは区別してください。</p>
+<h2 id="6-パネルラベルを付ける">6. パネルラベルを付ける</h2>
+<p>「4 パネルラベル」で形式を選び、連番の例を確認し、<strong>「ラベルを適用」</strong> を押します。選択しただけでは、各画像のラベルは更新されません。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="パネルラベルの種別・連番の例・適用ボタンの拡大を拡大"><img src="assets/label-controls.jpg" alt="パネルラベルの種別・連番の例・適用ボタンの拡大" width="271" height="349" loading="lazy"></button><figcaption>パネルラベルの種別・連番の例・適用ボタンの拡大</figcaption></figure>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>形式</th>
+<th>表示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>アルファベット</td>
+<td>(a), (b), (c)</td>
+</tr>
+<tr>
+<td>枝番号</td>
+<td>(a-1), (a-2), (a-3)</td>
+</tr>
+<tr>
+<td>枝ローマ数字</td>
+<td>(a-i), (a-ii), (a-iii)</td>
+</tr>
+<tr>
+<td>数字</td>
+<td>(1), (2), (3)</td>
+</tr>
+<tr>
+<td>カスタム</td>
+<td>必要な連番の形式を指定する</td>
+</tr>
+<tr>
+<td>なし</td>
+<td>ラベルを使わない</td>
+</tr>
+</tbody></table></div>
+<p>対象を限定する場合は「チェックした画像だけに適用」を使います。適用後は画像を切り替え、順番と文字を確認します。</p>
+<figure class="media animation"><div class="media-head"><span>マウス操作ガイド · 9.2秒</span><button class="play" type="button" data-gif="assets/labels-guide.gif" data-poster="assets/labels-guide.jpg" aria-pressed="false">▶ 操作を再生</button></div><button class="image-open" type="button" aria-label="ラベルの形式を選び、適用して次の画像を確認する操作ガイドGIFを拡大"><img src="assets/labels-guide.jpg" alt="ラベルの形式を選び、適用して次の画像を確認する操作ガイドGIF" width="1000" height="700" loading="lazy"></button><figcaption>ラベルの形式を選び、適用して次の画像を確認する操作ガイドGIF</figcaption></figure>
+<h2 id="7-個別の表示と位置を調整する">7. 個別の表示と位置を調整する</h2>
+<p>プレビューの <strong>「↖ 配置」</strong> を選び、バーやラベルをドラッグして位置を変えます。画像を拡大したときは、注釈以外の部分をドラッグすると表示位置を移動できます。</p>
+<p>画像ごとにバー・ラベルの表示を変えたり、文字を変更したりするときは、左の画像一覧の「バー・ラベル設定」を開きます。共通設定を変えた後は、各画像の表示も確認します。</p>
+<p>「↶ 戻す」「↷ やり直す」で直前の操作を戻したり、再適用したりできます。Ctrl＋Z・Ctrl＋Shift＋Z（MacはCmd）も使えます。</p>
+<h2 id="8-表示倍率と出力サイズ">8. 表示倍率と出力サイズ</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>設定</th>
+<th>変わるもの</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>プレビューの＋・−・表示倍率</td>
+<td>画面上の見える大きさ</td>
+</tr>
+<tr>
+<td>「5 出力」の印刷時のサイズ・指定する辺</td>
+<td>出力時の幅または高さ（cm）</td>
+</tr>
+<tr>
+<td>右上の解像度（dpi）</td>
+<td>保存・コピーする画像の画素数</td>
+</tr>
+</tbody></table></div>
+<p>初期の解像度は600 dpiです。提出先の指定があれば合わせます。表示倍率は「画面に合わせる」で戻せます。</p>
+<p>dpiを高くしても、元画像の細部が増えるわけではありません。SVG・PDFでも、元の顕微鏡画像部分の情報は元画像に依存します。灰色のチェッカーボードは透明部分を示し、保存画像に模様は入りません。</p>
+<h2 id="9-1枚または複数枚を保存する">9. 1枚または複数枚を保存する</h2>
+<p>1枚だけ保存する場合は、画像を表示して <strong>「この画像を保存」</strong> を押します。一括保存では、画像名の左のチェックで対象を選び、<strong>「一括保存（○枚）」</strong> を押します。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="チェックした画像だけが一括保存の対象になる画像一覧の拡大を拡大"><img src="assets/batch-targets.jpg" alt="チェックした画像だけが一括保存の対象になる画像一覧の拡大" width="271" height="517" loading="lazy"></button><figcaption>チェックした画像だけが一括保存の対象になる画像一覧の拡大</figcaption></figure>
+<p>形式と保存先を選び、保存画面の下のボタンを押します。一括保存では対象枚数を必ず確認します。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="保存形式・設定JSON・保存先・対象枚数を確認する一括保存画面の拡大を拡大"><img src="assets/save-popup.jpg" alt="保存形式・設定JSON・保存先・対象枚数を確認する一括保存画面の拡大" width="531" height="576" loading="lazy"></button><figcaption>保存形式・設定JSON・保存先・対象枚数を確認する一括保存画面の拡大</figcaption></figure>
+<figure class="media animation"><div class="media-head"><span>マウス操作ガイド · 9.2秒</span><button class="play" type="button" data-gif="assets/batch-guide.gif" data-poster="assets/batch-guide.jpg" aria-pressed="false">▶ 操作を再生</button></div><button class="image-open" type="button" aria-label="一括保存を開いて、形式と保存先を確認して保存する操作ガイドGIFを拡大"><img src="assets/batch-guide.jpg" alt="一括保存を開いて、形式と保存先を確認して保存する操作ガイドGIF" width="1000" height="700" loading="lazy"></button><figcaption>一括保存を開いて、形式と保存先を確認して保存する操作ガイドGIF</figcaption></figure>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>形式</th>
+<th>使い方</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PNG</td>
+<td>レポートやスライドに貼る図</td>
+</tr>
+<tr>
+<td>SVG・PDF</td>
+<td>図として配置・共有する。顕微鏡画像部分の画素情報は元画像に依存する</td>
+</tr>
+<tr>
+<td>TIFF</td>
+<td>指定された提出形式に合わせる。出力は8-bit RGBA</td>
+</tr>
+<tr>
+<td>PowerPoint（PPTX）</td>
+<td>図を含む新しいファイルとして保存し、保存後に開く</td>
+</tr>
+</tbody></table></div>
+<p>「設定JSONも別ファイルで保存」にチェックがあると、画像ごとの設定ファイルも出力されます。GIFの例では、3枚についてPNG・SVG・設定JSONの計9ファイルをダウンロードします。ブラウザが複数ダウンロードの許可を求めたら許可します。</p>
+<p>出力画像の名前には <code>_mifito</code> が付くため、元画像と区別できます。保存後は、出力先やブラウザのダウンロード一覧でファイルを確認します。</p>
+<h2 id="10-保存先を選ぶ">10. 保存先を選ぶ</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>保存先</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>元ファイルと同じフォルダ</td>
+<td>初回に選択画面が出たら、元画像の入ったフォルダを選ぶ</td>
+</tr>
+<tr>
+<td>指定フォルダ</td>
+<td>「保存先を選ぶ」で出力用のフォルダを選ぶ</td>
+</tr>
+<tr>
+<td>ダウンロード</td>
+<td>ブラウザの保存先へ保存する</td>
+</tr>
+</tbody></table></div>
+<p>「画像を開く」から開いた場合も、元画像と同じフォルダを保存先に選べます。ブラウザから親フォルダを取得できない場合は、初回に選択が必要です。フォルダ選択に対応しないブラウザではダウンロードを使います。</p>
+<h2 id="11-画像をコピーする">11. 画像をコピーする</h2>
+<p>「画像をコピー」を押し、コピー完了を確認して、Word・PowerPointなどで <strong>Ctrl＋V</strong>（Macは <strong>Cmd＋V</strong>）を押します。右上の解像度がコピーにも使われます。許可を求められたらクリップボードの使用を許可します。</p>
+<p>コピーできない場合はPNGを保存し、貼り付け先の「画像を挿入」から使います。開いているPowerPointへの直接送信は行いません。</p>
+<h2 id="12-プロジェクトを保存して再開する">12. プロジェクトを保存して再開する</h2>
+<p>上部の <strong>「プロジェクトを保存」</strong> で、元画像と編集状態を一つの <code>.mifito</code> ファイルに保存します。次回は「プロジェクトを開く」で選びます。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="元画像と編集状態をまとめて保存・再開する上部のボタンの拡大を拡大"><img src="assets/project-controls.jpg" alt="元画像と編集状態をまとめて保存・再開する上部のボタンの拡大" width="583" height="52" loading="lazy"></button><figcaption>元画像と編集状態をまとめて保存・再開する上部のボタンの拡大</figcaption></figure>
+<p>プロジェクトには一覧の元画像、校正、トリミング、ラベル、並び順、処理対象などが保存されます。戻す・やり直すの履歴と、保存先フォルダの権限は再開後に引き継がれません。</p>
+<p>PNG保存やコピーだけでは、プロジェクト保存済みにはなりません。自動保存ではないので、終了前にプロジェクトも保存します。更新・終了時に未保存の確認が出たら、キャンセルして保存してください。</p>
+<h2 id="13-設定だけを保存して使い回す">13. 設定だけを保存して使い回す</h2>
+<p>「設定を保存」のメニューには、<strong>「この画像の設定を保存」</strong> と <strong>「一覧の設定を保存」</strong> があります。どちらも元画像は含みません。</p>
+<figure class="media focus"><button class="image-open" type="button" aria-label="設定だけを保存するメニューの拡大を拡大"><img src="assets/settings-menu.jpg" alt="設定だけを保存するメニューの拡大" width="279" height="111" loading="lazy"></button><figcaption>設定だけを保存するメニューの拡大</figcaption></figure>
+<p>再利用するときは、元画像を先に開いてから「設定を開く」でJSONを選びます。元画像も含めて再開したいときは、プロジェクト保存を使います。</p>
+<h2 id="14-うまくいかないとき">14. うまくいかないとき</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>確認すること</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>バーが出ない</td>
+<td>校正済みか、画像ごとのバー表示がオンか</td>
+</tr>
+<tr>
+<td>バーの長さが違う</td>
+<td>既知の長さ、単位、画像ごとの校正値</td>
+</tr>
+<tr>
+<td>ラベルが更新されない</td>
+<td>「ラベルを適用」を押したか</td>
+</tr>
+<tr>
+<td>一括保存の枚数が違う</td>
+<td>画像名の左のチェック</td>
+</tr>
+<tr>
+<td>他の画像も切り抜かれた</td>
+<td>トリミングは共通反映。各画像を確認し、必要なら「全体に戻す」</td>
+</tr>
+<tr>
+<td>バーやラベルが動かない</td>
+<td>「↖ 配置」を選んでいるか</td>
+</tr>
+<tr>
+<td>画面が大きすぎる</td>
+<td>表示倍率を「画面に合わせる」にする</td>
+</tr>
+<tr>
+<td>TIFFの見え方が変わった</td>
+<td>最初のページを表示用の8 bitに変換する。16 bitや多ページの原データは元ファイルを保持する</td>
+</tr>
+<tr>
+<td>再開できない</td>
+<td>完成図ではなく <code>.mifito</code> を「プロジェクトを開く」で選んだか</td>
+</tr>
+</tbody></table></div>
+<h2 id="練習の確認">練習の確認</h2>
+<ul>
+<li><input disabled="" type="checkbox"> 画像を切り替え、保存対象を選べる</li>
+<li><input disabled="" type="checkbox"> 基準線を測り、既知の長さで校正できる</li>
+<li><input disabled="" type="checkbox"> 各画像の校正とトリミング範囲を確認できる</li>
+<li><input disabled="" type="checkbox"> スケールバーとパネルラベルを設定できる</li>
+<li><input disabled="" type="checkbox"> 1枚保存・一括保存・画像コピーを使い分けられる</li>
+<li><input disabled="" type="checkbox"> 完成図とプロジェクトを保存できる</li>
+</ul>
+<p>画面はMiFiTo Web v1.1.0です。2026年10月4日更新。</p>
+<p class="back-link"><a href="quick.html">簡易版で操作の流れを確認 →</a></p></main></div><dialog id="viewer"><div class="viewer-toolbar"><span id="viewer-title"></span><div class="viewer-controls"><button type="button" id="viewer-zoom-out" aria-label="画像を縮小">−</button><button type="button" id="viewer-zoom-in" aria-label="画像を拡大">＋</button><button type="button" id="viewer-fit">画面に合わせる</button><button type="button" id="viewer-close">閉じる</button></div></div><img id="viewer-image" alt=""></dialog><footer class="footer">MiFiTo Web v1.1.0 · 2026年10月4日更新</footer><script src="manual.js" defer></script></body></html>
