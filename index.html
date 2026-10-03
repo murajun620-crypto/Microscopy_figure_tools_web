@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=18ab5c1a2ac1">
-  <script type="module" src="./app.js?v=048a0aa6080c"></script>
+  <script type="module" src="./app.js?v=4affef084fca"></script>
 </head>
 <body>
   <header class="app-header">
@@ -150,8 +150,8 @@
         <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元画像と同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
         <p id="saveFolderInfo" class="hint"></p><p id="saveCompatibility" class="hint" hidden>このブラウザではフォルダへの直接保存を利用できません。各ファイルをダウンロードしてください。対応するChrome・Edgeでは保存先を指定できます。</p>
         <details class="save-options"><summary>保存オプション</summary><div class="save-options-body"><label class="check"><input id="multipleFormats" type="checkbox">複数形式で保存</label><div class="batch-options"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="jpeg">JPEG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="bmp">BMP</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF</label></div><label class="check"><input id="includeSettings" type="checkbox">設定JSONも別ファイルで保存</label></div></details>
-        <p class="hint">ファイル名：元の名前_mifito。印刷サイズは「出力・設定」で変更できます。</p>
-        <div class="save-actions"><button id="copyButton" class="button" disabled>画像をコピー</button><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
+        <p class="hint">コピーにも選択した解像度を使います。ファイル名：元の名前_mifito。印刷サイズは「出力・設定」で変更できます。</p>
+        <div class="save-actions"><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
         <p id="batchProgress" class="readout" role="status"></p>
         <div id="downloadReceipt" class="download-receipt" hidden><strong>保存用ファイル</strong><div id="downloadList"></div><span>各リンクから保存してください。ZIPにはまとめません。</span></div>
       </section>

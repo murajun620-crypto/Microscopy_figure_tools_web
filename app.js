@@ -1,7 +1,7 @@
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
 import { SUPPORTED, canvasBlob, decodeImage, download, clearDownloads, releaseImage, thumbnail } from './io.js?v=5914fe0f6c1f';
-import { buildPlan, paint, renderCanvas } from './render.js?v=952b7e69af87';
-import { batchExport } from './export.js?v=9a6559a6659d';
+import { buildPlan, paint } from './render.js?v=952b7e69af87';
+import { batchExport, exportImage } from './export.js?v=9a6559a6659d';
 import { wheelZoom, pinchZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=5f8b230a1363';
 import { ensureWritable, writeFile, readFolder } from './save-files.js?v=04e07b42f342';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=69f203066172';
@@ -739,10 +739,12 @@ refreshSaveUI();
 $('copyButton').addEventListener('click',()=>action(async()=>{
   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('このブラウザでは画像コピーを利用できません。PNGを保存してください。');
   const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=false;settings.output.scale=1;}
-  const rendered=renderCanvas(source,settings);
-  try{await navigator.clipboard.write([new ClipboardItem({'image/png':await canvasBlob(rendered.canvas)})]);}
-  finally{rendered.canvas.width=rendered.canvas.height=0;}
-  notify('表示中の画像をクリップボードへコピーしました。');
+  const image=source,png=document.fonts.ready.then(()=>exportImage(image,settings,'png'));
+  // Start the clipboard write in the click event; Safari requires user activation.
+  // Encode with the same resolution and native annotation rendering as PNG save.
+  png.catch(()=>{});
+  await navigator.clipboard.write([new ClipboardItem({'image/png':png})]);
+  notify(`表示中の画像を${settings.output.dpi??600} dpiでクリップボードへコピーしました。`);
 }));
 $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(); $('batchProgress').textContent = '現在の画像の処理後に中止します…'; });
 $('helpButton').addEventListener('click', () => $('helpDialog').showModal()); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
