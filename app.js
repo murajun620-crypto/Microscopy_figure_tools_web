@@ -210,7 +210,7 @@ function renderList() {
       input.addEventListener('change',()=>{item[key]=input.checked;const settings=copy(item.settings);settings[key==='barVisible'?'scaleBar':'panelLabel'].visible=input.checked;item.settings=validateSettings(settings,item.width,item.height);item.history.push(item.settings);if(item===current){syncInputs();render();}});label.append(input,title);controls.append(label);
     }
     for(const [key,title] of [['labelText','ラベル文字列'],['subtext','補足文字']]) {
-      const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='text';input.dataset.itemKey=key;input.maxLength=key==='labelText'?24:120;input.value=item[key]??'';input.setAttribute('aria-label',`${item.name}の${title}`);
+      const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='text';input.dataset.itemKey=key;input.maxLength=key==='labelText'?24:120;input.value=item[key]??'';input.setAttribute('aria-label',`${item.name}の${title}`);if(key==='subtext')input.placeholder='例：CeO$\\_2$';
       input.addEventListener('change',()=>{item[key]=input.value;item.settings.panelLabel[key==='labelText'?'text':'subtext']=input.value;item.history.push(item.settings);if(item===current){syncInputs();render();}});label.append(input);controls.append(label);
     }
     const remove=document.createElement('button');remove.className='image-delete';remove.disabled=busy;remove.title='一覧から削除';remove.setAttribute('aria-label',`${item.name}を一覧から削除`);

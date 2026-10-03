@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=507b76539a33">
-  <script type="module" src="./app.js?v=b0631dda15b7"></script>
+  <script type="module" src="./app.js?v=3ce66032efe0"></script>
 </head>
 <body>
   <header class="app-header">
@@ -95,8 +95,8 @@
               <p class="hint">一覧順で連番を付けます。ラベル表示OFFの画像は連番を飛ばし、本文を空欄にします。補足文字は保持します。</p>
             </div>
             <label class="check"><input id="labelVisible" type="checkbox" data-setting="panelLabel.visible" checked>ラベルを表示</label>
-            <div class="field-row"><label>ラベル<input id="labelText" type="text" maxlength="24" value="a" data-setting="panelLabel.text"></label><label>文字サイズ（%）<input id="labelFont" type="number" min="0.1" max="20" step="0.1" value="9" data-setting="panelLabel.fontPercent"></label></div>
-            <label>補足文字<input id="labelSubtext" type="text" maxlength="120" placeholder="例：CeO$\_2$" data-setting="panelLabel.subtext"></label>
+            <p class="hint">ラベル文字列・補足文字は、画像一覧の「バー・ラベル設定」で編集します。</p>
+            <label>文字サイズ（%）<input id="labelFont" type="number" min="0.1" max="20" step="0.1" value="9" data-setting="panelLabel.fontPercent"></label>
             <label class="check"><input id="labelParentheses" type="checkbox" data-setting="panelLabel.parentheses" checked>ラベルに括弧を付ける</label>
             <label>位置<select id="labelAnchor" data-setting="panelLabel.anchor" class="anchor-select"></select></label>
             <label>色の選び方（共通）<select id="labelColorMode"><option value="simple" selected>簡易モード：代表色から選択</option><option value="detailed">詳細モード：カラーピッカー</option></select></label>
