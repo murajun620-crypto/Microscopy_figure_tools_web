@@ -284,3 +284,5 @@ body.inline-editing .save-launchers{grid-column:1/-1}
 @media(max-width:600px){.save-launchers{gap:6px}.save-launchers>.button{flex:1;min-width:0;padding:9px 8px}.save-launchers>#copyButton{flex:0 0 auto;margin-left:0}.save-dialog{max-height:88dvh}.save-destination{flex-wrap:wrap}.save-destination>label{flex-basis:100%}.save-panel label{font-size:13px}.image-row>.image-delete{flex-basis:40px;min-height:44px}}
 
 @media(max-width:600px){.save-format-grid .check{min-height:44px}}
+.project-actions{display:grid;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+@media(max-width:600px){.project-actions .button{min-height:44px}}
