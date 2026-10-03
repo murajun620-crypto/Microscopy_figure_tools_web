@@ -38,15 +38,18 @@ for (const input of document.querySelectorAll('input[type="color"][data-setting]
   const name = `${section === 'scaleBar' ? 'スケールバー' : 'パネルラベル'}の${title}`;
   input.setAttribute('aria-label',name);
   const wrapper = document.createElement('span'); wrapper.className = 'color-control';
-  input.before(wrapper); wrapper.append(input);
-  const button = document.createElement('button'); button.type = 'button'; button.className = 'button quiet palette-button';
-  button.textContent = '色パネル'; button.setAttribute('aria-label',`${name}の色パネル`);
+  input.before(wrapper); wrapper.append(input); input.hidden=true;
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'color-icon';
+  button.setAttribute('aria-label',`${name}を選ぶ`); button.setAttribute('aria-haspopup','dialog');
   button.addEventListener('click',()=>openColorPanel(input,name)); wrapper.append(button);
   input.addEventListener('change',()=>rememberColor(input.value));
   colorFields.push({input,button});
 }
 function syncColorFields() {
-  for (const {input,button} of colorFields) button.disabled = input.matches(':disabled');
+  for (const {input,button} of colorFields) {
+    button.disabled=input.matches(':disabled'); button.style.backgroundColor=input.value;
+    button.title=`${input.getAttribute('aria-label')}：${input.value}（色を選ぶ）`;
+  }
 }
 function rememberColor(value) {
   const hex=value.toLowerCase();
