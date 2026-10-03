@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=a45e34a8d44e">
-  <script type="module" src="./app.js?v=d9444a1ddf4b"></script>
+  <link rel="stylesheet" href="./styles.css?v=653d30f2c84b">
+  <script type="module" src="./app.js?v=ce9fcca0c5b6"></script>
 </head>
 <body>
   <header class="app-header">
@@ -32,7 +32,7 @@
         <div class="field-row"><button id="newButton" class="quiet small">新規</button><button id="moveImageUp" class="quiet small">↑ 順序</button><button id="moveImageDown" class="quiet small">↓ 順序</button></div>
       </section>
       <fieldset id="editingControls" disabled>
-        <details open>
+        <details id="calibrationSection" open>
           <summary><span class="step">1</span> 校正 <span id="calibrationBadge" class="detail-value">未設定</span></summary>
           <div class="detail-body">
             <p class="hint">画像上の2点を測定し、実際の長さを入力します。</p>
@@ -48,7 +48,7 @@
             <p id="calibrationInfo" class="readout">スケールバーには校正が必要です</p>
           </div>
         </details>
-        <details>
+        <details id="cropSection">
           <summary><span class="step">2</span> トリミング <span id="cropBadge" class="detail-value">全体</span></summary>
           <div class="detail-body">
             <div class="field-row"><label>縦横比<select id="aspectRatio" data-setting="cropOptions.aspect"><option value="free">自由</option><option value="source">元画像比率</option><option value="1:1">1 : 1</option><option value="4:3">4 : 3</option><option value="3:2">3 : 2</option><option value="16:9">16 : 9</option><option value="custom">カスタム</option></select></label><div id="customRatio" hidden class="field-row"><label>幅<input id="aspectWidth" type="number" min="0.001" max="1000" step="any" value="5" data-setting="cropOptions.width"></label><label>高さ<input id="aspectHeight" type="number" min="0.001" max="1000" step="any" value="4" data-setting="cropOptions.height"></label></div></div>
@@ -118,6 +118,7 @@
         <div class="tool-group"><button id="rawPreviewButton" class="tool" disabled>元画像</button><button id="processedPreviewButton" class="tool active" disabled>処理後</button></div>
         <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
       </div>
+      <div class="preview-surface">
       <div class="preview-shell">
       <div id="previewArea" class="preview-area">
         <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>顕微鏡画像を、伝わる図に。</h1><p>校正からスケールバー、パネルラベルまで。<br>元画像を保持して、仕上がりを確認できます。</p><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p><small>インストール不要 · 画像のアップロード不要</small></div>
@@ -126,6 +127,8 @@
       <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>‹</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>›</button></div>
       </div>
       <div id="instruction" class="instruction">画像を開くか、サンプルを選んでください。</div>
+      </div>
+      <fieldset id="previewEditingControls" class="preview-editing-controls" aria-label="プレビュー上の測定とトリミング" disabled hidden></fieldset>
       <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
       <div class="export-bar"><span id="exportHint">仕上がりをファイルとして保存</span><select id="exportFormat" aria-label="保存形式"><option value="png">PNG</option><option value="svg">SVG</option><option value="pdf">PDF</option><option value="jpeg">JPEG</option><option value="bmp">BMP</option><option value="tiff">TIFF（8-bit RGBA）</option><option value="pptx">PowerPoint（PPTX）</option></select><button id="copyButton" class="button" disabled>コピー</button><button id="exportButton" class="button primary" disabled>↓ 保存</button></div>
       <div id="downloadReceipt" class="download-receipt" hidden>生成済み：<a id="lastDownload">ファイルをダウンロード</a><span>保存が始まらない場合はリンクをクリックしてください。</span></div>
@@ -136,7 +139,7 @@
     </section>
   </main>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。PNG/JPEG/BMP/TIFFは指定した印刷サイズ・300 dpiで保存します。</li></ol><p>スマホ・タブレットでは「プレビュー」と「画像・設定」を切り替えます。画像上で2本指を広げる／狭めると拡大・縮小できます。＋／−ボタンでも調整できます。拡大した画像は「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。必要な画像と設定JSONを保存してください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。PNG/JPEG/BMP/TIFFは指定した印刷サイズ・300 dpiで保存します。</li></ol><p>スマホ・タブレットでは、測定・校正とトリミングをプレビュー画面で操作できます。操作欄をスクロールしても画像を表示します。画像の一覧、スケールバーやラベルなどは「画像・設定」で変更します。画像上で2本指を広げる／狭めると拡大・縮小できます。＋／−ボタンでも調整できます。拡大した画像は「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。必要な画像と設定JSONを保存してください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>

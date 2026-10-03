@@ -13,8 +13,26 @@ let wheelZoomFrame = 0, wheelZoomAnchor = null;
 function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
 const touchPoints = new Map();
 let pinch = null, touchSnapshot = null;
+const compactLayout = matchMedia('(max-width:900px)');
+const inlineSections = [$('calibrationSection'), $('cropSection')];
+let compactControlsInitialized = false;
+function refreshInlineEditing() {
+  $('previewEditingControls').hidden = !compactLayout.matches || !current;
+  document.body.classList.toggle('inline-editing', compactLayout.matches && !!current && !document.body.classList.contains('settings-view') && inlineSections.some(section=>section.open));
+}
+function arrangeEditingControls() {
+  if (compactLayout.matches) {
+    if (!compactControlsInitialized) { for (const section of inlineSections) section.open=false; compactControlsInitialized=true; }
+    $('previewEditingControls').append(...inlineSections);
+  } else $('editingControls').prepend(...inlineSections);
+  refreshInlineEditing(); requestAnimationFrame(render);
+}
+compactLayout.addEventListener('change', arrangeEditingControls);
+for (const section of inlineSections) section.addEventListener('toggle',()=>{ refreshInlineEditing(); requestAnimationFrame(render); });
+arrangeEditingControls();
 function showCompactPanel(settings) {
   document.body.classList.toggle('settings-view', settings);
+  refreshInlineEditing();
   $('showPreview').setAttribute('aria-pressed', String(!settings));
   $('showSettings').setAttribute('aria-pressed', String(settings));
   requestAnimationFrame(() => {
@@ -95,6 +113,7 @@ function setBusy(value) {
   busy = value; document.body.classList.toggle('busy', value);
   for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
+  $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
   $('batchExportButton').disabled = value || !current || !items.some(item => item.enabled);
@@ -232,6 +251,7 @@ async function addFiles(files) {
 }
 
 function render() {
+  refreshInlineEditing();
   $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current;
   if (!current || !source) { plan = null; canvas.width = canvas.height = 1; return; }
   const settings = current.settings, raw = tool === 'crop'||previewRaw;
@@ -293,6 +313,10 @@ function drawGuides() {
   context.restore();
 }
 function setTool(value, revealPreview = false) {
+  if (compactLayout.matches && revealPreview && ['measure','crop'].includes(value)) {
+    $('calibrationSection').open = value === 'measure';
+    $('cropSection').open = value === 'crop';
+  }
   if (revealPreview) showCompactPanel(false);
   tool = value; measurementStart = cropStart = drag = null;
   previewRaw=false;$('rawPreviewButton').classList.remove('active');$('processedPreviewButton').classList.add('active');
