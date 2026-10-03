@@ -75,7 +75,6 @@ summary .detail-value+*{margin-left:0}
 .detail-body .check,.check{display:flex;flex-direction:row;align-items:center;gap:7px;font-size:11px}
 .readout{font-size:11px;color:var(--green);margin:0;line-height:1.6}
 .divider{border-top:1px solid var(--border);margin:3px 0}
-.detail-body label.color-field{flex-direction:row;align-items:center;justify-content:space-between}
 .editor{min-width:0;display:flex;flex-direction:column;padding:20px 26px 12px;overflow:auto;gap:0}
 .editor-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .tool-group{display:flex;gap:3px}
@@ -184,7 +183,7 @@ body.busy .sidebar input,body.busy .sidebar button,body.busy .sidebar select,bod
 .color-dialog{width:min(360px,calc(100vw - 24px));padding:16px;overflow:auto}
 .color-dialog label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted)}
 .color-dialog p{margin:10px 0 6px}
-.color-dialog input[type=color]{height:36px}
+.color-dialog input[type=color]{height:36px;width:100%}
 .color-swatches{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .color-swatch{width:100%;height:29px;border:1px solid #98a3b3;border-radius:3px;padding:0;cursor:pointer}
 .color-swatch:hover,.color-swatch:focus-visible,.color-swatch[aria-pressed=true]{outline:2px solid var(--green);outline-offset:2px}
