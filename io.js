@@ -1,4 +1,4 @@
-import { LIMITS, validateSize } from './core.js';
+import { LIMITS, validateSize } from './core.js?v=2d894542ff65';
 import { rasterSize } from './image-header.js';
 
 export const SUPPORTED = /\.(png|jpe?g|bmp|svg|tiff?)$/i;
@@ -16,15 +16,19 @@ export async function canvasBlob(canvas) {
   return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('画像を生成できませんでした。出力サイズを小さくしてください。')), 'image/png'));
 }
 
-let lastDownloadUrl = null;
-export function download(blob, name) {
-  const url = URL.createObjectURL(blob), anchor = document.createElement('a');
-  anchor.href = url; anchor.download = name; document.body.append(anchor); anchor.click(); anchor.remove();
-  if (lastDownloadUrl) URL.revokeObjectURL(lastDownloadUrl);
-  lastDownloadUrl = url;
-  const link = document.getElementById('lastDownload');
-  link.href = url; link.download = name; link.textContent = name;
-  document.getElementById('downloadReceipt').hidden = false;
+const downloadUrls=[];
+export function clearDownloads() {
+  for(const url of downloadUrls) URL.revokeObjectURL(url);
+  downloadUrls.length=0;
+  document.getElementById('downloadList').replaceChildren();
+  document.getElementById('downloadReceipt').hidden=true;
+}
+export function download(blob,name,{automatic=true}={}) {
+  const url=URL.createObjectURL(blob),anchor=document.createElement('a');
+  downloadUrls.push(url); anchor.href=url;anchor.download=name;anchor.textContent=name;
+  document.getElementById('downloadList').append(anchor);
+  document.getElementById('downloadReceipt').hidden=false;
+  if(automatic)anchor.click();
 }
 
 // SVG is used only as an inert raster image, never inserted into the page DOM.

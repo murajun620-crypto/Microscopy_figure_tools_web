@@ -95,7 +95,7 @@ export function defaultSettings(width, height) {
     cropOptions: { aspect: 'free', application: 'selection', width: 5, height: 4, pending: null },
     scaleBar: { visible: true, length: null, unit: 'µm', anchor: 'bottom-right', position: null, fontPercent: 9, thicknessPercent: 0.8, gapPercent: 1, verticalPaddingPercent: 3, color: '#ffffff', textColor: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.5, showText: true, outsideTransparent: true, outsideColor: '#ffffff' },
     panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
-    output: { scale: 1, resampling: 'smooth', sizeCm: 4, sizeAxis: 'width', outsideTransparent: true, outsideColor: '#ffffff', pptEditable: false, pptIncludeLabel: true },
+    output: { scale: 1, resampling: 'smooth', sizeCm: 4, sizeAxis: 'width', dpi:600, outsideTransparent: true, outsideColor: '#ffffff', pptEditable: false, pptIncludeLabel: true },
   };
 }
 
@@ -157,7 +157,8 @@ export function validateSettings(value, width, height) {
   }
   const output = value.output;
   if (!output || ![1, 2, 4].includes(output.scale) || !['nearest', 'smooth'].includes(output.resampling) || !['width', 'height'].includes(output.sizeAxis)) throw new Error('出力設定が不正です。');
-  result.output = { scale: output.scale, resampling: output.resampling, sizeCm: numberRange(output.sizeCm, 0.01, 100, '出力サイズ'), sizeAxis: output.sizeAxis, outsideTransparent: boolean(output.outsideTransparent), outsideColor: color(output.outsideColor), pptEditable: boolean(output.pptEditable), pptIncludeLabel: boolean(output.pptIncludeLabel ?? true) };
+  if (![300,600,1200].includes(output.dpi ?? 600)) throw new Error('保存解像度が不正です。');
+  result.output = { scale: output.scale, resampling: output.resampling, sizeCm: numberRange(output.sizeCm, 0.01, 100, '出力サイズ'), sizeAxis: output.sizeAxis, dpi:output.dpi ?? 600, outsideTransparent: boolean(output.outsideTransparent), outsideColor: color(output.outsideColor), pptEditable: boolean(output.pptEditable), pptIncludeLabel: boolean(output.pptIncludeLabel ?? true) };
   return result;
 }
 
@@ -174,7 +175,7 @@ export function serializeProject(settings, image) {
     layout:{vertical_padding_offset:b.verticalPaddingPercent,edge_margin_ratio_percent:b.verticalPaddingPercent,text_gap_ratio_percent:b.gapPercent},
     outside_area:{enabled:b.anchor.startsWith('outside-'),transparent:b.outsideTransparent,background_color:b.outsideColor},
     panel_label:{visible:p.visible,text:p.text,supplemental_text:p.subtext,use_parentheses:p.parentheses,position_preset:p.anchor,font_family:'Arial',font_weight:'Regular',font_ratio_percent:p.fontPercent,font_scale:p.fontPercent,supplemental_font_ratio_percent:p.fontPercent,bold:false,text_color:p.color,background_visible:p.background,background_color:p.backgroundColor,background_opacity_percent:Math.round(p.opacity*100),background_padding_ratio_percent:.8,outside_transparent:p.outsideTransparent,outside_background_color:p.outsideColor,use_custom_position:!!p.position,position:p.position??{x:0,y:0}},
-    output:{scale_factor:s.output.scale,image_resampling:s.output.resampling,size_axis:s.output.sizeAxis,size_cm:s.output.sizeCm,ppt_label_text:s.output.pptEditable}
+    output:{scale_factor:s.output.scale,image_resampling:s.output.resampling,size_axis:s.output.sizeAxis,size_cm:s.output.sizeCm,dpi:s.output.dpi,ppt_label_text:s.output.pptEditable}
   };
 }
 
@@ -192,7 +193,7 @@ export function desktopSettings(data, image) {
     position:b.use_custom_position?b.custom_position:null,thicknessPercent:b.line_width_ratio_percent??b.line_width,color:b.line_color,showText:l.visible,fontPercent:l.font_ratio_percent??l.font_scale,textColor:l.color,gapPercent:l.text_gap_ratio_percent??l.text_bar_gap_offset,
     verticalPaddingPercent:data.layout?.edge_margin_ratio_percent??g.vertical_padding_offset??0,background:g.visible,backgroundColor:g.color,opacity:g.opacity_percent/100,outsideTransparent:a.transparent??true,outsideColor:a.background_color??'#ffffff'});
   Object.assign(s.panelLabel,{visible:p.visible??true,text:p.text??'a',subtext:p.supplemental_text??'',parentheses:p.use_parentheses??true,anchor:p.position_preset??'top-left',fontPercent:p.font_ratio_percent??p.font_scale??9,color:p.text_color??'#ffffff',background:p.background_visible??false,backgroundColor:p.background_color??'#000000',opacity:(p.background_opacity_percent??65)/100,outsideTransparent:p.outside_transparent??true,outsideColor:p.outside_background_color??'#ffffff',position:p.use_custom_position?p.position:null});
-  Object.assign(s.output,{scale:o.scale_factor??1,resampling:o.image_resampling??'smooth',sizeAxis:o.size_axis??'width',sizeCm:o.size_cm??4,pptEditable:o.ppt_label_text??false});
+  Object.assign(s.output,{scale:o.scale_factor??1,resampling:o.image_resampling??'smooth',sizeAxis:o.size_axis??'width',sizeCm:o.size_cm??4,dpi:o.dpi??600,pptEditable:o.ppt_label_text??false});
   return validateSettings(s,image.width,image.height);
 }
 export function formatLength(value){
@@ -209,7 +210,7 @@ export function clipCrop(crop,width,height){
   return right>x&&bottom>y?{x,y,width:right-x,height:bottom-y}:null;
 }
 export function sessionProject(items,output,formats=['png']){
-  return {schema_version:1,session_type:'microscopy_batch',output_dir:null,output_scale:output.scale,image_resample:output.resampling,output_size_axis:output.sizeAxis,output_size_cm:output.sizeCm,output_formats:formats.map(format=>`.${format==='jpeg'?'jpg':format==='tiff'?'tif':format}`),conflict_mode:'auto-number',items:items.map(item=>({source_path:item.name,enabled:item.enabled,scale_bar_visible:item.barVisible??item.settings.scaleBar.visible,panel_label_visible:item.labelVisible??item.settings.panelLabel.visible,generated_label:item.labelText??item.settings.panelLabel.text,supplemental_text:item.subtext??item.settings.panelLabel.subtext,project_data:serializeProject(item.settings,item)}))};
+  return {schema_version:1,session_type:'microscopy_batch',output_dir:null,output_scale:output.scale,image_resample:output.resampling,output_size_axis:output.sizeAxis,output_size_cm:output.sizeCm,output_dpi:output.dpi,output_formats:formats.map(format=>`.${format==='jpeg'?'jpg':format==='tiff'?'tif':format}`),conflict_mode:'auto-number',items:items.map(item=>({source_path:item.name,enabled:item.enabled,scale_bar_visible:item.barVisible??item.settings.scaleBar.visible,panel_label_visible:item.labelVisible??item.settings.panelLabel.visible,generated_label:item.labelText??item.settings.panelLabel.text,supplemental_text:item.subtext??item.settings.panelLabel.subtext,project_data:serializeProject(item.settings,item)}))};
 }
 export function parseSession(data,images){
   if(!data||data.schema_version!==1||data.session_type!=='microscopy_batch'||!Array.isArray(data.items)||!data.items.length||data.items.length>LIMITS.files)throw new Error('セッションJSONが不正です。');
@@ -219,7 +220,7 @@ export function parseSession(data,images){
     if(matches.length!==1||used.has(matches[0]?.id))throw new Error(`セッションの元画像 ${name} を一意に対応できません。元画像を先に開き、同名画像の重複を解消してください。`);
     const image=matches[0];used.add(image.id);const settings=parseProject(record.project_data,image);
     settings.scaleBar.visible=boolean(record.scale_bar_visible);settings.panelLabel.visible=boolean(record.panel_label_visible);settings.panelLabel.text=text(record.generated_label);settings.panelLabel.subtext=text(record.supplemental_text);
-    Object.assign(settings.output,{scale:data.output_scale??1,resampling:data.image_resample??'smooth',sizeAxis:data.output_size_axis??'width',sizeCm:data.output_size_cm??4});
+    Object.assign(settings.output,{scale:data.output_scale??1,resampling:data.image_resample??'smooth',sizeAxis:data.output_size_axis??'width',sizeCm:data.output_size_cm??4,dpi:data.output_dpi??600});
     return {image,enabled:boolean(record.enabled),settings:validateSettings(settings,image.width,image.height)};
   });
 }
@@ -244,9 +245,11 @@ export function outputMetrics(plan, output) {
 
 export function rasterMetrics(plan, output) {
   const metrics = outputMetrics(plan, output);
-  const width = Math.max(1, pyRound(metrics.widthCm / 2.54 * 300)), height = Math.max(1, pyRound(metrics.heightCm / 2.54 * 300));
+  const dpi = output.dpi ?? 600;
+  if (![300,600,1200].includes(dpi)) throw new Error('保存解像度が不正です。');
+  const width = Math.max(1, pyRound(metrics.widthCm / 2.54 * dpi)), height = Math.max(1, pyRound(metrics.heightCm / 2.54 * dpi));
   validateSize(width, height, true);
-  return { ...metrics, width, height, dpi: 300 };
+  return { ...metrics, width, height, dpi };
 }
 
 export function sequenceLabel(index, mode, start = 1, prefix = '', uppercase = false) {

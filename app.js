@@ -1,13 +1,18 @@
-import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js';
-import { SUPPORTED, canvasBlob, decodeImage, download, loadScript, releaseImage, thumbnail } from './io.js';
-import { buildPlan, paint, renderCanvas } from './render.js';
-import { addFigureSlide, batchExport, batchSettings, createPresentation, exportImage, presentationBlob } from './export.js?v=1ae5db51707c';
+import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
+import { SUPPORTED, canvasBlob, decodeImage, download, clearDownloads, releaseImage, thumbnail } from './io.js?v=5914fe0f6c1f';
+import { buildPlan, paint, renderCanvas } from './render.js?v=952b7e69af87';
+import { batchExport } from './export.js?v=9a6559a6659d';
 import { wheelZoom, pinchZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=5f8b230a1363';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=265331117fbe';
+import { ensureWritable, writeFile, readFolder } from './save-files.js?v=04e07b42f342';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=69f203066172';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
+const folderSupported=typeof window.showDirectoryPicker==='function';
+const sourceFolders=new WeakMap();
+let saveDirectory=null;
+
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
@@ -112,12 +117,15 @@ function setBusy(value) {
     touchPoints.clear(); pinch=touchSnapshot=null;
   }
   busy = value; document.body.classList.toggle('busy', value);
-  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton', 'removeButton','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
+  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton', 'removeButton','removeSelectedButton','removeAllButton','openSourceFolder','newButton','moveImageUp','moveImageDown']) $(id).disabled = value || (['removeButton','moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
-  $('batchExportButton').disabled = value || !current || !items.some(item => item.enabled);
+  for(const id of ['saveScope','saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat']) $(id).disabled=value;
+  for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
+  for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
+  refreshSaveUI();
   $('undoButton').disabled = value || !current?.history.canUndo; $('redoButton').disabled = value || !current?.history.canRedo;
   if(current){
     const b=current.settings.scaleBar,p=current.settings.panelLabel;
@@ -186,7 +194,7 @@ function renderList() {
   $('imageList').replaceChildren();
   for (const item of items) {
     const row = document.createElement('li'); row.className = `image-row${item === current ? ' selected' : ''}`;row.dataset.imageId=item.id;
-    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = item.enabled; checkbox.disabled = busy; checkbox.setAttribute('aria-label', `${item.name}を一括処理`);
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = item.enabled; checkbox.disabled = busy; checkbox.setAttribute('aria-label', `${item.name}を処理・削除対象にする`);
     checkbox.addEventListener('change', () => { item.enabled = checkbox.checked; updateBatch(); });
     const button = document.createElement('button'); button.disabled = busy; button.setAttribute('aria-label', `${item.name}を編集`);
     const img = document.createElement('img'); img.src = item.thumbnail; img.alt = '';
@@ -203,13 +211,17 @@ function renderList() {
       const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='text';input.dataset.itemKey=key;input.maxLength=key==='labelText'?24:120;input.value=item[key]??'';input.setAttribute('aria-label',`${item.name}の${title}`);
       input.addEventListener('change',()=>{item[key]=input.value;item.settings.panelLabel[key==='labelText'?'text':'subtext']=input.value;item.history.push(item.settings);if(item===current){syncInputs();render();}});label.append(input);controls.append(label);
     }
-    row.append(checkbox, button,controls); $('imageList').append(row);
+    const remove=document.createElement('button');remove.className='image-delete';remove.disabled=busy;remove.title='一覧から削除';remove.setAttribute('aria-label',`${item.name}を一覧から削除`);
+    remove.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7M14 10v7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    remove.addEventListener('click',()=>action(()=>removeItems([item])));
+    row.append(checkbox, button,remove,controls); $('imageList').append(row);
   }
   $('fileCount').textContent = items.length; updateBatch(); syncImageNavigation();
 }
 function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
-  $('batchExportButton').disabled = busy || !current || count < 1;
+  $('removeSelectedButton').disabled=busy||count<1;
+  refreshSaveUI();
 }
 
 async function selectItem(item) {
@@ -238,7 +250,7 @@ async function addFiles(files) {
         settings.panelLabel={...copy(current.settings.panelLabel),visible:true,text:'',subtext:'',position:null};
         settings.output=copy(current.settings.output);
       }
-      const item = { id: crypto.randomUUID(), name: file.name, file, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
+      const item = { id: crypto.randomUUID(), name: file.name, file, sourceDirectory:sourceFolders.get(file)||null, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
       items.push(item); added.push(item); total += file.size;
     } catch (error) { errors.push(`${file.name}：${error.message}`); }
     finally { if (decoded) releaseImage(decoded.source); }
@@ -270,7 +282,7 @@ function render() {
     drawGuides();
     const finalPlan = buildPlan(settings,context,false,settings.output.scale);
     const metrics = rasterMetrics(finalPlan, settings.output);
-    $('outputInfo').textContent = `PNG ${metrics.width} × ${metrics.height} px · ${metrics.widthCm.toFixed(2)} × ${metrics.heightCm.toFixed(2)} cm · 300 dpi`;
+    $('outputInfo').textContent = `PNG ${metrics.width} × ${metrics.height} px · ${metrics.widthCm.toFixed(2)} × ${metrics.heightCm.toFixed(2)} cm · ${metrics.dpi} dpi`;
     $('viewInfo').textContent = `${tool==='crop'?'現在の画像（トリミング選択）':previewRaw?'元画像':'処理後画像'} · 表示 ${zoomText(displayScale)}`;
     const warnings = finalPlan.warnings;
     $('instruction').classList.toggle('warning', warnings.length > 0 && tool === 'move');
@@ -595,13 +607,25 @@ document.addEventListener('paste', event => {
   const files = [...(event.clipboardData?.files || [])].filter(file => /^image\/(png|jpeg|bmp)$/.test(file.type));
   if (files.length) { event.preventDefault(); action(() => addFiles(files)); }
 });
-$('removeButton').addEventListener('click', () => action(async () => {
-  const removed = current, index = items.indexOf(removed), next = items[index + 1] || items[index - 1];
-  if (next) await selectItem(next);
-  else { releaseImage(source); source = current = null; $('imageName').textContent = '画像なし'; $('imageDimensions').textContent = $('outputInfo').textContent = '—'; $('instruction').textContent = '画像を開くか、サンプルを選んでください。'; renderList(); render(); }
-  URL.revokeObjectURL(removed.thumbnail); items.splice(index, 1); renderList();
-}));
-$('newButton').addEventListener('click',()=>{if(busy)return;if(source)releaseImage(source);for(const item of items)URL.revokeObjectURL(item.thumbnail);items.length=0;current=source=plan=null;measurement=measurementStart=pendingCrop=drag=cropStart=null;renderList();render();setBusy(false);$('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';});
+async function removeItems(removed) {
+  if(!removed.length)return;
+  const retained=items.filter(item=>!removed.includes(item));
+  if(removed.includes(current)) {
+    const next=retained.find(item=>items.indexOf(item)>items.indexOf(current))||retained.at(-1);
+    if(next) { const oldError=next.cropError;next.cropError=null;try{await selectItem(next);}finally{next.cropError=oldError;} }
+    else {if(source)releaseImage(source);source=current=plan=null;}
+  }
+  for(const item of removed)URL.revokeObjectURL(item.thumbnail);
+  items.splice(0,items.length,...retained);
+  measurement=measurementStart=pendingCrop=drag=cropStart=null;
+  renderList();syncInputs();render();setBusy(busy);
+  if(!current){$('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';}
+  notify(`${removed.length}枚を一覧から削除しました。元画像は保持されます。`);
+}
+$('removeButton').addEventListener('click',()=>action(()=>removeItems(current?[current]:[])));
+$('removeSelectedButton').addEventListener('click',()=>action(()=>removeItems(items.filter(item=>item.enabled))));
+$('removeAllButton').addEventListener('click',()=>action(()=>removeItems([...items])));
+$('newButton').addEventListener('click',()=>action(()=>removeItems([...items])));
 for(const [id,offset] of [['moveImageUp',-1],['moveImageDown',1]]) $(id).addEventListener('click',()=>{if(busy||!current)return;const index=items.indexOf(current),target=index+offset;if(target<0||target>=items.length)return;[items[index],items[target]]=[items[target],items[index]];renderList();});
 for(const [id,key,value] of [['batchAll','enabled',true],['batchNone','enabled',false],['batchBarsOn','barVisible',true],['batchBarsOff','barVisible',false],['batchLabelsOn','labelVisible',true],['batchLabelsOff','labelVisible',false]]) $(id).addEventListener('click',()=>{if(busy)return;for(const item of items){item[key]=value;if(key!=='enabled')item.settings[key==='barVisible'?'scaleBar':'panelLabel'].visible=value;}renderList();syncInputs();render();});
 $('batchBarFirst').addEventListener('click',()=>{if(busy)return;let first=true;for(const item of items){item.barVisible=item.enabled&&first;if(item.enabled)first=false;item.settings.scaleBar.visible=item.barVisible;}renderList();syncInputs();render();});
@@ -654,18 +678,64 @@ $('settingsInput').addEventListener('change', () => {
   });
 });
 function exportFormats(){const formats=$('multipleFormats').checked?[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat):[$('exportFormat').value];if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
-$('exportButton').addEventListener('click', () => action(async () => {
-  await document.fonts.ready;
-  const formats=exportFormats();
-  if(formats.length>1){const result=await batchExport([current],copy(current.settings),current,formats,numbering(false),new AbortController().signal,()=>{});download(result.blob,result.name);notify('複数形式の画像と設定JSONをZIPに保存しました。');return;}
-  const format = formats[0];
-  let blob;
-  if (format === 'pptx') { const presentation = await createPresentation(); addFigureSlide(presentation, source, current.settings, current.name); blob = await presentationBlob(presentation); }
-  else blob = await exportImage(source, current.settings, format);
-  const base=current.name.replace(/\.[^.]+$/,''),name=`${base}_processed.${format === 'tiff' ? 'tif' : format==='jpeg'?'jpg':format}`;
-  if($('includeSettings').checked){await loadScript('jszip.min.js');const zip=new JSZip();zip.file(name,await blob.arrayBuffer());zip.file(`${base}_processed.json`,JSON.stringify(serializeProject(current.settings,current),null,2));download(await zip.generateAsync({type:'blob'}),`${base}_processed.zip`);}else download(blob,name);
-  notify('保存ファイルを生成しました。ダウンロード先をご確認ください。');
+function refreshSaveUI() {
+  const count=items.filter(item=>item.enabled).length,batch=$('saveScope').value==='batch';
+  $('saveScope').options[1].textContent=`チェックした画像（${count}枚）`;
+  $('exportButton').textContent=batch?`対象${count}枚を保存`:'この画像を保存';
+  $('exportButton').disabled=busy||!current||(batch&&!count);
+  $('saveTargetInfo').textContent=batch?`${count}枚が対象`:(current?current.name:'画像を開いてください');
+  const mode=$('saveDestination').value;
+  $('chooseSaveFolder').hidden=mode!=='folder';
+  $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存先フォルダを選んでください。'):mode==='source'?'「フォルダから開く」で読み込んだ画像の元フォルダへ保存します。':'各ファイルをダウンロードします。保存先はブラウザの設定に従います。';
+}
+$('saveScope').addEventListener('change',refreshSaveUI);
+$('saveDestination').addEventListener('change',refreshSaveUI);
+$('saveDestination').value=folderSupported?'folder':'download';
+for(const option of $('saveDestination').options)if(option.value!=='download')option.disabled=!folderSupported;
+$('folderInput').closest('label').hidden=folderSupported;
+$('openSourceFolder').hidden=!folderSupported;
+$('saveCompatibility').hidden=folderSupported;
+$('chooseSaveFolder').addEventListener('click',()=>action(async()=>{
+  try{saveDirectory=await window.showDirectoryPicker({id:'mifito-output',mode:'readwrite'});refreshSaveUI();}
+  catch(error){if(error.name!=='AbortError')throw error;}
 }));
+$('openSourceFolder').addEventListener('click',()=>action(async()=>{
+  let directory;
+  try{directory=await window.showDirectoryPicker({id:'mifito-source',mode:'readwrite'});}
+  catch(error){if(error.name==='AbortError')return;throw error;}
+  const records=await readFolder(directory,SUPPORTED,LIMITS.files);
+  for(const record of records)sourceFolders.set(record.file,record.directory);
+  const added=await addFiles(records.map(record=>record.file));
+  if(added.length){$('saveDestination').value='source';refreshSaveUI();}
+}));
+async function prepareSaver(targets) {
+  const mode=$('saveDestination').value;
+  if(mode==='folder'&&!saveDirectory)throw new Error('「保存先を選ぶ」でフォルダを指定してください。');
+  if(mode==='source'&&targets.some(item=>!item.sourceDirectory))throw new Error('元フォルダへ保存するには「フォルダから開く」で読み込んでください。または保存先を指定してください。');
+  const directories=mode==='download'?[]:mode==='folder'?[saveDirectory]:[...new Set(targets.map(item=>item.sourceDirectory))];
+  for(const directory of directories)await ensureWritable(directory);
+  clearDownloads();
+  return async(blob,name,item)=>{
+    if(mode==='download'){download(blob,name,{automatic:targets.length===1&&!$('multipleFormats').checked&&!$('includeSettings').checked});return name;}
+    return writeFile(mode==='source'?item.sourceDirectory:saveDirectory,blob,name);
+  };
+}
+$('exportButton').addEventListener('click',()=>action(async()=>{
+  const isBatch=$('saveScope').value==='batch',targets=isBatch?items.filter(item=>item.enabled):[current];
+  if(!targets.length||!current)throw new Error('保存する画像を選んでください。');
+  const formats=exportFormats(),labelNumbering=numbering(isBatch&&$('batchNumbering').checked),saveFile=await prepareSaver(targets);
+  await document.fonts.ready;
+  batchController=new AbortController();$('cancelBatchButton').hidden=false;
+  try {
+    const template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
+    const result=await batchExport(targets,template,current,formats,labelNumbering,batchController.signal,message=>{$('batchProgress').textContent=message;},saveFile,$('includeSettings').checked);
+    const verb=$('saveDestination').value==='download'?'生成しました。下のリンクから保存できます。':'保存しました。';
+    const message=`${result.saved}枚・${result.files.length}ファイルを${verb}${result.failures.length?` ${result.failures.length}枚失敗：${result.failures.map(f=>`${f.name}（${f.error}）`).join('、')}`:''}`;
+    $('batchProgress').textContent=message;notify(message,result.failures.length>0);
+  } catch(error){$('batchProgress').textContent=error.message;throw error;}
+  finally{$('cancelBatchButton').hidden=true;batchController=null;renderList();}
+}));
+refreshSaveUI();
 $('copyButton').addEventListener('click',()=>action(async()=>{
   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('このブラウザでは画像コピーを利用できません。PNGを保存してください。');
   const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=false;settings.output.scale=1;}
@@ -673,19 +743,6 @@ $('copyButton').addEventListener('click',()=>action(async()=>{
   try{await navigator.clipboard.write([new ClipboardItem({'image/png':await canvasBlob(rendered.canvas)})]);}
   finally{rendered.canvas.width=rendered.canvas.height=0;}
   notify('表示中の画像をクリップボードへコピーしました。');
-}));
-$('batchExportButton').addEventListener('click', () => action(async () => {
-  const labelNumbering = numbering($('batchNumbering').checked);
-  batchController = new AbortController(); $('cancelBatchButton').hidden = false;
-  try {
-    const formats=exportFormats(),template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
-    const result = await batchExport(items.filter(item => item.enabled), template, current, formats.length>1?formats:formats[0], labelNumbering, batchController.signal, message => { $('batchProgress').textContent = message; });
-    download(result.blob, result.name);
-    const message = `${result.saved}枚を保存しました。${result.failures.length ? ` ${result.failures.length}枚失敗：${result.failures.map(f => `${f.name}（${f.error}）`).join('、')}` : ''}`;
-    renderList();
-    $('batchProgress').textContent = message; notify(message, result.failures.length > 0);
-  } catch (error) { $('batchProgress').textContent = error.message; throw error; }
-  finally { $('cancelBatchButton').hidden = true; batchController = null; }
 }));
 $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(); $('batchProgress').textContent = '現在の画像の処理後に中止します…'; });
 $('helpButton').addEventListener('click', () => $('helpDialog').showModal()); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());

@@ -1,10 +1,11 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js';
-import { numberedLabel } from './label-numbering.js?v=265331117fbe';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=2d894542ff65';
+import { numberedLabel } from './label-numbering.js?v=69f203066172';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=5914fe0f6c1f';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=952b7e69af87';
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
+import { outputBase, extensionFor } from './save-files.js?v=04e07b42f342';
 
 export async function exportImage(source, settings, format) {
   if (format === 'svg') {
@@ -17,7 +18,7 @@ export async function exportImage(source, settings, format) {
     if (format === 'tiff') return await encodeTiff(canvas, metrics.dpi);
     if (format === 'jpeg' || format === 'bmp') {
       const context=canvas.getContext('2d');context.globalCompositeOperation='destination-over';context.fillStyle=settings.scaleBar.outsideColor;context.fillRect(0,0,canvas.width,canvas.height);context.globalCompositeOperation='source-over';
-      if(format==='jpeg') {const blob=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('JPEGを生成できませんでした。')),'image/jpeg',.95));return new Blob([jpegWithDpi(new Uint8Array(await blob.arrayBuffer()),metrics.dpi)],{type:'image/jpeg'});}
+      if(format==='jpeg') {const blob=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('JPEGを生成できませんでした。')),'image/jpeg',1));return new Blob([jpegWithDpi(new Uint8Array(await blob.arrayBuffer()),metrics.dpi)],{type:'image/jpeg'});}
       const {encodeBmp}=await import('./bmp.js');return new Blob([encodeBmp(context.getImageData(0,0,canvas.width,canvas.height),metrics.dpi)],{type:'image/bmp'});
     }
     if (format === 'pdf') {
@@ -93,48 +94,45 @@ export function batchSettings(template, original, target, index, numbering) {
   return settings;
 }
 
-export async function batchExport(items, template, original, format, numbering, signal, progress) {
-  const formats=Array.isArray(format)?format:[format];
-  const used = new Set(), failures = [], manifest = [];
-  const presentation = format === 'pptx' ? await createPresentation() : null;
-  if (!presentation) await loadScript('jszip.min.js');
-  let totalBytes = 0, saved = 0, labelIndex=0;
-  const zip = presentation ? null : new JSZip();
-  for (let index = 0; index < items.length; index++) {
-    if (signal.aborted) throw new Error('一括処理を中止しました。');
-    const item = items[index]; progress(`${index + 1} / ${items.length}：${item.name}`);
-    item.status='処理中';
-    let source = null;
+export async function batchExport(items, template, original, format, numbering, signal, progress, saveFile, includeSettings=false) {
+  if (typeof saveFile !== 'function') throw new Error('保存先を指定してください。');
+  const formats=Array.isArray(format)?format:[format], used=new Set(), failures=[], files=[];
+  let totalBytes=0, saved=0, labelIndex=0;
+  async function write(blob,name,item) {
+    if (signal.aborted) throw new Error('保存を中止しました。保存済みファイルは残ります。');
+    if (totalBytes+blob.size>256*1024*1024) throw new Error('保存データの合計が256 MBを超えます。対象枚数や解像度を減らしてください。');
+    totalBytes+=blob.size;
+    const actualName=await saveFile(blob,name,item);
+    files.push({name:actualName||name,source:item.name,bytes:blob.size});
+  }
+  for (let index=0;index<items.length;index++) {
+    if (signal.aborted) throw new Error('保存を中止しました。保存済みファイルは残ります。');
+    const item=items[index]; progress(`${index+1} / ${items.length}：${item.name}`); item.status='処理中';
+    let source=null;
     try {
-      source = (await decodeImage(item.file)).source;
-      const settings = batchSettings(template, original, item, labelIndex, numbering);
-      const plan = buildPlan(settings, document.createElement('canvas').getContext('2d'), true,settings.output.scale); outputMetrics(plan, settings.output);
-      const name = `${uniqueName(item.name, used)}_processed`;
-      if (presentation) totalBytes += addFigureSlide(presentation, source, settings, item.name, 256 * 1024 * 1024 - totalBytes);
-      else {
-        for(const outputFormat of formats){
-        if(signal.aborted)throw new Error('一括処理を中止しました。');
-        const blob = await exportImage(source, settings, outputFormat);
-        if (totalBytes + blob.size > 256 * 1024 * 1024) throw new Error('出力の合計が256 MBを超えました。対象枚数や出力倍率を減らしてください。');
-        totalBytes += blob.size;
-        zip.file(`${name}.${outputFormat === 'tiff' ? 'tif' : outputFormat==='jpeg'?'jpg':outputFormat}`, await blob.arrayBuffer());
-        }
-        zip.file(`${name}.json`, JSON.stringify(serializeProject(settings, item), null, 2));
+      source=(await decodeImage(item.file)).source;
+      const settings=batchSettings(template,original,item,labelIndex,numbering), base=outputBase(item.name,used);
+      for (const outputFormat of formats) {
+        if(signal.aborted)throw new Error('保存を中止しました。保存済みファイルは残ります。');
+        let blob;
+        if (outputFormat==='pptx') {
+          const presentation=await createPresentation(); addFigureSlide(presentation,source,settings,item.name);
+          blob=await presentationBlob(presentation);
+        } else blob=await exportImage(source,settings,outputFormat);
+        await write(blob,`${base}.${extensionFor(outputFormat)}`,item);
       }
-      saved++;item.status='完了'; manifest.push({ source: item.name, output: name, status: 'saved' });
-    } catch (error) {item.status='エラー'; failures.push({ name: item.name, error: error.message }); manifest.push({ source: item.name, status: 'failed', error: error.message }); }
-    finally { if(item.labelVisible??template.panelLabel.visible) labelIndex++; if (source) releaseImage(source); }
-    await new Promise(resolve => setTimeout(resolve, 0));
+      if (includeSettings) await write(new Blob([JSON.stringify(serializeProject(settings,item),null,2)],{type:'application/json'}),`${base}.json`,item);
+      saved++; item.status='完了';
+    } catch(error) {
+      if(signal.aborted){item.status='中止';throw error;}
+      item.status='エラー';failures.push({name:item.name,error:error.message});
+    } finally {
+      if(item.labelVisible??template.panelLabel.visible) labelIndex++;
+      if(source)releaseImage(source);
+    }
+    await new Promise(resolve=>setTimeout(resolve,0));
   }
-  if (signal.aborted) throw new Error('一括処理を中止しました。');
-  if (!saved) throw new Error(`保存できる画像がありませんでした。${failures[0]?.error || ''}`);
-  progress(`${saved}枚のファイルをまとめています…`);
-  if (presentation) {
-    const blob = await presentationBlob(presentation);
-    if (signal.aborted) throw new Error('一括処理を中止しました。');
-    return { blob, name: 'microscopy_figures.pptx', saved, failures };
-  }
-  zip.file('manifest.json', JSON.stringify({ saved, failures: failures.length, images: manifest }, null, 2));
-  const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' }, () => { if (signal.aborted) throw new Error('一括処理を中止しました。'); });
-  return { blob, name: `microscopy_figures_${formats.length>1?'multiple':format}.zip`, saved, failures };
+  if(signal.aborted)throw new Error('保存を中止しました。保存済みファイルは残ります。');
+  if(!saved)throw new Error(`保存できる画像がありませんでした。${failures[0]?.error||''}`);
+  return {saved,failures,files};
 }

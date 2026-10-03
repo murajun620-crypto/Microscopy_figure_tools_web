@@ -250,3 +250,22 @@ input[type=text],input[type=number],select{min-height:44px;font-size:16px}
 .color-swatch{height:38px;min-height:38px}
 .preview-navigator .image-nav{width:44px;height:44px;min-height:44px}
 }
+
+.image-row>.image-delete{flex:0 0 32px;min-width:32px;min-height:36px;justify-content:center;color:#815047;border-radius:5px}
+.image-delete:hover{background:#f5e5e0}
+.file-delete-actions{display:flex;gap:5px;flex-wrap:wrap}
+.save-panel{padding:14px;background:#fff;border:1px solid var(--border);border-radius:9px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px}
+.save-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.save-heading .hint{margin:0;overflow-wrap:anywhere;text-align:right}
+.save-fields{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px}
+.save-panel label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#587064;min-width:0}
+.save-panel .check{flex-direction:row;align-items:center}
+.save-destination{display:flex;gap:10px;align-items:end}
+.save-destination>label{flex:1;min-width:0}
+.save-panel .hint{margin:0}
+.save-options summary{padding:8px 0}
+.save-options-body{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.save-actions{display:flex;gap:8px;flex-wrap:wrap}
+.save-actions .primary{flex:1}
+#downloadList{display:flex;flex-direction:column;gap:5px}
+@media(max-width:600px){.save-fields{grid-template-columns:1fr 1fr}.save-fields>label:first-child{grid-column:1/-1}.save-destination{flex-wrap:wrap}.save-destination>label{flex-basis:100%}.save-panel label{font-size:13px}.image-row>.image-delete{flex-basis:40px;min-height:44px}}

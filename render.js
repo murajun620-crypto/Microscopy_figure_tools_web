@@ -1,4 +1,4 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=2d894542ff65';
 import { inlineRuns } from './inline-text.js';
 
 export const FONT = 'Arial';
@@ -115,11 +115,14 @@ export function renderCanvas(source,settings,options={}) {
   return {canvas,plan,metrics};
 }
 export function renderRaster(source,settings) {
-  const rendered=renderCanvas(source,settings),metrics=rasterMetrics(rendered.plan,settings.output);
-  if(rendered.canvas.width===metrics.width&&rendered.canvas.height===metrics.height) return {...rendered,metrics};
-  const canvas=document.createElement('canvas');canvas.width=metrics.width;canvas.height=metrics.height;
-  const context=canvas.getContext('2d');context.imageSmoothingEnabled=settings.output.resampling==='smooth';context.imageSmoothingQuality='high';context.drawImage(rendered.canvas,0,0,metrics.width,metrics.height);
-  rendered.canvas.width=rendered.canvas.height=0;return {canvas,plan:rendered.plan,metrics};
+  const canvas=document.createElement('canvas'),plan=buildPlan(settings,canvas.getContext('2d'),true,settings.output.scale),metrics=rasterMetrics(plan,settings.output);
+  canvas.width=metrics.width;canvas.height=metrics.height;
+  const context=canvas.getContext('2d');
+  // Draw the source once and rasterize text and bars at the final resolution.
+  // Keep the preview's geometry; never enlarge already rasterized annotations.
+  context.scale(metrics.width/plan.width,metrics.height/plan.height);
+  paint(context,source,plan,settings);
+  return {canvas,plan,metrics};
 }
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function renderSvg(source,settings,options={}) {
