@@ -50,30 +50,30 @@
     "height": 768,
     "pixel_nm": 4.0,
     "bar_nm": 500,
-    "subtext": "Au (magenta) / Si (cyan)",
+    "subtext": "Au + Si",
     "model": "SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。",
     "parameters": "Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。"
   },
   {
     "slug": "afm-grains",
     "title": "AFM ナノ粒状表面",
-    "width": 868,
+    "width": 768,
     "height": 768,
     "pixel_nm": 4,
     "bar_nm": 500,
     "subtext": "Height: 0–60 nm",
     "model": "相関した基板粗さに多数の高さピークを加え、半径12 nmの放物面探針による形態学的膨張と高さノイズを適用した。",
-    "parameters": "データ領域768×768 px、4 nm/px、視野3.072 µm角。右の100 pxは高さカラーバーで、走査領域ではない。カラーマップmagma、共通範囲0–60 nm。"
+    "parameters": "画像768×768 px、4 nm/px、視野3.072 µm角。カラーマップmagma、共通範囲0–60 nm。高さカラーバーは付けていない。"
   },
   {
     "slug": "afm-terraces",
     "title": "AFM 段差を持つ表面",
-    "width": 868,
+    "width": 768,
     "height": 768,
     "pixel_nm": 4,
     "bar_nm": 500,
-    "subtext": "Terraces: 3.2 nm steps",
+    "subtext": "3.2 nm steps",
     "model": "ゆるく曲がった平行テラスに3.2 nmの段差と空間相関した小さな高さノイズを加えた。",
-    "parameters": "データ領域768×768 px、4 nm/px、視野3.072 µm角。高さ表示0–36 nm。右の100 pxは高さカラーバー。ステップは特定結晶の原子層高さを意味しない。"
+    "parameters": "画像768×768 px、4 nm/px、視野3.072 µm角。高さ表示0–36 nm。高さカラーバーは付けていない。ステップは特定結晶の原子層高さを意味しない。"
   }
 ]

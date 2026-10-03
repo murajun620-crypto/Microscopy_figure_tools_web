@@ -7,7 +7,7 @@ import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da67
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4f6f10fa9fc9';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=42fc67acf5cd';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -953,3 +953,11 @@ for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();
+const galleryProject = new URLSearchParams(location.search).get('gallery');
+if (galleryProject && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(galleryProject)) {
+  await action(async () => {
+    const response = await fetch(new URL(`gallery/projects/${galleryProject}.mifito`, import.meta.url));
+    if (!response.ok) throw new Error('ギャラリーのプロジェクトを開けませんでした。');
+    await openProject(new File([await response.blob()], `${galleryProject}.mifito`, {type:'application/octet-stream'}));
+  });
+}

@@ -6,14 +6,14 @@
     "name": "afm-terraces.png",
     "path": "afm-terraces.png",
     "source_image_path": "afm-terraces.png",
-    "width": 868,
+    "width": 768,
     "height": 768
   },
   "settings": {
     "crop": {
       "x": 0,
       "y": 0,
-      "width": 868,
+      "width": 768,
       "height": 768
     },
     "calibration": {
@@ -32,14 +32,11 @@
       "length": 500,
       "unit": "nm",
       "anchor": "bottom-right",
-      "position": {
-        "x": 619,
-        "y": 702
-      },
-      "fontPercent": 3.5,
-      "thicknessPercent": 0.65,
-      "gapPercent": 0.8,
-      "verticalPaddingPercent": 1.8,
+      "position": null,
+      "fontPercent": 9,
+      "thicknessPercent": 0.8,
+      "gapPercent": 1,
+      "verticalPaddingPercent": 3,
       "color": "#ffffff",
       "textColor": "#ffffff",
       "background": true,
@@ -52,11 +49,11 @@
     "panelLabel": {
       "visible": true,
       "text": "g",
-      "subtext": "Terraces: 3.2 nm steps",
+      "subtext": "3.2 nm steps",
       "parentheses": true,
       "anchor": "top-left",
       "position": null,
-      "fontPercent": 3.5,
+      "fontPercent": 9,
       "color": "#ffffff",
       "background": true,
       "backgroundColor": "#000000",
@@ -81,7 +78,7 @@
     "enabled": false,
     "left": 0,
     "top": 0,
-    "right": 868,
+    "right": 768,
     "bottom": 768,
     "aspect_mode": "free",
     "aspect_application": "selection",
@@ -102,35 +99,35 @@
     "position_preset": "bottom-right",
     "placement_mode": "inside",
     "horizontal_alignment": "right",
-    "use_custom_position": true,
+    "use_custom_position": false,
     "custom_position": {
-      "x": 619,
-      "y": 702
+      "x": 0,
+      "y": 0
     },
-    "line_width": 0.65,
-    "line_width_ratio_percent": 0.65,
+    "line_width": 0.8,
+    "line_width_ratio_percent": 0.8,
     "line_color": "#ffffff"
   },
   "label": {
     "visible": true,
     "font_family": "Arial",
-    "font_scale": 3.5,
-    "font_ratio_percent": 3.5,
+    "font_scale": 9,
+    "font_ratio_percent": 9,
     "color": "#ffffff",
-    "text_bar_gap_offset": 0.8,
-    "text_gap_ratio_percent": 0.8
+    "text_bar_gap_offset": 1,
+    "text_gap_ratio_percent": 1
   },
   "background": {
     "visible": true,
     "color": "#000000",
     "opacity_percent": 72,
-    "vertical_padding_offset": 1.8,
+    "vertical_padding_offset": 3,
     "background_padding_ratio_percent": 0.8
   },
   "layout": {
-    "vertical_padding_offset": 1.8,
-    "edge_margin_ratio_percent": 1.8,
-    "text_gap_ratio_percent": 0.8
+    "vertical_padding_offset": 3,
+    "edge_margin_ratio_percent": 3,
+    "text_gap_ratio_percent": 1
   },
   "outside_area": {
     "enabled": false,
@@ -140,14 +137,14 @@
   "panel_label": {
     "visible": true,
     "text": "g",
-    "supplemental_text": "Terraces: 3.2 nm steps",
+    "supplemental_text": "3.2 nm steps",
     "use_parentheses": true,
     "position_preset": "top-left",
     "font_family": "Arial",
     "font_weight": "Regular",
-    "font_ratio_percent": 3.5,
-    "font_scale": 3.5,
-    "supplemental_font_ratio_percent": 3.5,
+    "font_ratio_percent": 9,
+    "font_scale": 9,
+    "supplemental_font_ratio_percent": 9,
     "bold": false,
     "text_color": "#ffffff",
     "background_visible": true,

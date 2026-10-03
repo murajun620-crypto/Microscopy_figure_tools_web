@@ -1,0 +1,382 @@
+{
+  "renderer": "web application in browser",
+  "exportRoute": "application UI save button",
+  "created": "2026-10-03T22:25:55.273248+00:00",
+  "projects": [
+    {
+      "slug": "sem-particles-inside",
+      "projectSha256": "81c21b07ff610efe4fe1033c611c8388a626cfc07a28f2c6399e1fa33818fc0f",
+      "files": [
+        {
+          "path": "figures/sem-particles-inside.png",
+          "bytes": 3333576,
+          "sha256": "a5aed737088e7ae31cde8f0a5c69efdbeba44b08a82f78b226e2dfcae3011a65"
+        },
+        {
+          "path": "figures/sem-particles-inside.svg",
+          "bytes": 1334539,
+          "sha256": "27328f31e8e613979e58423b64d88d0f4dbd760caa6e4a26122e8b7d59277d94"
+        },
+        {
+          "path": "assets/sem-particles-inside.png",
+          "bytes": 628264,
+          "sha256": "d2c81477ff9d8b7bfd50398a898a9759319085cafb24491da598817c81ebb907"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "sem-particles-outside",
+      "projectSha256": "a40e6399d2c80b8a9141c7f0a87a561ce8316c2a2da55ee906a7238080e40269",
+      "files": [
+        {
+          "path": "figures/sem-particles-outside.png",
+          "bytes": 3426934,
+          "sha256": "b51630d9e0cac6b4051750d1acf77eea52387432b85592a389474e086dd7ff57"
+        },
+        {
+          "path": "figures/sem-particles-outside.svg",
+          "bytes": 1342751,
+          "sha256": "2e999c69b1c35470c6e8df6ac61bd3467921d0c30809fa8fa0de9a186d4ff602"
+        },
+        {
+          "path": "assets/sem-particles-outside.png",
+          "bytes": 561603,
+          "sha256": "afde3170eebfef71064875ca41e27f58e6919ec708737a9c6770abd99c1b9a6f"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "sem-porous-inside",
+      "projectSha256": "c3fa38094af93ca9ddad3a9af819d54e8c83481ed52a45192c5da83e2a31b3cb",
+      "files": [
+        {
+          "path": "figures/sem-porous-inside.png",
+          "bytes": 3301463,
+          "sha256": "050f1d91d9d5b2652bb067b5bc12e2c10f3a46805689bac6ed00211367101a61"
+        },
+        {
+          "path": "figures/sem-porous-inside.svg",
+          "bytes": 1345895,
+          "sha256": "43c2aafdd57bfa6903e019ce3b37ce612875856fa4fc306961a4e5099560f0ca"
+        },
+        {
+          "path": "assets/sem-porous-inside.png",
+          "bytes": 634781,
+          "sha256": "3b430880d6493fbe1cf2fdb991f22e907db3d67e6e09d8dbf704e9bfb9e5ed6e"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 167,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "sem-porous-outside",
+      "projectSha256": "00fdbf431c5ced205abdea334af41ed0a356f7eb670b3ffb08fd941a0ae6d482",
+      "files": [
+        {
+          "path": "figures/sem-porous-outside.png",
+          "bytes": 3479070,
+          "sha256": "6db70df79554f62136e68696da4fe1d83a190e9996e94839f48b9b92889d4224"
+        },
+        {
+          "path": "figures/sem-porous-outside.svg",
+          "bytes": 1361830,
+          "sha256": "d9ff206d82fb5e20fbc095e1f1246a7dbe8d90a385a7729b90465e26b0ae3a61"
+        },
+        {
+          "path": "assets/sem-porous-outside.png",
+          "bytes": 559893,
+          "sha256": "22305f7bea6cc1b1c39fa224d247eb484502de600ae67d8089870c366e1d27d9"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 167,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-au-inside",
+      "projectSha256": "c4224f0abed22cb7995d854bff57cb902a154ee6c9c477586ace19ad2b15d0c0",
+      "files": [
+        {
+          "path": "figures/edx-au-inside.png",
+          "bytes": 6175259,
+          "sha256": "75ff41a6a91fd5d636296d47c5978e97639ae0c8fa6f1d53cad42e927b022a1a"
+        },
+        {
+          "path": "figures/edx-au-inside.svg",
+          "bytes": 1438008,
+          "sha256": "ca5e88d3ca4eff2d7ae0449d9d3ec7bb5f7722c5f49deffff1c3b6f4f776d511"
+        },
+        {
+          "path": "assets/edx-au-inside.png",
+          "bytes": 1292247,
+          "sha256": "29d40d151feab202a852ca8107c05563fde84999dc018a53ef58d54f577b761e"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-au-outside",
+      "projectSha256": "d2803a9f2c0680cacade03a57ebf67938d09c9dc8cb4fc945a6a8f04e8028474",
+      "files": [
+        {
+          "path": "figures/edx-au-outside.png",
+          "bytes": 6365869,
+          "sha256": "75443f06d8a744931da2050d7f1f91294a7c99d0362d5e3cd6cfbb504448910e"
+        },
+        {
+          "path": "figures/edx-au-outside.svg",
+          "bytes": 1448583,
+          "sha256": "ae80c1463e005201fce5033d18e597a4b15d75892abbc52fd89faf5e7429a83a"
+        },
+        {
+          "path": "assets/edx-au-outside.png",
+          "bytes": 1107586,
+          "sha256": "2fb0fccc53a2b1ec9d5be821f4a567412886dbb7619f34c6cee6a5cbb7e7fa31"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-si-inside",
+      "projectSha256": "639ce563b9f868d6c0d1410f079f70d22d5f6c036a20f6640b2e53360fa3d476",
+      "files": [
+        {
+          "path": "figures/edx-si-inside.png",
+          "bytes": 6537099,
+          "sha256": "4cd75fafb1d0d3fbd30176892b29f5fac204b42b94e415f3017d960e356caa97"
+        },
+        {
+          "path": "figures/edx-si-inside.svg",
+          "bytes": 1731246,
+          "sha256": "e97d5fea1eddb21d8347271d7f0276ea2cbd755778d20624e940be643975b8e6"
+        },
+        {
+          "path": "assets/edx-si-inside.png",
+          "bytes": 1459773,
+          "sha256": "f1b895a52d9a50016c17f6aac3ca282e07a9421742a355467b43fc7559b8522a"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-si-outside",
+      "projectSha256": "512f78faa065a3ca8825c65b331d8db04460973bda95cd2ebdc04ea729ab8c95",
+      "files": [
+        {
+          "path": "figures/edx-si-outside.png",
+          "bytes": 6706002,
+          "sha256": "d08954595e66d76dcf14fa400a98b3610f58a5d7655d11213fc2e4527cc5abbd"
+        },
+        {
+          "path": "figures/edx-si-outside.svg",
+          "bytes": 1741457,
+          "sha256": "6fc113465739a5a4d56afef7472f7ce8dd34ebe1f5ab19208dcc24e838fd6b2e"
+        },
+        {
+          "path": "assets/edx-si-outside.png",
+          "bytes": 1250112,
+          "sha256": "1dffc1f5bb00d971cfd938b14ef71a4c4f0c80ed08c151b53cbdefec978702bc"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-overlay-inside",
+      "projectSha256": "be358a2c4b428995401160e83cc886a4e8384d3e88b51a97321f2805185ba7f7",
+      "files": [
+        {
+          "path": "figures/edx-overlay-inside.png",
+          "bytes": 8297005,
+          "sha256": "06fe9ff52993f900b236d7b656970242101b59cf817085942d82d66cdbbbbc8b"
+        },
+        {
+          "path": "figures/edx-overlay-inside.svg",
+          "bytes": 2564050,
+          "sha256": "2309ee28e7946a36d009aa9e44d8d34ade7ed217a51dc7858c3e4eed3016e436"
+        },
+        {
+          "path": "assets/edx-overlay-inside.png",
+          "bytes": 1954651,
+          "sha256": "1d2491343117746578939a18268607df58eaa2d1d52d82a221cf34cedef7fac6"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "edx-overlay-outside",
+      "projectSha256": "d1b23087cb4c101d7d21e729ddea3226b284fea693eda3a6ad64b8c526a3e85c",
+      "files": [
+        {
+          "path": "figures/edx-overlay-outside.png",
+          "bytes": 8494497,
+          "sha256": "fc59536072f50cbcbe30e4d5da3f9ce6b2ca45708114915ec8322c5eb5980303"
+        },
+        {
+          "path": "figures/edx-overlay-outside.svg",
+          "bytes": 2573978,
+          "sha256": "22fbd9a82f2f439ae1963e3438a7e0d0f2df587f5eaab5395d5f5e8f1a2134db"
+        },
+        {
+          "path": "assets/edx-overlay-outside.png",
+          "bytes": 1672329,
+          "sha256": "e62c8df023393468052ed19654dca2350502ca8c263a6102cfa6bf42d47f9f6e"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "afm-grains-inside",
+      "projectSha256": "04df4a316c9fcdb44d2e499a5af8dc3b654a2a8a1f0f1020b2b9f3d9eb5040fd",
+      "files": [
+        {
+          "path": "figures/afm-grains-inside.png",
+          "bytes": 4499460,
+          "sha256": "75a239a6bf63f70b9c1891154e0e9d0011dd1378dd9fdc1cf88f5bc792d38d97"
+        },
+        {
+          "path": "figures/afm-grains-inside.svg",
+          "bytes": 1297741,
+          "sha256": "90820a0c38d95ce0208fb8e8ffa051dbedd6e6db557813a5a6bb9be6040f165f"
+        },
+        {
+          "path": "assets/afm-grains-inside.png",
+          "bytes": 833041,
+          "sha256": "bca87dc07012e85e4bc442b7676e74da304f0fac4b1bdfeb51893e2e10a62ece"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "afm-grains-outside",
+      "projectSha256": "6be195b915ae60ff2353af837618868b60aa15fbd7f8cb1c13d3551ddb3311ad",
+      "files": [
+        {
+          "path": "figures/afm-grains-outside.png",
+          "bytes": 4804963,
+          "sha256": "257745eda0fc0dc9fa6da96bf6afac5b65f370295173480770fd80853f0e877c"
+        },
+        {
+          "path": "figures/afm-grains-outside.svg",
+          "bytes": 1307520,
+          "sha256": "7831051cf28f401e0a434bb3895abc4025fa48029c2ca82d943a7fbfe1fc4336"
+        },
+        {
+          "path": "assets/afm-grains-outside.png",
+          "bytes": 611821,
+          "sha256": "52f4cf300627e04581fa55d0fdea9205831b4f7d3bb4a52544e156e562dbdd2f"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "afm-terraces-inside",
+      "projectSha256": "45922dc62084ca7dfb2ff22e63a3da7c839466c5e5eea7096b084fe298006a69",
+      "files": [
+        {
+          "path": "figures/afm-terraces-inside.png",
+          "bytes": 1138868,
+          "sha256": "7bb63315c22d63a4ac860cd53286898954f2e2e7f2dd7ed72a7fa596ee0f55fb"
+        },
+        {
+          "path": "figures/afm-terraces-inside.svg",
+          "bytes": 289235,
+          "sha256": "8c729343ebf206a57a8c10c1059406f38ac4f33a83c608f7849c23bb7fbb046a"
+        },
+        {
+          "path": "assets/afm-terraces-inside.png",
+          "bytes": 258866,
+          "sha256": "ffcd31cf3d822236ed8edfde821efe37403d8489a843bff92a75679a6f3e727c"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    },
+    {
+      "slug": "afm-terraces-outside",
+      "projectSha256": "e93ce4897791c0289b593a3229f763b535acd9ba3274c292b635145c2e3daedb",
+      "files": [
+        {
+          "path": "figures/afm-terraces-outside.png",
+          "bytes": 1245619,
+          "sha256": "d00f841197a64d598c8ea121bd4bbaa8693fef0b3141abd23e92c2b41abccd0e"
+        },
+        {
+          "path": "figures/afm-terraces-outside.svg",
+          "bytes": 296837,
+          "sha256": "f10173ce052c4b54e57a312292554da3d029b55d5cbf98cc37cf5e16994f2004"
+        },
+        {
+          "path": "assets/afm-terraces-outside.png",
+          "bytes": 213726,
+          "sha256": "6ce94df2e0fab718567d2d16a33c663f7b0433caa5154aa4e2c266bdf7d02699"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": false,
+      "fontPercent": 9
+    },
+    {
+      "slug": "sem-label-only",
+      "projectSha256": "f719605019dd4f405d4f67e9ed63ab3448a9b9875f00ed70c15afe610326f60e",
+      "files": [
+        {
+          "path": "figures/sem-label-only.png",
+          "bytes": 3387446,
+          "sha256": "2ded0f84ca5c2a47379d5172c189ef44e9bc04507b80686ed3485369a5aca0a5"
+        },
+        {
+          "path": "figures/sem-label-only.svg",
+          "bytes": 1334463,
+          "sha256": "d4de7fbd8d184eb787377df41f4fe1073dbf5ff1a918c252aa2f199f6b4df16b"
+        },
+        {
+          "path": "assets/sem-label-only.png",
+          "bytes": 632202,
+          "sha256": "863344deaa55e5863b0be5fffcf28e58350cb707d9b35269efac4b1c1bf44b23"
+        }
+      ],
+      "uiVerified": true,
+      "barPixels": 125,
+      "individualBackgrounds": true,
+      "fontPercent": 9
+    }
+  ]
+}
