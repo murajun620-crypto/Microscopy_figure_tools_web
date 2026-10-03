@@ -12,6 +12,7 @@ const items = [];
 const folderSupported=typeof window.showDirectoryPicker==='function';
 const sourceFolders=new WeakMap();
 let saveDirectory=null;
+let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
@@ -122,7 +123,7 @@ function setBusy(value) {
   $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
-  for(const id of ['saveScope','saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat']) $(id).disabled=value;
+  for(const id of ['saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat','batchNumbering','closeSaveDialog']) $(id).disabled=value;
   for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
   for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
   refreshSaveUI();
@@ -679,16 +680,31 @@ $('settingsInput').addEventListener('change', () => {
 });
 function exportFormats(){const formats=$('multipleFormats').checked?[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat):[$('exportFormat').value];if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
 function refreshSaveUI() {
-  const count=items.filter(item=>item.enabled).length,batch=$('saveScope').value==='batch';
-  $('saveScope').options[1].textContent=`チェックした画像（${count}枚）`;
-  $('exportButton').textContent=batch?`対象${count}枚を保存`:'この画像を保存';
-  $('exportButton').disabled=busy||!current||(batch&&!count);
-  $('saveTargetInfo').textContent=batch?`${count}枚が対象`:(current?current.name:'画像を開いてください');
+  const count=items.filter(item=>item.enabled).length;
+  $('singleSaveButton').disabled=busy||!current;
+  $('batchSaveButton').textContent=`一括保存（${count}枚）`;
+  $('batchSaveButton').disabled=busy||!current||!count;
+  $('saveDialogTitle').textContent=saveBatch?'一括保存':'この画像を保存';
+  $('exportButton').textContent=saveBatch?`${count}枚を一括保存`:'この画像を保存';
+  $('exportButton').disabled=busy||!current||(saveBatch&&!count);
+  $('saveTargetInfo').textContent=saveBatch?`保存する画像：チェックした${count}枚`:(current?current.name:'画像を開いてください');
+  $('saveBatchHint').hidden=!saveBatch;
+  $('saveNumberingField').hidden=!saveBatch;
+  $('saveFormatChoices').hidden=!$('multipleFormats').checked;
+  $('exportFormat').disabled=busy||$('multipleFormats').checked;
+  $('saveOptionsInfo').textContent=[`${current?.settings.output.dpi??600} dpi`,$('multipleFormats').checked?'複数形式':'',$('includeSettings').checked?'設定JSON':'',saveBatch&&$('batchNumbering').checked?'連番':''].filter(Boolean).join(' · ');
+  $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（保存画面の詳細設定で変更）`;
   const mode=$('saveDestination').value;
   $('chooseSaveFolder').hidden=mode!=='folder';
   $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存先フォルダを選んでください。'):mode==='source'?'「フォルダから開く」で読み込んだ画像の元フォルダへ保存します。':'各ファイルをダウンロードします。保存先はブラウザの設定に従います。';
 }
-$('saveScope').addEventListener('change',refreshSaveUI);
+for(const [id,batch] of [['singleSaveButton',false],['batchSaveButton',true]]) $(id).addEventListener('click',()=>{
+  if(busy||!current)return;
+  saveBatch=batch;refreshSaveUI();$('saveAdvanced').open=false;$('saveDialog').showModal();
+});
+$('closeSaveDialog').addEventListener('click',()=>{if(!busy)$('saveDialog').close();});
+$('saveDialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+for(const id of ['multipleFormats','includeSettings','saveDpi','batchNumbering']) $(id).addEventListener('change',refreshSaveUI);
 $('saveDestination').addEventListener('change',refreshSaveUI);
 $('saveDestination').value=folderSupported?'folder':'download';
 for(const option of $('saveDestination').options)if(option.value!=='download')option.disabled=!folderSupported;
@@ -721,12 +737,12 @@ async function prepareSaver(targets) {
   };
 }
 $('exportButton').addEventListener('click',()=>action(async()=>{
-  const isBatch=$('saveScope').value==='batch',targets=isBatch?items.filter(item=>item.enabled):[current];
-  if(!targets.length||!current)throw new Error('保存する画像を選んでください。');
-  const formats=exportFormats(),labelNumbering=numbering(isBatch&&$('batchNumbering').checked),saveFile=await prepareSaver(targets);
-  await document.fonts.ready;
-  batchController=new AbortController();$('cancelBatchButton').hidden=false;
+  const isBatch=saveBatch,targets=isBatch?items.filter(item=>item.enabled):[current];
   try {
+    if(!targets.length||!current)throw new Error('保存する画像を選んでください。');
+    const formats=exportFormats(),labelNumbering=numbering(isBatch&&$('batchNumbering').checked),saveFile=await prepareSaver(targets);
+    await document.fonts.ready;
+    batchController=new AbortController();$('cancelBatchButton').hidden=false;
     const template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
     const result=await batchExport(targets,template,current,formats,labelNumbering,batchController.signal,message=>{$('batchProgress').textContent=message;},saveFile,$('includeSettings').checked);
     const verb=$('saveDestination').value==='download'?'生成しました。下のリンクから保存できます。':'保存しました。';
@@ -789,7 +805,7 @@ async function demo(count = 1) {
   }
   if (added.length) { $('knownLength').value = 5; syncInputs(); renderList(); render(); }
   if (added.length === files.length) {
-    if (count > 1) { $('batchPanel').open = true; notify('同じスケールのサンプル3枚を追加しました（1 px = 0.02 µm）。共通設定と一括保存を試せます。'); }
+    if (count > 1) { notify('同じスケールのサンプル3枚を追加しました（1 px = 0.02 µm）。上の「一括保存」から保存できます。'); }
     else notify('サンプルは校正済みです。左下の基準線は250 px = 5 µmです。');
   }
 }
