@@ -6,7 +6,7 @@ import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da67
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=266f4cee750c';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=6423f563fd9b';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -153,7 +153,10 @@ function setBusy(value) {
   if (value) cancelWheelZoom();
   busy = value; document.body.classList.toggle('busy', value);
   $('projectInput').disabled=value;
+  $('openProjectButton').disabled=value;
   $('saveProjectButton').disabled=value||!items.length;
+  for(const id of ['settingsInput','openSettingsButton','settingsSaveMenuButton','saveSettingsButton','saveSessionButton'])$(id).disabled=value||!current;
+  if(value||!current)closeSettingsSaveMenu();
   $('saveDpi').disabled=value||!current;
   for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeSelectedButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
@@ -667,6 +670,21 @@ function applyPanelLabels(onlyEnabled) {
 }
 $('applyPanelLabels').addEventListener('click',()=>applyPanelLabels($('labelApplySelected').checked));
 const projectLabelControls=['panelFormat','panelBranchParent','batchSequence','batchStart','batchStartLetter','batchPrefix','batchSeparator','batchUppercase'];
+$('openProjectButton').addEventListener('click',()=>{if(!busy)$('projectInput').click();});
+$('openSettingsButton').addEventListener('click',()=>{if(!busy&&current)$('settingsInput').click();});
+function closeSettingsSaveMenu(){
+  $('settingsSaveMenu').hidden=true;$('settingsSaveMenuButton').setAttribute('aria-expanded','false');
+}
+$('settingsSaveMenuButton').addEventListener('click',()=>{
+  if(busy||!current)return;
+  const open=$('settingsSaveMenu').hidden;
+  $('settingsSaveMenu').hidden=!open;$('settingsSaveMenuButton').setAttribute('aria-expanded',String(open));
+});
+document.addEventListener('click',event=>{if(!$('settingsSaveDropdown').contains(event.target))closeSettingsSaveMenu();});
+$('settingsSaveDropdown').addEventListener('focusout',event=>{if(!$('settingsSaveDropdown').contains(event.relatedTarget))closeSettingsSaveMenu();});
+$('settingsSaveDropdown').addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!$('settingsSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeSettingsSaveMenu();$('settingsSaveMenuButton').focus();}
+});
 $('saveProjectButton').addEventListener('click',()=>action(async()=>{
   let handle;
   const name=`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
@@ -729,9 +747,10 @@ async function openProject(file){
   notify(`プロジェクトを開きました（${items.length}枚）。編集を再開できます。`);
 }
 $('saveSettingsButton').addEventListener('click', () => {
+  if(busy||!current)return;closeSettingsSaveMenu();
   try { download(new Blob([JSON.stringify(serializeProject(current.settings, current), null, 2)], { type: 'application/json' }), `${current.name.replace(/\.[^.]+$/, '')}_settings.json`); notify('設定JSONを保存しました。'); } catch (error) { notify(error.message, true); }
 });
-$('saveSessionButton').addEventListener('click',()=>{try{download(new Blob([JSON.stringify(sessionProject(items,current.settings.output,exportFormats()),null,2)],{type:'application/json'}),'microscopy_batch.json');notify('一覧のセッション設定を保存しました。元画像も保管してください。');}catch(error){notify(error.message,true);}});
+$('saveSessionButton').addEventListener('click',()=>{if(busy||!current)return;closeSettingsSaveMenu();try{download(new Blob([JSON.stringify(sessionProject(items,current.settings.output,exportFormats()),null,2)],{type:'application/json'}),'microscopy_batch.json');notify('一覧のセッション設定を保存しました。元画像も保管してください。');}catch(error){notify(error.message,true);}});
 $('settingsInput').addEventListener('change', () => {
   const file = $('settingsInput').files[0]; $('settingsInput').value = '';
   action(async () => {

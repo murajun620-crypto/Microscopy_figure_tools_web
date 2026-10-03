@@ -8,14 +8,29 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=fd351db7a4cf">
-  <script type="module" src="./app.js?v=c1484f7391ce"></script>
+  <link rel="stylesheet" href="./styles.css?v=508c717ab6fd">
+  <script type="module" src="./app.js?v=667e53235e08"></script>
 </head>
 <body>
   <header class="app-header">
-    <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="40" height="40" alt=""><span><span class="brand-name">MiFiTo <span id="appVersion" class="app-version" aria-label="バージョン"></span></span><small>MICROSCOPY FIGURE TOOLS</small></span></a>
-    <span class="privacy"><span class="dot"></span>画像はこのブラウザ内で処理</span>
-    <button id="helpButton" class="quiet">使い方</button>
+    <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="36" height="36" alt=""><span class="brand-name">MiFiTo <span class="brand-web">Web</span><span id="appVersion" class="app-version" aria-label="バージョン"></span></span></a>
+    <div class="header-actions" role="group" aria-label="プロジェクトと設定">
+      <span class="privacy"><span class="dot"></span>画像はブラウザ内で処理</span>
+      <button id="openProjectButton" class="button quiet" title="元画像と編集設定をまとめて開きます"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>プロジェクトを開く</button>
+      <button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>プロジェクトを保存</button>
+      <input id="projectInput" type="file" accept=".mifito" aria-label="プロジェクトを開く" hidden>
+      <button id="openSettingsButton" class="button quiet" title="設定JSONを開きます。先に元画像を開いてください" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>設定を開く</button>
+      <input id="settingsInput" type="file" accept=".json,application/json" aria-label="設定を開く" hidden disabled>
+      <div id="settingsSaveDropdown" class="settings-save-dropdown">
+        <button id="settingsSaveMenuButton" class="button quiet" aria-expanded="false" aria-controls="settingsSaveMenu" title="画像を含めず、設定JSONのみを保存します" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>設定を保存<span class="save-menu-arrow" aria-hidden="true">▾</span></button>
+        <div id="settingsSaveMenu" class="header-menu" role="group" aria-label="保存する設定" hidden>
+          <button id="saveSettingsButton" class="button quiet" disabled>この画像の設定を保存</button>
+          <button id="saveSessionButton" class="button quiet" disabled>一覧の設定を保存</button>
+          <p class="hint">設定JSONのみ。再開用の元画像も保存する場合は「プロジェクトを保存」を使います。</p>
+        </div>
+      </div>
+      <button id="helpButton" class="button quiet">使い方</button>
+    </div>
   </header>
   <main class="workspace">
     <aside id="settingsPanel" class="sidebar" aria-label="画像と編集設定">
@@ -26,9 +41,8 @@
         <div class="sample-actions"><button id="demoButton" class="button">サンプル1枚</button><button id="multiDemoButton" class="button">サンプル3枚</button></div>
         <p class="hint">3枚は同じスケール・画像サイズ。一括処理を試せます。</p>
         <p class="hint">PNG / JPEG / BMP / SVG / TIFF</p>
-        <div class="project-actions"><button id="saveProjectButton" class="button full" disabled>プロジェクトを保存</button><label class="button full file-button">プロジェクトを開く<input id="projectInput" type="file" accept=".mifito" aria-label="プロジェクトを開く"></label></div>
         <p id="projectSaveStatus" class="hint" role="status" aria-live="polite">画像なし</p>
-        <p class="hint">一覧の全画像と編集設定を1つの.mifitoファイルに保存します。開くと現在の一覧を置き換え、画像を選び直さず再開できます。終了・更新前の未保存確認はプロジェクト保存が基準です。画像保存やコピーでは作業状態を保存しません。</p>
+        <p class="hint">再開用の元画像と編集設定は、ヘッダーの「プロジェクトを保存」で1つの.mifitoファイルに保存できます。終了・更新前の確認はプロジェクト保存が基準です。</p>
         <ul id="imageList" class="image-list" aria-label="読み込んだ画像"></ul>
       <details id="batchPanel" class="batch-panel"><summary>画像をまとめて操作 <span id="batchCount" class="detail-value">0枚</span></summary><div class="batch-body"><p class="hint">デザイン・トリミング・出力設定は共通、校正・表示・文字列は画像ごとに保持します。未校正画像には校正済み画像の値を補います。トリミングはPython版と同じ絶対ピクセル座標です。連番対象は処理対象かつラベル表示の画像です。</p>
         <div class="batch-options"><button id="batchAll" class="button">全て対象</button><button id="batchNone" class="button">全て対象外</button><button id="batchBarsOn" class="button">バー全表示</button><button id="batchBarsOff" class="button">バー全非表示</button><button id="batchBarFirst" class="button">バー先頭のみ</button><button id="batchLabelsOn" class="button">ラベル全表示</button><button id="batchLabelsOff" class="button">ラベル全非表示</button></div>
@@ -111,7 +125,7 @@
           </div>
         </details>
         <details>
-          <summary><span class="step">5</span> 出力・設定</summary>
+          <summary><span class="step">5</span> 出力</summary>
           <div class="detail-body">
             <div class="field-row"><label>出力倍率<select id="outputScale" data-setting="output.scale" data-number><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label><label>画像補間<select id="resampling" data-setting="output.resampling"><option value="nearest">最近傍</option><option value="smooth">滑らか</option></select></label></div>
             <div class="field-row"><label>印刷時のサイズ<input id="sizeCm" type="number" min="0.1" max="100" step="0.1" value="4" data-setting="output.sizeCm"></label><label>指定する辺<select id="sizeAxis" data-setting="output.sizeAxis"><option value="width">幅（cm）</option><option value="height">高さ（cm）</option></select></label></div>
@@ -119,11 +133,6 @@
             <label class="check"><input id="pptEditable" type="checkbox" data-setting="output.pptEditable">PPTXのラベルを編集可能にする</label>
             <label class="check"><input id="pptIncludeLabel" type="checkbox" data-setting="output.pptIncludeLabel" checked>PPTXにラベル文字列を含める</label>
 
-            <div class="divider"></div>
-            <button id="saveSettingsButton" class="button full">設定JSONを保存</button>
-            <button id="saveSessionButton" class="button full">一覧のセッションJSONを保存</button>
-            <label class="button full file-button">設定JSONを読み込む<input id="settingsInput" type="file" accept=".json,application/json" aria-label="設定JSONを読み込む"></label>
-            <p class="hint">Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。Web版保存JSONはPython版でも読み込めます。</p>
           </div>
         </details>
       </fieldset>
@@ -176,7 +185,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、画像欄の「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定交換にはJSONも引き続き使えます。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>
