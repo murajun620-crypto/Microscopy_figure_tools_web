@@ -3,6 +3,13 @@ import { uniqueName } from './core.js?v=2d894542ff65';
 export const extensionFor = format => format === 'jpeg' ? 'jpg' : format === 'tiff' ? 'tif' : format;
 export function outputBase(name, used = new Set()) { return `${uniqueName(name, used)}_mifito`; }
 
+// Older projects may contain JPEG/BMP, which are no longer save choices.
+export function restoreExportFormats(formats) {
+  const normalized=formats.map(value=>value.replace(/^\./,'').toLowerCase()).map(value=>value==='tif'?'tiff':value);
+  const supported=[...new Set(normalized.filter(value=>['png','svg','pdf','tiff','pptx'].includes(value)))];
+  return supported.length || !formats.length ? supported : ['png'];
+}
+
 // Sharing the picker ID also retains the last image folder when no handle exists.
 export const imagePickerOptions = () => ({ id:'mifito-images', multiple:true, types:[{description:'画像',accept:{'image/png':['.png'],'image/jpeg':['.jpg','.jpeg'],'image/bmp':['.bmp'],'image/tiff':['.tif','.tiff'],'image/svg+xml':['.svg']}}] });
 export const directoryPickerOptions = startIn => ({ id:'mifito-images', mode:'readwrite', ...(startIn?{startIn}:{}) });

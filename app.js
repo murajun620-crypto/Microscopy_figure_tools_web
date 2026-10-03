@@ -1,9 +1,9 @@
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
 import { buildPlan, paint } from './render.js?v=952b7e69af87';
-import { batchExport, exportImage } from './export.js?v=78d65294e65e';
+import { batchExport, exportImage } from './export.js?v=51b4221c04db';
 import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da674';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory } from './save-files.js?v=e4225fd7ab67';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=364b6e61ee9d';
 
@@ -21,43 +21,63 @@ let measurement = null, measurementStart = null, drag = null, pendingCrop = null
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
-const representativeColors = [['白','#ffffff'],['黒','#000000'],['赤','#ff0000'],['黄','#ffff00'],['緑','#00ff00'],['水色','#00ffff'],['青','#0000ff'],['紫','#ff00ff']];
-const colorFields = [];
-let colorMode = 'simple';
-for (const input of document.querySelectorAll('input[type="color"]')) {
-  const original = input.parentElement, title = original.firstChild.textContent.trim();
+const COLOR_PALETTE = {
+    blue:["#D8EBFF","#BFE0FF","#A5D5FF","#8BC9FF","#70BEFF","#56B2FF","#3CA6F5","#1F8FE0","#0C74C2","#0052A8"],
+    red:["#FFD1CC","#FFB9B1","#FFA198","#FF897F","#FF7166","#F7574A","#E93E31","#D4291E","#BC170C","#A10000"],
+    green:["#D8F5DF","#BFEECB","#A6E7B7","#8DDEA2","#74D68D","#5BCC77","#43C262","#2BA84D","#158E38","#009F22"],
+    orange:["#FFE3C2","#FFD4A2","#FFC582","#FFB662","#FFA742","#FF9822","#F28610","#D77207","#BC5E03","#A14B00"],
+    purple:["#E8D9FF","#DAC3FF","#CCADFF","#BE97FF","#AF81F8","#A06BEB","#9155DD","#7D3EDD","#6725C3","#5A1FA8"],
+    gray:["#E0E0E0","#D2D2D2","#C4C4C4","#B6B6B6","#A8A8A8","#9A9A9A","#8A8A8A","#787878","#626262","#4A4A4A"],
+    black:["#E6E6E6","#D5D5D5","#C4C4C4","#B3B3B3","#A2A2A2","#8F8F8F","#7C7C7C","#666666","#4A4A4A","#2A2A2A"],
+  };
+const colorFields = [], recentColors = [];
+let colorTarget = null;
+for (const input of document.querySelectorAll('input[type="color"][data-setting]')) {
+  const title = input.parentElement.firstChild.textContent.trim();
   const section = input.dataset.setting.split('.')[0];
   const name = `${section === 'scaleBar' ? 'スケールバー' : 'パネルラベル'}の${title}`;
-  const field = document.createElement('div'); field.className = 'color-field'; field.setAttribute('role','group'); field.setAttribute('aria-label',name);
-  const heading = document.createElement('label'); heading.htmlFor = input.id; heading.textContent = title;
   input.setAttribute('aria-label',name);
-  const palette = document.createElement('div'); palette.className = 'color-palette';
-  for (const [label,color] of representativeColors) {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'color-swatch';
-    button.style.backgroundColor = color; button.dataset.color = color; button.title = `${label} (${color})`; button.setAttribute('aria-label',`${name}：${label}`);
-    button.addEventListener('click',()=>{
-      if (!current || input.matches(':disabled') || input.value === color) return;
-      const settings = copy(current.settings), [section,key] = input.dataset.setting.split('.'); settings[section][key] = color;
-      try { commit(settings,section); } catch (error) { notify(error.message,true); syncInputs(); }
-    });
-    palette.append(button);
-  }
-  const value = document.createElement('span'); value.className = 'color-value';
-  original.replaceWith(field); field.append(heading,input,palette,value); colorFields.push({field,input,palette,value});
+  const wrapper = document.createElement('span'); wrapper.className = 'color-control';
+  input.before(wrapper); wrapper.append(input);
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'button quiet palette-button';
+  button.textContent = '色パネル'; button.setAttribute('aria-label',`${name}の色パネル`);
+  button.addEventListener('click',()=>openColorPanel(input,name)); wrapper.append(button);
+  input.addEventListener('change',()=>rememberColor(input.value));
+  colorFields.push({input,button});
 }
 function syncColorFields() {
-  for (const {field,input,palette,value} of colorFields) {
-    const simple = colorMode === 'simple'; field.classList.toggle('simple',simple); input.hidden = simple; palette.hidden = !simple; value.hidden = !simple;
-    const color = input.value.toLowerCase(), selected = representativeColors.find(([,hex])=>hex === color);
-    value.textContent = selected ? selected[0] : `カスタム ${color}`;
-    value.title = color;
-    for (const button of palette.children) { button.disabled = input.matches(':disabled'); button.setAttribute('aria-pressed',String(button.dataset.color === color)); }
-  }
+  for (const {input,button} of colorFields) button.disabled = input.matches(':disabled');
 }
-$('colorMode').addEventListener('change',event=>{
-  colorMode = event.target.value;
-  syncColorFields();
-});
+function rememberColor(value) {
+  const hex=value.toLowerCase();
+  recentColors.splice(0,recentColors.length,hex,...recentColors.filter(color=>color!==hex).slice(0,7));
+}
+function colorSwatch(hex,name=hex) {
+  const button=document.createElement('button'); button.type='button'; button.className='color-swatch';
+  button.style.backgroundColor=hex; button.title=name; button.setAttribute('aria-label',name);
+  button.setAttribute('aria-pressed',String(hex.toLowerCase()===colorTarget?.value.toLowerCase()));
+  button.addEventListener('click',()=>chooseColor(hex)); return button;
+}
+function openColorPanel(input,title) {
+  if(busy||!current||input.matches(':disabled'))return;
+  colorTarget=input; $('color-panel-title').textContent=`${title}を選ぶ`;
+  const names={black:'黒',gray:'灰',blue:'青',orange:'橙',red:'赤',green:'緑',purple:'紫'};
+  $('color-swatches').replaceChildren(...Array.from({length:10},(_,shade)=>Object.keys(names).map(base=>colorSwatch(COLOR_PALETTE[base][shade],`${names[base]} ${shade} ${COLOR_PALETTE[base][shade]}`))).flat());
+  $('basic-colors').replaceChildren(...['#000000','#ffffff'].map(hex=>colorSwatch(hex)));
+  $('recent-colors').replaceChildren(...recentColors.map(hex=>colorSwatch(hex)));
+  $('custom-color').value=input.value; $('color-code').value=input.value; $('color-error').textContent='';
+  $('color-panel').showModal();
+}
+function chooseColor(value) {
+  if(!/^#[0-9a-f]{6}$/i.test(value)){$('color-error').textContent='#RRGGBB形式で入力してください。';return;}
+  if(!current||busy||!colorTarget?.isConnected||colorTarget.matches(':disabled')){$('color-panel').close();return;}
+  colorTarget.value=value; colorTarget.dispatchEvent(new Event('change',{bubbles:true}));
+  $('color-panel').close();
+}
+$('close-color-panel').addEventListener('click',()=>$('color-panel').close());
+$('custom-color').addEventListener('change',event=>chooseColor(event.target.value));
+$('apply-color-code').addEventListener('click',()=>chooseColor($('color-code').value.trim()));
+$('color-code').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();chooseColor(event.target.value.trim());}});
 syncColorFields();
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
 
@@ -83,11 +103,12 @@ function setBusy(value) {
   busy = value; document.body.classList.toggle('busy', value);
   $('projectInput').disabled=value;
   $('saveProjectButton').disabled=value||!items.length;
-  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeSelectedButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','colorMode','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
+  $('saveDpi').disabled=value||!current;
+  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeSelectedButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
-  for(const id of ['saveDestination','chooseSaveFolder','includeSettings','saveDpi','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
+  for(const id of ['saveDestination','chooseSaveFolder','includeSettings','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
   for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
   for(const button of $('batchPanel').querySelectorAll('button')) button.disabled=value||!items.length;
   for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
@@ -598,7 +619,7 @@ $('saveProjectButton').addEventListener('click',()=>action(async()=>{
     try { handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'MiFiToプロジェクト',accept:{'application/octet-stream':['.mifito']}}]}); }
     catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
   }
-  const ui={formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  const ui={formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
   notify('元画像と編集設定をプロジェクトに保存しています…');
   const blob=await createProject(items,items.indexOf(current),ui);
   if(handle){
@@ -634,9 +655,9 @@ async function openProject(file){
   items.splice(0,items.length,...restored);
   clearDownloads();saveDirectory=null;previewRaw=false;$('zoomSelect').value='fit';
   $('saveDestination').value='download';
-  colorMode=project.ui.colorMode;$('colorMode').value=colorMode;
   $('saveDpi').value=String(project.ui.dpi);$('includeSettings').checked=project.ui.includeSettings;
-  for(const input of document.querySelectorAll('[data-export-format]'))input.checked=project.ui.formats.includes(input.dataset.exportFormat);
+  const formats=restoreExportFormats(project.ui.formats);
+  for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);
   for(const id of projectLabelControls)if(typeof project.ui.labelControls?.[id]==='string'||typeof project.ui.labelControls?.[id]==='boolean'){
     const input=$(id),value=project.ui.labelControls[id];
     if(input.type==='checkbox')input.checked=value===true;
@@ -659,7 +680,7 @@ $('settingsInput').addEventListener('change', () => {
       const records=parseSession(data,items);for(const {image,settings,enabled} of records){image.settings=settings;image.history=new History(settings);image.enabled=enabled;image.barVisible=settings.scaleBar.visible;image.labelVisible=settings.panelLabel.visible;image.labelText=settings.panelLabel.text;image.subtext=settings.panelLabel.subtext;image.cropError=null;}
       const previous=[...items];items.splice(0,items.length,...records.map(r=>r.image));for(const item of previous)if(!items.includes(item))URL.revokeObjectURL(item.thumbnail);
       await selectItem(items[0]);
-      const formats=(data.output_formats??[data.output_format??'.png']).map(value=>value.replace(/^\./,'')).map(value=>value==='jpg'?'jpeg':value==='tif'?'tiff':value);
+      const formats=restoreExportFormats(data.output_formats??[data.output_format??'.png']);
       for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);
     }else{const settings=parseProject(data,current);pendingCrop=null;commit(settings);setTool('move');}
     notify('設定を読み込みました。');
@@ -676,7 +697,7 @@ function refreshSaveUI() {
   $('exportButton').disabled=busy||!current||(saveBatch&&!count);
   $('saveTargetInfo').textContent=saveBatch?`保存する画像：チェックした${count}枚`:(current?current.name:'画像を開いてください');
   $('saveBatchHint').hidden=!saveBatch;
-  $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（保存画面の解像度で変更）`;
+  $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（プレビュー右上の解像度で変更）`;
   const mode=$('saveDestination').value;
   $('chooseSaveFolder').hidden=mode!=='folder';
   $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存ボタンを押すと保存先を選べます。'):mode==='source'?(current?.sourceDirectory?`元フォルダ：${current.sourceDirectory.name}`:current?.sourceHandle?'初回保存時に元フォルダを開きます。保存先を確認してください。':'初回保存時に保存先フォルダを確認してください。'):'全ファイルのダウンロードを自動で開始します。';

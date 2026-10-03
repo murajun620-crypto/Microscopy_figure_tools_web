@@ -33,8 +33,6 @@ input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .workspace{display:grid;grid-template-columns:310px minmax(0,1fr);height:calc(100dvh - 78px);min-height:620px}
 .sidebar{background:#fff;border-right:1px solid var(--border);overflow:auto}
 .file-section{padding:20px}
-.color-mode-setting{padding:0 20px 16px}
-.color-mode-setting label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:11px}
 .file-section .batch-panel{margin:10px 0;padding:0}
 .file-section .batch-panel summary{padding:10px 0}
 .file-section .batch-body{padding:0 0 10px}
@@ -78,14 +76,6 @@ summary .detail-value+*{margin-left:0}
 .readout{font-size:11px;color:var(--green);margin:0;line-height:1.6}
 .divider{border-top:1px solid var(--border);margin:3px 0}
 .detail-body label.color-field{flex-direction:row;align-items:center;justify-content:space-between}
-.detail-body div.color-field{display:flex;align-items:center;justify-content:space-between;gap:5px}
-.detail-body div.color-field.simple{flex-direction:column;align-items:stretch}
-.color-field label{margin:0}
-.color-palette{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;max-width:150px}
-.color-swatch{height:25px;min-width:20px;border:1px solid #a4b5ab;border-radius:5px;position:relative}
-.color-swatch[aria-pressed=true]{outline:2px solid var(--green);outline-offset:1px}
-.color-swatch[aria-pressed=true]::after{content:'';position:absolute;width:7px;height:7px;right:2px;bottom:2px;border:1px solid #fff;border-radius:50%;background:var(--green);box-shadow:0 0 1px #000}
-.color-value{font-size:10px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
 .editor{min-width:0;display:flex;flex-direction:column;padding:20px 26px 12px;overflow:auto;gap:0}
 .editor-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .tool-group{display:flex;gap:3px}
@@ -187,3 +177,20 @@ body.busy .sidebar input,body.busy .sidebar button,body.busy .sidebar select,bod
 #downloadList{display:flex;flex-direction:column;gap:5px}
 
 .project-actions{display:grid;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
+.color-control{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap}
+.color-control input[type=color]{flex:0 0 34px;width:34px;min-width:34px}
+.color-control .palette-button{font-size:11px;padding:6px;min-width:0;white-space:nowrap}
+.color-dialog{width:min(360px,calc(100vw - 24px));padding:16px;overflow:auto}
+.color-dialog label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted)}
+.color-dialog p{margin:10px 0 6px}
+.color-dialog input[type=color]{height:36px}
+.color-swatches{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.color-swatch{width:100%;height:29px;border:1px solid #98a3b3;border-radius:3px;padding:0;cursor:pointer}
+.color-swatch:hover,.color-swatch:focus-visible,.color-swatch[aria-pressed=true]{outline:2px solid var(--green);outline-offset:2px}
+.recent-colors{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;min-height:29px}
+.color-custom{display:flex;align-items:center;gap:10px;margin-top:10px}
+.color-custom label{flex:1}
+.preview-options{display:flex;align-items:center;justify-content:flex-end;margin:-4px 0 10px;flex-shrink:0}
+.preview-options label{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}
+.preview-options select{height:27px;background:transparent;width:86px;font-size:10px;padding:3px 7px}

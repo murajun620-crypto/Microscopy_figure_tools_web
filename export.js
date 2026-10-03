@@ -5,7 +5,7 @@ import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
-import { outputBase, extensionFor } from './save-files.js?v=e4225fd7ab67';
+import { outputBase, extensionFor } from './save-files.js?v=84ba3a3d158f';
 
 export async function exportImage(source, settings, format) {
   if (format === 'svg') {

@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=2a67e074ef94">
-  <script type="module" src="./app.js?v=195c6ff6cbfc"></script>
+  <link rel="stylesheet" href="./styles.css?v=22e4bcf3b5a6">
+  <script type="module" src="./app.js?v=4fbb664323d7"></script>
 </head>
 <body>
   <header class="app-header">
@@ -35,7 +35,6 @@
         <div class="file-delete-actions"><button id="removeSelectedButton" class="button small" disabled>チェックした画像を削除</button><button id="removeAllButton" class="quiet small" disabled>全画像を削除</button></div><p class="hint">チェックは一括処理・削除の対象です。削除は一覧からのみ行い、元ファイルは保持します。</p>
         <div class="field-row"><button id="moveImageUp" class="quiet small">↑ 順序</button><button id="moveImageDown" class="quiet small">↓ 順序</button></div>
       </section>
-      <div class="color-mode-setting"><label>色の選び方（バー・ラベル共通）<select id="colorMode"><option value="simple" selected>簡易モード：代表色から選択</option><option value="detailed">詳細モード：カラーピッカー</option></select></label></div>
       <fieldset id="editingControls" disabled>
         <details id="calibrationSection" open>
           <summary><span class="step">1</span> 校正 <span id="calibrationBadge" class="detail-value">未設定</span></summary>
@@ -115,7 +114,7 @@
           <div class="detail-body">
             <div class="field-row"><label>出力倍率<select id="outputScale" data-setting="output.scale" data-number><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label><label>画像補間<select id="resampling" data-setting="output.resampling"><option value="nearest">最近傍</option><option value="smooth">滑らか</option></select></label></div>
             <div class="field-row"><label>印刷時のサイズ<input id="sizeCm" type="number" min="0.1" max="100" step="0.1" value="4" data-setting="output.sizeCm"></label><label>指定する辺<select id="sizeAxis" data-setting="output.sizeAxis"><option value="width">幅（cm）</option><option value="height">高さ（cm）</option></select></label></div>
-            <p class="hint">保存解像度はプレビュー上部の保存ボタンから選べます。出力倍率は配置計算に使います。</p>
+            <p class="hint">保存解像度はプレビュー右上で選べます。出力倍率は配置計算に使います。</p>
             <label class="check"><input id="pptEditable" type="checkbox" data-setting="output.pptEditable">PPTXのラベルを編集可能にする</label>
             <label class="check"><input id="pptIncludeLabel" type="checkbox" data-setting="output.pptIncludeLabel" checked>PPTXにラベル文字列を含める</label>
 
@@ -136,6 +135,7 @@
         <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
       </div>
       <div class="save-launchers" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button" disabled>この画像を保存</button><button id="batchSaveButton" class="button primary" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
+      <div class="preview-options"><label>解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
       <div class="preview-surface">
       <div class="preview-shell">
       <div id="previewArea" class="preview-area">
@@ -150,12 +150,20 @@
 
     </section>
   </main>
+  <dialog id="color-panel" class="color-dialog" aria-labelledby="color-panel-title">
+    <div class="dialog-heading"><strong id="color-panel-title">色を選ぶ</strong><button type="button" class="button quiet" id="close-color-panel" aria-label="色パネルを閉じる">閉じる</button></div>
+    <p>テーマの色</p><div id="color-swatches" class="color-swatches"></div>
+    <p>基本の色</p><div id="basic-colors" class="recent-colors"></div>
+    <p>最近使用した色</p><div id="recent-colors" class="recent-colors"></div>
+    <label>カラーピッカー<input id="custom-color" type="color" value="#000000"></label>
+    <div class="color-custom"><label>カラーコード<input id="color-code" maxlength="7" placeholder="#RRGGBB"></label><button type="button" class="button quiet" id="apply-color-code">適用</button></div>
+    <p id="color-error" class="hint" role="status"></p>
+  </dialog>
   <dialog id="saveDialog" class="save-dialog" aria-labelledby="saveDialogTitle">
     <div class="dialog-heading"><h2 id="saveDialogTitle">画像を保存</h2><button id="closeSaveDialog" class="tool" aria-label="保存画面を閉じる">✕</button></div>
     <section class="save-panel" aria-label="画像の保存">
       <p id="saveTargetInfo" class="save-target"></p><p id="saveBatchHint" class="hint" hidden>画像一覧でチェックした画像を、現在のデザインで保存します。</p>
-      <fieldset id="saveFormatChoices" class="save-formats"><legend>保存形式（複数選択可）</legend><div class="save-format-grid"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="jpeg">JPEG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="bmp">BMP</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF（8-bit RGBA）</label><label class="check"><input type="checkbox" data-export-format="pptx">PowerPoint（PPTX）</label></div></fieldset>
-      <label>解像度<select id="saveDpi" data-setting="output.dpi" data-number><option value="300">300 dpi</option><option value="600" selected>600 dpi（標準）</option><option value="1200">1200 dpi</option></select></label>
+      <fieldset id="saveFormatChoices" class="save-formats"><legend>保存形式（複数選択可）</legend><div class="save-format-grid"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF（8-bit RGBA）</label><label class="check"><input type="checkbox" data-export-format="pptx">PowerPoint（PPTX）</label></div></fieldset>
       <label class="check"><input id="includeSettings" type="checkbox" checked>設定JSONも別ファイルで保存</label>
       <p class="hint">コピーも同じ解像度です。ラベルはプレビューどおりに保存します。</p>
       <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元画像と同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
@@ -167,7 +175,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度も同じ画面で選び、設定JSONは初期状態で保存します。PNG/JPEG/BMP/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、画像欄の「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定交換にはJSONも引き続き使えます。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、画像欄の「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定交換にはJSONも引き続き使えます。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>
