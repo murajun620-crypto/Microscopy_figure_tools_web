@@ -1,3 +1,4 @@
+import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
 import { buildPlan, paint } from './render.js?v=952b7e69af87';
@@ -6,7 +7,7 @@ import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da67
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=2c42b014da86';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4f6f10fa9fc9';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -15,6 +16,7 @@ const folderSupported=typeof window.showDirectoryPicker==='function';
 const sourceFolders=new WeakMap();
 const sourceHandles=new WeakMap();
 let saveDirectory=null;
+let projectHandle=null;
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
@@ -130,6 +132,7 @@ $('custom-color').addEventListener('change',event=>chooseColor(event.target.valu
 $('apply-color-code').addEventListener('click',()=>chooseColor($('color-code').value.trim()));
 $('color-code').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();chooseColor(event.target.value.trim());}});
 syncColorFields();
+compactHelp();
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
 
 function notify(message, error = false) {
@@ -332,8 +335,11 @@ function render() {
     $('viewInfo').textContent = `${tool==='crop'?'現在の画像（トリミング選択）':previewRaw?'元画像':'処理後画像'} · 表示 ${zoomText(displayScale)}`;
     const warnings = finalPlan.warnings;
     $('instruction').classList.toggle('warning', warnings.length > 0 && tool === 'move');
-    $('instruction').textContent = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。四隅・辺でサイズ、中央で位置を調整し適用します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
-  } catch (error) { $('instruction').textContent = error.message; $('instruction').classList.add('warning'); }
+    $('instruction').title = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。四隅・辺でサイズ、中央で位置を調整し適用します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
+    $('instruction').textContent = tool === 'move' ? warnings[0] || '' : '';
+    $('instruction').hidden = !$('instruction').textContent;
+    $('previewArea').title = $('instruction').title;
+  } catch (error) { $('instruction').hidden=false; $('instruction').textContent = error.message; $('instruction').classList.add('warning'); }
 }
 
 function sourcePoint(event) {
@@ -602,19 +608,35 @@ $('zoomSelect').addEventListener('change',()=>{ cancelWheelZoom(); render(); });
 for(const [id,raw] of [['rawPreviewButton',true],['processedPreviewButton',false]]) $(id).addEventListener('click',()=>{setTool('move');previewRaw=raw;$('rawPreviewButton').classList.toggle('active',raw);$('processedPreviewButton').classList.toggle('active',!raw);render();});
 let resizeFrame; new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(render); }).observe($('previewArea'));
 document.addEventListener('keydown', event => {
+  if(document.querySelector('dialog[open]'))return;
   const editing = event.target.matches('input, textarea, select');
   if (event.key === 'Escape' && current && !busy) { if (drag?.before) current.settings = drag.before; drag = pendingCrop = cropStart = measurementStart = measurement = null; current.settings.cropOptions.pending=null;current.history.push(current.settings);setTool('move'); syncInputs(); }
   if (!editing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(event.shiftKey); }
   if((event.ctrlKey||event.metaKey)&&!editing) {
     const key=event.key.toLowerCase();
-    if(key==='s'){event.preventDefault();$('singleSaveButton').click();}
-    if(key==='o'){event.preventDefault();$('imageInput').click();}
+    if(key==='s'){event.preventDefault();$(event.shiftKey?'settingsSaveMenuButton':'saveProjectButton').click();}
+    if(key==='o'){event.preventDefault();$(event.altKey?'imageInput':event.shiftKey?'openSettingsButton':'openProjectButton').click();}
     if(key==='n'){event.preventDefault();$('removeAllButton').click();}
     if(key==='c'&&event.shiftKey){event.preventDefault();$('copyButton').click();}
   }
 });
 for (const eventName of ['dragenter', 'dragover']) $('previewArea').addEventListener(eventName, event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } });
-$('previewArea').addEventListener('drop', event => { event.preventDefault(); if (!busy) action(() => addFiles(event.dataTransfer.files)); });
+$('previewArea').addEventListener('drop',event=>{
+  event.preventDefault();event.stopPropagation();if(!busy)action(()=>openDroppedFiles([...event.dataTransfer.files]));
+});
+async function openDroppedFiles(files){
+  if(files.length===1&&/\.mifito$/i.test(files[0].name))return openProject(files[0]);
+  if(files.length===1&&/\.json$/i.test(files[0].name)){
+    if(!current)throw new Error('設定を開く前に画像を開いてください。');
+    return openSettingsFile(files[0]);
+  }
+  const added=await addFiles(files);
+  if(added.length){$('saveDestination').value=folderSupported?'source':'download';refreshSaveUI();}
+}
+window.addEventListener('dragover',event=>event.preventDefault());
+window.addEventListener('drop',event=>{
+  event.preventDefault();if(!busy)action(()=>openDroppedFiles([...event.dataTransfer.files]));
+});
 document.addEventListener('paste', event => {
   if (busy || event.target.matches('input, textarea')) return;
   const files = [...(event.clipboardData?.files || [])].filter(file => /^image\/(png|jpeg|bmp)$/.test(file.type));
@@ -684,25 +706,32 @@ $('settingsSaveDropdown').addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!$('settingsSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeSettingsSaveMenu();$('settingsSaveMenuButton').focus();}
 });
 $('saveProjectButton').addEventListener('click',()=>action(async()=>{
-  let handle;
   const name=`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
-  if(typeof window.showSaveFilePicker==='function'){
-    try { handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'MiFiToプロジェクト',accept:{'application/octet-stream':['.mifito']}}]}); }
-    catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
-  }
+  let saveFile;
+  try {saveFile=await prepareDocumentSaver(name,'MiFiToプロジェクト','.mifito');}
+  catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
   const ui=projectUI(), savedSnapshot=workspaceSnapshot(items,ui);
   notify('元画像と編集設定をプロジェクトに保存しています…');
   projectSaving=true;scheduleWorkState();
   try {
     const blob=await createProject(items,items.indexOf(current),ui);
-    if(handle){
-      const writer=await handle.createWritable();
-      try{await writer.write(blob);await writer.close();}catch(error){try{await writer.abort();}catch{}throw error;}
-      notify(`プロジェクトを保存しました（元画像${items.length}枚と編集設定）。`);
-    }else{download(blob,name);notify(`プロジェクトのダウンロードを開始しました（元画像${items.length}枚と編集設定）。`);}
+    await saveFile(blob,name);
+    notify(`プロジェクトを保存しました（元画像${items.length}枚と編集設定）。`);
     workSaveState.markSaved(savedSnapshot);
   }finally{projectSaving=false;scheduleWorkState();}
 }));
+async function prepareDocumentSaver(name, description, extension) {
+  return documentSaver({name,id:'mifito-images',description,accept:{'application/octet-stream':[extension]},startIn:saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle,fallback:()=>async(blob,filename)=>{download(blob,filename);return filename;}});
+}
+$('projectInput').addEventListener('click',event=>{
+  if(typeof window.showOpenFilePicker!=='function')return;
+  event.preventDefault();action(async()=>{
+    let handle;
+    try{[handle]=await window.showOpenFilePicker({...filePickerOptions('mifito-images','MiFiToプロジェクト',{'application/octet-stream':['.mifito']},saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle),multiple:false});}
+    catch(error){if(error.name==='AbortError')return;throw error;}
+    const file=await handle.getFile();sourceHandles.set(file,handle);await openProject(file);
+  });
+});
 $('projectInput').addEventListener('change',()=>{
   const file=$('projectInput').files[0];$('projectInput').value='';
   if(file)action(()=>openProject(file));
@@ -729,7 +758,8 @@ async function openProject(file){
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...restored);
   clearDownloads();saveDirectory=null;previewRaw=false;$('zoomSelect').value='fit';
-  $('saveDestination').value='download';
+  projectHandle=sourceHandles.get(file)||null;
+  $('saveDestination').value=folderSupported?'source':'download';
   $('saveDpi').value=String(project.ui.dpi);$('includeSettings').checked=project.ui.includeSettings;
   const formats=restoreExportFormats(project.ui.formats);
   for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);
@@ -744,14 +774,34 @@ async function openProject(file){
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
   notify(`プロジェクトを開きました（${items.length}枚）。編集を再開できます。`);
 }
-$('saveSettingsButton').addEventListener('click', () => {
+async function saveSettingsFile(session) {
   if(busy||!current)return;closeSettingsSaveMenu();
-  try { download(new Blob([JSON.stringify(serializeProject(current.settings, current), null, 2)], { type: 'application/json' }), `${current.name.replace(/\.[^.]+$/, '')}_settings.json`); notify('設定JSONを保存しました。'); } catch (error) { notify(error.message, true); }
-});
-$('saveSessionButton').addEventListener('click',()=>{if(busy||!current)return;closeSettingsSaveMenu();try{download(new Blob([JSON.stringify(sessionProject(items,current.settings.output,exportFormats()),null,2)],{type:'application/json'}),'microscopy_batch.json');notify('一覧のセッション設定を保存しました。元画像も保管してください。');}catch(error){notify(error.message,true);}});
+  await action(async()=>{
+    const name=session?'microscopy_batch.json':`${current.name.replace(/\.[^.]+$/, '')}_settings.json`;
+    let saveFile;
+    try{saveFile=await prepareDocumentSaver(name,'設定JSON','.json');}
+    catch(error){if(error.name==='AbortError'){notify('設定の保存をキャンセルしました。');return;}throw error;}
+    const saved=session?sessionProject(items,current.settings.output,exportFormats()):serializeProject(current.settings,current);
+    await saveFile(new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),name);
+    notify(session?'一覧の設定を保存しました。':'設定を保存しました。');
+  });
+}
+$('saveSettingsButton').addEventListener('click',()=>saveSettingsFile(false));
+$('saveSessionButton').addEventListener('click',()=>saveSettingsFile(true));
 $('settingsInput').addEventListener('change', () => {
-  const file = $('settingsInput').files[0]; $('settingsInput').value = '';
-  action(async () => {
+  const file=$('settingsInput').files[0];$('settingsInput').value='';
+  if(file)action(()=>openSettingsFile(file));
+});
+$('settingsInput').addEventListener('click',event=>{
+  if(typeof window.showOpenFilePicker!=='function')return;
+  event.preventDefault();action(async()=>{
+    let handle;
+    try{[handle]=await window.showOpenFilePicker({...filePickerOptions('mifito-images','設定JSON',{'application/json':['.json']},saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle),multiple:false});}
+    catch(error){if(error.name==='AbortError')return;throw error;}
+    await openSettingsFile(await handle.getFile());
+  });
+});
+async function openSettingsFile(file){
     if (!file) return;if(file.size>4000000)throw new Error('設定JSONが大きすぎます。');const text=await file.text();let data;try{data=JSON.parse(text);}catch{throw new Error('設定JSONを読み取れませんでした。');}
     if(data?.session_type==='microscopy_batch'){
       const records=parseSession(data,items);for(const {image,settings,enabled} of records){image.settings=settings;image.history=new History(settings);image.enabled=enabled;image.barVisible=settings.scaleBar.visible;image.labelVisible=settings.panelLabel.visible;image.labelText=settings.panelLabel.text;image.subtext=settings.panelLabel.subtext;image.cropError=null;}
@@ -761,8 +811,8 @@ $('settingsInput').addEventListener('change', () => {
       for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);
     }else{const settings=parseProject(data,current);pendingCrop=null;commit(settings);setTool('move');}
     notify('設定を読み込みました。');
-  });
-});
+
+}
 function exportFormats(){const formats=[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat);if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
 function refreshSaveUI() {
   const count=items.filter(item=>item.enabled).length;
@@ -770,14 +820,15 @@ function refreshSaveUI() {
   $('batchSaveButton').textContent=`一括保存（${count}枚）`;
   $('batchSaveButton').disabled=busy||!current||!count;
   $('saveDialogTitle').textContent=saveBatch?'一括保存':'この画像を保存';
-  $('exportButton').textContent=saveBatch?`${count}枚を一括保存`:'この画像を保存';
+  $('exportButton').textContent=saveBatch?`${count}枚を一括保存`:'保存';
   $('exportButton').disabled=busy||!current||(saveBatch&&!count);
   $('saveTargetInfo').textContent=saveBatch?`保存する画像：チェックした${count}枚`:(current?current.name:'画像を開いてください');
   $('saveBatchHint').hidden=!saveBatch;
   $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（プレビュー右上の解像度で変更）`;
   const mode=$('saveDestination').value;
   $('chooseSaveFolder').hidden=mode!=='folder';
-  $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存ボタンを押すと保存先を選べます。'):mode==='source'?(current?.sourceDirectory?`元フォルダ：${current.sourceDirectory.name}`:current?.sourceHandle?'初回保存時に元フォルダを開きます。保存先を確認してください。':'初回保存時に保存先フォルダを確認してください。'):'全ファイルのダウンロードを自動で開始します。';
+  $('saveFolderInfo').textContent=mode==='download'?'ブラウザの保存先':(mode==='source'?current?.sourceDirectory:saveDirectory)?.name || '未選択';
+  $('saveFolderInfo').title='初回保存時にフォルダを確認します。非対応ブラウザではダウンロードします。';
 }
 for(const [id,batch] of [['singleSaveButton',false],['batchSaveButton',true]]) $(id).addEventListener('click',()=>{
   if(busy||!current)return;
@@ -793,12 +844,12 @@ $('folderInput').closest('label').hidden=folderSupported;
 $('openSourceFolder').hidden=!folderSupported;
 $('saveCompatibility').hidden=folderSupported;
 $('chooseSaveFolder').addEventListener('click',()=>action(async()=>{
-  try{saveDirectory=await window.showDirectoryPicker(directoryPickerOptions(saveDirectory||current?.sourceDirectory||current?.sourceHandle));refreshSaveUI();}
+  try{saveDirectory=await window.showDirectoryPicker(directoryPickerOptions(saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle));refreshSaveUI();}
   catch(error){if(error.name!=='AbortError')throw error;}
 }));
 $('openSourceFolder').addEventListener('click',()=>action(async()=>{
   let directory;
-  try{directory=await window.showDirectoryPicker({id:'mifito-source',mode:'readwrite'});}
+  try{directory=await window.showDirectoryPicker(directoryPickerOptions(saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle));}
   catch(error){if(error.name==='AbortError')return;throw error;}
   const records=await readFolder(directory,SUPPORTED,LIMITS.files);
   for(const record of records)sourceFolders.set(record.file,record.directory);
@@ -809,7 +860,7 @@ async function prepareSaver(targets) {
   let mode=$('saveDestination').value;
   if((mode==='folder'&&!saveDirectory)||(mode==='source'&&targets.some(item=>!item.sourceDirectory))) {
     const first=targets.find(item=>!item.sourceDirectory)||targets[0];
-    const directory=await window.showDirectoryPicker(directoryPickerOptions(mode==='source'?first.sourceHandle:saveDirectory||first.sourceDirectory||first.sourceHandle));
+    const directory=await window.showDirectoryPicker(directoryPickerOptions(mode==='source'?first.sourceHandle||projectHandle:saveDirectory||first.sourceDirectory||first.sourceHandle||projectHandle));
     saveDirectory=directory;await rememberSourceDirectory(items,directory);
     if(mode==='source'&&targets.some(item=>!item.sourceDirectory))mode='folder';
     $('saveDestination').value=mode;refreshSaveUI();

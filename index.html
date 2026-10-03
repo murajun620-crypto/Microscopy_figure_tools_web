@@ -8,21 +8,21 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=508c717ab6fd">
-  <script type="module" src="./app.js?v=3470191caa39"></script>
+  <link rel="stylesheet" href="./styles.css?v=d9fdb4f5bc9f">
+  <script type="module" src="./app.js?v=882007e90591"></script>
 </head>
 <body>
   <header class="app-header">
     <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="36" height="36" alt=""><span class="brand-name">MiFiTo <span class="brand-web">Web</span><span id="appVersion" class="app-version" aria-label="バージョン"></span></span></a>
     <div class="header-actions" role="group" aria-label="プロジェクトと設定">
-      <span class="privacy"><span class="dot"></span>画像はブラウザ内で処理</span>
-      <button id="openProjectButton" class="button quiet" title="元画像と編集設定をまとめて開きます"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>プロジェクトを開く</button>
-      <button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>プロジェクトを保存</button>
+      <span class="privacy" title="画像はブラウザ内で処理します。外部には送信しません。" aria-label="画像はブラウザ内で処理"><span class="dot"></span>画像はブラウザ内で処理</span>
+      <button id="openProjectButton" class="button quiet" title="元画像と編集設定をまとめて開きます（Ctrl/Cmd＋O）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>プロジェクトを開く</button>
+      <button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します（Ctrl/Cmd＋S）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>プロジェクトを保存</button>
       <input id="projectInput" type="file" accept=".mifito" aria-label="プロジェクトを開く" hidden>
-      <button id="openSettingsButton" class="button quiet" title="設定JSONを開きます。先に元画像を開いてください" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>設定を開く</button>
+      <button id="openSettingsButton" class="button quiet" title="設定JSONを開きます。先に元画像を開いてください（Ctrl/Cmd＋Shift＋O）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>設定を開く</button>
       <input id="settingsInput" type="file" accept=".json,application/json" aria-label="設定を開く" hidden disabled>
       <div id="settingsSaveDropdown" class="settings-save-dropdown">
-        <button id="settingsSaveMenuButton" class="button quiet" aria-expanded="false" aria-controls="settingsSaveMenu" title="画像を含めず、設定JSONのみを保存します" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>設定を保存<span class="save-menu-arrow" aria-hidden="true">▾</span></button>
+        <button id="settingsSaveMenuButton" class="button quiet" aria-expanded="false" aria-controls="settingsSaveMenu" title="画像を含めず、設定JSONのみを保存します（Ctrl/Cmd＋Shift＋S）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>設定を保存<span class="save-menu-arrow" aria-hidden="true">▾</span></button>
         <div id="settingsSaveMenu" class="header-menu" role="group" aria-label="保存する設定" hidden>
           <button id="saveSettingsButton" class="button quiet" disabled>この画像の設定を保存</button>
           <button id="saveSessionButton" class="button quiet" disabled>一覧の設定を保存</button>
@@ -36,15 +36,15 @@
     <aside id="settingsPanel" class="sidebar" aria-label="画像と編集設定">
       <section class="file-section">
         <div class="section-heading"><h2>画像</h2><span id="fileCount" class="badge">0</span></div>
-        <label class="button primary file-button">＋ 画像を開く<input id="imageInput" type="file" multiple accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff,.svg" aria-label="画像を開く"></label>
+        <label class="button primary file-button" title="画像を複数選択できます。プレビューへのドラッグ＆ドロップでも開けます（Ctrl/Cmd＋Alt＋O）">＋ 画像を開く<input id="imageInput" type="file" multiple accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff,.svg" aria-label="画像を開く"></label>
         <div class="file-tools"><button id="openSourceFolder" class="button quiet small" hidden>フォルダから開く</button><label class="button quiet small file-button">フォルダを選ぶ<input id="folderInput" type="file" webkitdirectory multiple aria-label="フォルダを選ぶ"></label></div>
         <div class="sample-actions"><button id="demoButton" class="button">サンプル1枚</button><button id="multiDemoButton" class="button">サンプル3枚</button></div>
         <p class="hint">3枚は同じスケール・画像サイズ。一括処理を試せます。</p>
         <p class="hint">PNG / JPEG / BMP / SVG / TIFF</p>
         <p id="projectSaveStatus" class="hint" role="status" aria-live="polite">画像なし</p>
-        <p class="hint">再開用の元画像と編集設定は、ヘッダーの「プロジェクトを保存」で1つの.mifitoファイルに保存できます。終了・更新前の確認はプロジェクト保存が基準です。</p>
+        <p class="hint" data-help-for="#saveProjectButton">再開用の元画像と編集設定は、ヘッダーの「プロジェクトを保存」で1つの.mifitoファイルに保存できます。終了・更新前の確認はプロジェクト保存が基準です。</p>
         <ul id="imageList" class="image-list" aria-label="読み込んだ画像"></ul>
-      <details id="batchPanel" class="batch-panel"><summary>画像をまとめて操作 <span id="batchCount" class="detail-value">0枚</span></summary><div class="batch-body"><p class="hint">デザイン・トリミング・出力設定は共通、校正・表示・文字列は画像ごとに保持します。未校正画像には校正済み画像の値を補います。トリミングはPython版と同じ絶対ピクセル座標です。連番対象は処理対象かつラベル表示の画像です。</p>
+      <details id="batchPanel" class="batch-panel"><summary>画像をまとめて操作 <span id="batchCount" class="detail-value">0枚</span></summary><div class="batch-body"><p class="hint" data-help-for="#batchPanel summary">デザイン・トリミング・出力設定は共通、校正・表示・文字列は画像ごとに保持します。未校正画像には校正済み画像の値を補います。トリミングはPython版と同じ絶対ピクセル座標です。連番対象は処理対象かつラベル表示の画像です。</p>
         <div class="batch-options"><button id="batchAll" class="button">全て対象</button><button id="batchNone" class="button">全て対象外</button><button id="batchBarsOn" class="button">バー全表示</button><button id="batchBarsOff" class="button">バー全非表示</button><button id="batchBarFirst" class="button">バー先頭のみ</button><button id="batchLabelsOn" class="button">ラベル全表示</button><button id="batchLabelsOff" class="button">ラベル全非表示</button></div>
         <p class="hint">ラベルの連番は「パネルラベル」、保存はプレビュー上部の「一括保存」で行います。</p></div></details>
         <div class="file-delete-actions"><button id="removeAllButton" class="quiet small" disabled>全画像を削除</button></div><p class="hint">チェックは一括処理の対象です。削除は一覧からのみ行い、元ファイルは保持します。</p>
@@ -144,17 +144,17 @@
         <div class="tool-group"><button id="rawPreviewButton" class="tool" disabled>元画像</button><button id="processedPreviewButton" class="tool active" disabled>処理後</button></div>
         <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
       </div>
-      <div class="save-launchers" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button" disabled>この画像を保存</button><button id="batchSaveButton" class="button primary" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
-      <div class="preview-options"><label>解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
+      <div class="save-launchers preview-file-actions" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button primary" disabled>この画像を保存</button><button id="batchSaveButton" class="button" title="一覧でチェックした画像を、現在のデザインで保存します。画像ごとの校正・表示・文字列は保持します。" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
+      <div class="preview-options"><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
       <div class="preview-surface">
       <div class="preview-shell">
       <div id="previewArea" class="preview-area">
-        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>顕微鏡画像を、伝わる図に。</h1><p>校正からスケールバー、パネルラベルまで。<br>元画像を保持して、仕上がりを確認できます。</p><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p><small>インストール不要 · 画像のアップロード不要</small></div>
+        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
       </div>
       <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>‹</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>›</button></div>
       </div>
-      <div id="instruction" class="instruction">画像を開くか、サンプルを選んでください。</div>
+      <div id="instruction" class="instruction" hidden></div>
       </div>
       <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
 
@@ -170,16 +170,16 @@
     <p id="color-error" class="hint" role="status"></p>
   </dialog>
   <dialog id="saveDialog" class="save-dialog" aria-labelledby="saveDialogTitle">
-    <div class="dialog-heading"><h2 id="saveDialogTitle">画像を保存</h2><button id="closeSaveDialog" class="tool" aria-label="保存画面を閉じる">✕</button></div>
+    <div class="dialog-heading"><h2 id="saveDialogTitle">画像を保存</h2><button id="closeSaveDialog" class="button quiet" aria-label="保存画面を閉じる">閉じる</button></div>
     <section class="save-panel" aria-label="画像の保存">
-      <p id="saveTargetInfo" class="save-target"></p><p id="saveBatchHint" class="hint" hidden>画像一覧でチェックした画像を、現在のデザインで保存します。</p>
-      <fieldset id="saveFormatChoices" class="save-formats"><legend>保存形式（複数選択可）</legend><div class="save-format-grid"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF（8-bit RGBA）</label><label class="check"><input type="checkbox" data-export-format="pptx">PowerPoint（PPTX）</label></div></fieldset>
+      <p id="saveTargetInfo" class="save-target"></p><span id="saveBatchHint" hidden></span>
+      <fieldset id="saveFormatChoices" class="save-formats"><legend title="複数の形式を同時に保存できます">保存形式</legend><div class="save-format-grid"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF（8-bit RGBA）</label><label class="check"><input type="checkbox" data-export-format="pptx">PowerPoint（PPTX）</label></div></fieldset>
       <label class="check"><input id="includeSettings" type="checkbox" checked>設定JSONも別ファイルで保存</label>
       <p class="hint">コピーも同じ解像度です。ラベルはプレビューどおりに保存します。</p>
-      <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元画像と同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
-      <p id="saveFolderInfo" class="hint"></p><p id="saveCompatibility" class="hint" hidden>このブラウザでは元フォルダを指定できないため、ブラウザの保存先へ自動ダウンロードします。</p>
-      <p class="hint">ファイル名：元の名前_mifito。画像ごとのファイルとして保存します。</p>
-      <p id="batchProgress" class="readout" role="status"></p>
+      <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元ファイルと同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
+      <p id="saveFolderInfo" class="save-folder-info"></p><span id="saveCompatibility" hidden></span>
+      <p class="hint" data-help-for="#singleSaveButton,#batchSaveButton">ファイル名：元の名前_mifito。画像ごとのファイルとして保存します。</p>
+      <p id="batchProgress" class="save-progress" role="status"></p>
       <details id="downloadReceipt" class="download-receipt" hidden><summary>ダウンロードの確認・再保存</summary><button id="downloadAllButton" class="button">全ファイルを再ダウンロード</button><p class="hint">保存が始まらない場合は、ブラウザの「複数ファイルのダウンロード」を許可してください。</p><div id="downloadList"></div></details>
     </section>
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
