@@ -1,0 +1,170 @@
+{
+  "application": "microscopy-figure-tools-web",
+  "schemaVersion": 2,
+  "schema_version": 1,
+  "image": {
+    "name": "edx-overlay.png",
+    "path": "edx-overlay.png",
+    "source_image_path": "edx-overlay.png",
+    "width": 1024,
+    "height": 768
+  },
+  "settings": {
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 1024,
+      "height": 768
+    },
+    "calibration": {
+      "pixelSize": 4,
+      "unit": "nm"
+    },
+    "cropOptions": {
+      "aspect": "free",
+      "application": "selection",
+      "width": 5,
+      "height": 4,
+      "pending": null
+    },
+    "scaleBar": {
+      "visible": true,
+      "length": 500,
+      "unit": "nm",
+      "anchor": "bottom-right",
+      "position": null,
+      "fontPercent": 3.5,
+      "thicknessPercent": 0.65,
+      "gapPercent": 0.8,
+      "verticalPaddingPercent": 1.8,
+      "color": "#ffffff",
+      "textColor": "#ffffff",
+      "background": true,
+      "backgroundColor": "#000000",
+      "opacity": 0.72,
+      "showText": true,
+      "outsideTransparent": false,
+      "outsideColor": "#ffffff"
+    },
+    "panelLabel": {
+      "visible": true,
+      "text": "e",
+      "subtext": "Au (magenta) / Si (cyan)",
+      "parentheses": true,
+      "anchor": "top-left",
+      "position": null,
+      "fontPercent": 3.5,
+      "color": "#ffffff",
+      "background": true,
+      "backgroundColor": "#000000",
+      "opacity": 0.72,
+      "bold": false,
+      "outsideTransparent": false,
+      "outsideColor": "#ffffff"
+    },
+    "output": {
+      "scale": 1,
+      "resampling": "smooth",
+      "sizeCm": 8.9,
+      "sizeAxis": "width",
+      "dpi": 600,
+      "outsideTransparent": false,
+      "outsideColor": "#ffffff",
+      "pptEditable": false,
+      "pptIncludeLabel": true
+    }
+  },
+  "crop": {
+    "enabled": false,
+    "left": 0,
+    "top": 0,
+    "right": 1024,
+    "bottom": 768,
+    "aspect_mode": "free",
+    "aspect_application": "selection",
+    "custom_aspect_width": 5,
+    "custom_aspect_height": 4
+  },
+  "calibration": {
+    "is_calibrated": true,
+    "length_per_pixel": 4,
+    "unit": "nm",
+    "known_length": null,
+    "measured_pixel_distance": null
+  },
+  "scale_bar": {
+    "visible": true,
+    "length": 500,
+    "unit": "nm",
+    "position_preset": "bottom-right",
+    "placement_mode": "inside",
+    "horizontal_alignment": "right",
+    "use_custom_position": false,
+    "custom_position": {
+      "x": 0,
+      "y": 0
+    },
+    "line_width": 0.65,
+    "line_width_ratio_percent": 0.65,
+    "line_color": "#ffffff"
+  },
+  "label": {
+    "visible": true,
+    "font_family": "Arial",
+    "font_scale": 3.5,
+    "font_ratio_percent": 3.5,
+    "color": "#ffffff",
+    "text_bar_gap_offset": 0.8,
+    "text_gap_ratio_percent": 0.8
+  },
+  "background": {
+    "visible": true,
+    "color": "#000000",
+    "opacity_percent": 72,
+    "vertical_padding_offset": 1.8,
+    "background_padding_ratio_percent": 0.8
+  },
+  "layout": {
+    "vertical_padding_offset": 1.8,
+    "edge_margin_ratio_percent": 1.8,
+    "text_gap_ratio_percent": 0.8
+  },
+  "outside_area": {
+    "enabled": false,
+    "transparent": false,
+    "background_color": "#ffffff"
+  },
+  "panel_label": {
+    "visible": true,
+    "text": "e",
+    "supplemental_text": "Au (magenta) / Si (cyan)",
+    "use_parentheses": true,
+    "position_preset": "top-left",
+    "font_family": "Arial",
+    "font_weight": "Regular",
+    "font_ratio_percent": 3.5,
+    "font_scale": 3.5,
+    "supplemental_font_ratio_percent": 3.5,
+    "bold": false,
+    "text_color": "#ffffff",
+    "background_visible": true,
+    "background_color": "#000000",
+    "background_opacity_percent": 72,
+    "background_padding_ratio_percent": 0.8,
+    "outside_transparent": false,
+    "outside_background_color": "#ffffff",
+    "use_custom_position": false,
+    "position": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "output": {
+    "scale_factor": 1,
+    "image_resampling": "smooth",
+    "size_axis": "width",
+    "size_cm": 8.9,
+    "dpi": 600,
+    "ppt_label_text": false
+  }
+}

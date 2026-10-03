@@ -1,0 +1,148 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MiFiTo 図のギャラリー</title><link rel="stylesheet" href="gallery.css"></head><body><header><a class="brand" href="index.html">MiFiTo ギャラリー</a><nav><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/">アプリを開く ↗</a><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/manual/">マニュアル</a><a href="esa.md">esa用本文</a><a href="gallery.zip" download>一式を保存</a></nav></header><main><h1>MiFiTo 図のギャラリー</h1>
+<p>SEM、EDX元素マップ、AFM高さ画像の7サンプルを使い、スケールバーとラベルの置き方を比較します。各サンプルに画像内・画像外の2パターンを用意しました。ラベルはパネル記号と補足文字を組み合わせています。</p>
+<p><strong>すべて人工的に生成した模擬画像です。実際の顕微鏡で取得した画像ではありません。</strong> 画素寸法と高さ・計数データを持つモデルから作成し、MiFiToの実際の描画処理でバーとラベルを付けています。</p>
+<p><a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/">MiFiToを開く</a> · <a href="https://murajun620-crypto.github.io/Microscopy_figure_tools_web/manual/">学生向けマニュアル</a> · <a href="gallery.zip">esa掲載用一式</a></p>
+<div class="grid"><a class="tile" href="#sem-particles"><img src="assets/sem-particles-inside.png" alt="SEM Auナノ粒子 模擬データ"><b>SEM Auナノ粒子</b><span>画像内・画像外の2例</span></a><a class="tile" href="#sem-porous"><img src="assets/sem-porous-inside.png" alt="SEM 多孔質膜 模擬データ"><b>SEM 多孔質膜</b><span>画像内・画像外の2例</span></a><a class="tile" href="#edx-au"><img src="assets/edx-au-inside.png" alt="EDX Auマップ 模擬データ"><b>EDX Auマップ</b><span>画像内・画像外の2例</span></a><a class="tile" href="#edx-si"><img src="assets/edx-si-inside.png" alt="EDX Siマップ 模擬データ"><b>EDX Siマップ</b><span>画像内・画像外の2例</span></a><a class="tile" href="#edx-overlay"><img src="assets/edx-overlay-inside.png" alt="EDX AuとSiの重ね合わせ 模擬データ"><b>EDX AuとSiの重ね合わせ</b><span>画像内・画像外の2例</span></a><a class="tile" href="#afm-grains"><img src="assets/afm-grains-inside.png" alt="AFM ナノ粒状表面 模擬データ"><b>AFM ナノ粒状表面</b><span>画像内・画像外の2例</span></a><a class="tile" href="#afm-terraces"><img src="assets/afm-terraces-inside.png" alt="AFM 段差を持つ表面 模擬データ"><b>AFM 段差を持つ表面</b><span>画像内・画像外の2例</span></a></div><h2>2つの配置ルール</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>配置</th>
+<th>スケールバーの個別背景</th>
+<th>ラベルの個別背景</th>
+<th>文字色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>画像内部</td>
+<td>あり 半透明黒</td>
+<td>あり 半透明黒</td>
+<td>白</td>
+</tr>
+<tr>
+<td>画像外部</td>
+<td>なし</td>
+<td>なし</td>
+<td>黒</td>
+</tr>
+</tbody></table></div>
+<p>画像外の白い部分は上下に追加した余白です。バーとラベルの個別背景は両方オフにしてあります。画像外ではラベルを上、バーを下に配置しています。</p>
+<h2>プロジェクトで再現する</h2>
+<ol>
+<li>作例の「プロジェクト」をダウンロードする。</li>
+<li>MiFiToの「プロジェクトを開く」で開く。元画像、校正、バー、ラベル設定が復元される。</li>
+<li>ラベルと補足文字、個別背景、位置を変更する。</li>
+</ol>
+<p>PNGのdpiから画素寸法を推定して校正しないでください。この作例ではモデルに与えたnm/pxを校正値として使っています。実画像は装置の画素寸法や既知長のスケールで校正します。</p>
+<p><a id="sem-particles"></a></p>
+<h2>SEM Auナノ粒子</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="SEM Auナノ粒子 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/sem-particles-inside.png" alt="SEM Auナノ粒子 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>SEM Auナノ粒子 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/sem-particles.png">元画像</a> · <a href="projects/sem-particles-inside.mifito">プロジェクト</a> · <a href="figures/sem-particles-inside.png">PNG 600 dpi</a> · <a href="figures/sem-particles-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="SEM Auナノ粒子 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/sem-particles-outside.png" alt="SEM Auナノ粒子 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>SEM Auナノ粒子 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/sem-particles.png">元画像</a> · <a href="projects/sem-particles-outside.mifito">プロジェクト</a> · <a href="figures/sem-particles-outside.png">PNG 600 dpi</a> · <a href="figures/sem-particles-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(a)」＋補足文字「Au nanoparticles」。</p>
+<h3>元画像の作り方</h3>
+<p>対数正規粒径の楕円状粒子を配置し、表面傾斜、明るい縁、照射方向の陰影、計数ノイズを重ねたSEM二次電子像の近似。</p>
+<p>1024×768 px、4 nm/px。190個を配置。幾何学的投影径の中央値184 nm、対数標準偏差0.32。重なりあり。実際の電子輸送計算ではない。</p>
+<p>二次電子像の表面コントラストと縁の明るさは<a href="https://www.jeol.com/words/semterms/20121024.070958.php">JEOLのSEM像解説</a>を参考にした近似です。</p>
+<p><a id="sem-porous"></a></p>
+<h2>SEM 多孔質膜</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="SEM 多孔質膜 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/sem-porous-inside.png" alt="SEM 多孔質膜 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>SEM 多孔質膜 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/sem-porous.png">元画像</a> · <a href="projects/sem-porous-inside.mifito">プロジェクト</a> · <a href="figures/sem-porous-inside.png">PNG 600 dpi</a> · <a href="figures/sem-porous-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="SEM 多孔質膜 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/sem-porous-outside.png" alt="SEM 多孔質膜 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>SEM 多孔質膜 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/sem-porous.png">元画像</a> · <a href="projects/sem-porous-outside.mifito">プロジェクト</a> · <a href="figures/sem-porous-outside.png">PNG 600 dpi</a> · <a href="figures/sem-porous-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 6 nm/px。バー1000 nm = 元画像上167 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(b)」＋補足文字「Porous film」。</p>
+<h3>元画像の作り方</h3>
+<p>空間相関を持つランダム場を閾値化して連続骨格と孔を作り、縁のコントラストと計数ノイズを加えた。</p>
+<p>6 nm/px、視野6.144×4.608 µm、相関長の設定78 nm。材料名や実測孔径は割り当てていない。</p>
+<p>二次電子像の表面コントラストと縁の明るさは<a href="https://www.jeol.com/words/semterms/20121024.070958.php">JEOLのSEM像解説</a>を参考にした近似です。</p>
+<p><a id="edx-au"></a></p>
+<h2>EDX Auマップ</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="EDX Auマップ 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/edx-au-inside.png" alt="EDX Auマップ 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>EDX Auマップ 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/edx-au.png">元画像</a> · <a href="projects/edx-au-inside.mifito">プロジェクト</a> · <a href="figures/edx-au-inside.png">PNG 600 dpi</a> · <a href="figures/edx-au-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="EDX Auマップ 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/edx-au-outside.png" alt="EDX Auマップ 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>EDX Auマップ 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/edx-au.png">元画像</a> · <a href="projects/edx-au-outside.mifito">プロジェクト</a> · <a href="figures/edx-au-outside.png">PNG 600 dpi</a> · <a href="figures/edx-au-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(c)」＋補足文字「Au M counts」。</p>
+<h3>元画像の作り方</h3>
+<p>SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。</p>
+<p>Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。</p>
+<p>EDXは画素ごとの特性X線計数を表すという<a href="https://www.jeol.com/words/semterms/20121024.031359.php">JEOLの元素マッピング解説</a>を参考にしました。濃度マップではありません。</p>
+<p><a id="edx-si"></a></p>
+<h2>EDX Siマップ</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="EDX Siマップ 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/edx-si-inside.png" alt="EDX Siマップ 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>EDX Siマップ 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/edx-si.png">元画像</a> · <a href="projects/edx-si-inside.mifito">プロジェクト</a> · <a href="figures/edx-si-inside.png">PNG 600 dpi</a> · <a href="figures/edx-si-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="EDX Siマップ 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/edx-si-outside.png" alt="EDX Siマップ 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>EDX Siマップ 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/edx-si.png">元画像</a> · <a href="projects/edx-si-outside.mifito">プロジェクト</a> · <a href="figures/edx-si-outside.png">PNG 600 dpi</a> · <a href="figures/edx-si-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(d)」＋補足文字「Si K counts」。</p>
+<h3>元画像の作り方</h3>
+<p>SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。</p>
+<p>Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。</p>
+<p>EDXは画素ごとの特性X線計数を表すという<a href="https://www.jeol.com/words/semterms/20121024.031359.php">JEOLの元素マッピング解説</a>を参考にしました。濃度マップではありません。</p>
+<p><a id="edx-overlay"></a></p>
+<h2>EDX AuとSiの重ね合わせ</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="EDX AuとSiの重ね合わせ 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/edx-overlay-inside.png" alt="EDX AuとSiの重ね合わせ 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>EDX AuとSiの重ね合わせ 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/edx-overlay.png">元画像</a> · <a href="projects/edx-overlay-inside.mifito">プロジェクト</a> · <a href="figures/edx-overlay-inside.png">PNG 600 dpi</a> · <a href="figures/edx-overlay-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="EDX AuとSiの重ね合わせ 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/edx-overlay-outside.png" alt="EDX AuとSiの重ね合わせ 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>EDX AuとSiの重ね合わせ 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/edx-overlay.png">元画像</a> · <a href="projects/edx-overlay-outside.mifito">プロジェクト</a> · <a href="figures/edx-overlay-outside.png">PNG 600 dpi</a> · <a href="figures/edx-overlay-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(e)」＋補足文字「Au (magenta) / Si (cyan)」。</p>
+<h3>元画像の作り方</h3>
+<p>SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。</p>
+<p>Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。</p>
+<p>EDXは画素ごとの特性X線計数を表すという<a href="https://www.jeol.com/words/semterms/20121024.031359.php">JEOLの元素マッピング解説</a>を参考にしました。濃度マップではありません。</p>
+<p><a id="afm-grains"></a></p>
+<h2>AFM ナノ粒状表面</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="AFM ナノ粒状表面 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/afm-grains-inside.png" alt="AFM ナノ粒状表面 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>AFM ナノ粒状表面 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/afm-grains.png">元画像</a> · <a href="projects/afm-grains-inside.mifito">プロジェクト</a> · <a href="figures/afm-grains-inside.png">PNG 600 dpi</a> · <a href="figures/afm-grains-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="AFM ナノ粒状表面 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/afm-grains-outside.png" alt="AFM ナノ粒状表面 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>AFM ナノ粒状表面 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/afm-grains.png">元画像</a> · <a href="projects/afm-grains-outside.mifito">プロジェクト</a> · <a href="figures/afm-grains-outside.png">PNG 600 dpi</a> · <a href="figures/afm-grains-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(f)」＋補足文字「Height: 0–60 nm」。</p>
+<h3>元画像の作り方</h3>
+<p>相関した基板粗さに多数の高さピークを加え、半径12 nmの放物面探針による形態学的膨張と高さノイズを適用した。</p>
+<p>データ領域768×768 px、4 nm/px、視野3.072 µm角。右の100 pxは高さカラーバーで、走査領域ではない。カラーマップmagma、共通範囲0–60 nm。</p>
+<p><a id="afm-terraces"></a></p>
+<h2>AFM 段差を持つ表面</h2>
+<div class="pair"><section><h3>画像内部 個別背景あり</h3>
+<figure class="media"><button type="button" aria-label="AFM 段差を持つ表面 画像内 バーとラベルの個別背景あり 模擬画像を拡大"><img src="assets/afm-terraces-inside.png" alt="AFM 段差を持つ表面 画像内 バーとラベルの個別背景あり 模擬画像" loading="lazy"></button><figcaption>AFM 段差を持つ表面 画像内 バーとラベルの個別背景あり 模擬画像</figcaption></figure>
+<p><a href="data/afm-terraces.png">元画像</a> · <a href="projects/afm-terraces-inside.mifito">プロジェクト</a> · <a href="figures/afm-terraces-inside.png">PNG 600 dpi</a> · <a href="figures/afm-terraces-inside.svg">SVG</a></p>
+</section><section><h3>画像外部 個別背景なし</h3>
+<figure class="media"><button type="button" aria-label="AFM 段差を持つ表面 画像外 バーとラベルの個別背景なし 模擬画像を拡大"><img src="assets/afm-terraces-outside.png" alt="AFM 段差を持つ表面 画像外 バーとラベルの個別背景なし 模擬画像" loading="lazy"></button><figcaption>AFM 段差を持つ表面 画像外 バーとラベルの個別背景なし 模擬画像</figcaption></figure>
+<p><a href="data/afm-terraces.png">元画像</a> · <a href="projects/afm-terraces-outside.mifito">プロジェクト</a> · <a href="figures/afm-terraces-outside.png">PNG 600 dpi</a> · <a href="figures/afm-terraces-outside.svg">SVG</a></p>
+</section></div><p><strong>校正：</strong> 4 nm/px。バー500 nm = 元画像上125 px。両パターンの走査画像部分の大きさは同じです。</p>
+<p><strong>ラベル：</strong> 「(g)」＋補足文字「Terraces: 3.2 nm steps」。</p>
+<h3>元画像の作り方</h3>
+<p>ゆるく曲がった平行テラスに3.2 nmの段差と空間相関した小さな高さノイズを加えた。</p>
+<p>データ領域768×768 px、4 nm/px、視野3.072 µm角。高さ表示0–36 nm。右の100 pxは高さカラーバー。ステップは特定結晶の原子層高さを意味しない。</p>
+<h2>補足文字を付けないラベル</h2>
+<p>SEM粒子像を使った「(a)」のみの例です。上の「(a) Au nanoparticles」と比較できます。</p>
+<figure class="media"><button type="button" aria-label="SEM パネル記号のみ 個別背景あり 模擬画像を拡大"><img src="assets/sem-label-only.png" alt="SEM パネル記号のみ 個別背景あり 模擬画像" loading="lazy"></button><figcaption>SEM パネル記号のみ 個別背景あり 模擬画像</figcaption></figure>
+<p><a href="figures/sem-label-only.png">PNG 600 dpi</a></p>
+<h2>数値データと表示の注意点</h2>
+<ul>
+<li><a href="data/particle_ground_truth.csv">粒子配置と投影径CSV</a>：SEM粒子モデルの真値。画像から測定した結果ではありません。</li>
+<li><a href="data/edx_counts.npz">EDX計数データ</a>：AuとSiのPoisson計数配列。色画像は可視化用で、定量濃度を意味しません。</li>
+<li><a href="data/afm_heights_nm.npz">AFM高さデータ nm</a>：grainとterraceの高さ配列。NPZは解析用の数値データで、MiFiToに開くときは各PNGを使います。</li>
+<li><a href="data/afm_line_profiles.csv">AFM断面CSV</a>：粒状高さマップから抽出した2断面。</li>
+<li>AFMの右端は高さカラーバーで、走査範囲に含めません。横方向の校正は走査領域の4 nm/pxを使います。</li>
+<li>内部配置の個別背景は不透明度72%。図中文字と線を見やすくする背景です。画像そのものの背景を塗り替える設定ではありません。</li>
+<li>画像外の余白を除いた画像領域は両パターンで同じ大きさです。PNG 600 dpiは保存時の印刷指定で、元画像の解像度を増やしません。</li>
+</ul>
+<p>図中文字は通常書体。保存幅8.9 cm、PNG 600 dpi、SVGは元の画像にベクトルのバーとラベルを重ねて保存しています。<a href="https://www.nature.com/documents/NRJs-guide-to-preparing-final-artwork.pdf">Natureの最終図版ガイド</a>にあるスケール表示と判読性の方針を参考にしました。</p>
+<p>乱数の初期値は20261004。MiFiTo Web v1.1.0の公開版と同じ描画コードを使用し、Canvas互換の描画環境で生成しました。プロジェクトをブラウザで開いた場合、ごく小さなフォント計測差が出ることがあります。</p>
+</main><dialog><div class="tools"><span id="caption"></span><div><button id="minus" aria-label="画像を縮小">−</button><button id="plus" aria-label="画像を拡大">＋</button><button id="fit">画面に合わせる</button><button id="close">閉じる</button></div></div><img id="large" alt=""></dialog><footer>すべて模擬データ · MiFiTo v1.1.0 · 2026年10月4日</footer><script src="gallery.js" defer></script></body></html>

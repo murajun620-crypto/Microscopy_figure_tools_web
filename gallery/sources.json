@@ -1,0 +1,79 @@
+[
+  {
+    "slug": "sem-particles",
+    "title": "SEM Auナノ粒子",
+    "width": 1024,
+    "height": 768,
+    "pixel_nm": 4.0,
+    "bar_nm": 500,
+    "subtext": "Au nanoparticles",
+    "model": "対数正規粒径の楕円状粒子を配置し、表面傾斜、明るい縁、照射方向の陰影、計数ノイズを重ねたSEM二次電子像の近似。",
+    "parameters": "1024×768 px、4 nm/px。190個を配置。幾何学的投影径の中央値184 nm、対数標準偏差0.32。重なりあり。実際の電子輸送計算ではない。"
+  },
+  {
+    "slug": "sem-porous",
+    "title": "SEM 多孔質膜",
+    "width": 1024,
+    "height": 768,
+    "pixel_nm": 6,
+    "bar_nm": 1000,
+    "subtext": "Porous film",
+    "model": "空間相関を持つランダム場を閾値化して連続骨格と孔を作り、縁のコントラストと計数ノイズを加えた。",
+    "parameters": "6 nm/px、視野6.144×4.608 µm、相関長の設定78 nm。材料名や実測孔径は割り当てていない。"
+  },
+  {
+    "slug": "edx-au",
+    "title": "EDX Auマップ",
+    "width": 1024,
+    "height": 768,
+    "pixel_nm": 4.0,
+    "bar_nm": 500,
+    "subtext": "Au M counts",
+    "model": "SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。",
+    "parameters": "Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。"
+  },
+  {
+    "slug": "edx-si",
+    "title": "EDX Siマップ",
+    "width": 1024,
+    "height": 768,
+    "pixel_nm": 4.0,
+    "bar_nm": 500,
+    "subtext": "Si K counts",
+    "model": "SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。",
+    "parameters": "Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。"
+  },
+  {
+    "slug": "edx-overlay",
+    "title": "EDX AuとSiの重ね合わせ",
+    "width": 1024,
+    "height": 768,
+    "pixel_nm": 4.0,
+    "bar_nm": 500,
+    "subtext": "Au (magenta) / Si (cyan)",
+    "model": "SEMと同じ粒子配置からAuとSiの期待計数を作り、標準偏差48 nmの空間ぼけとPoisson計数ノイズを加えた。",
+    "parameters": "Auは粒子部分、Siは基板部分が優勢。各色の表示上限はAu 30 counts/px、Si 22 counts/px。別々の表示スケールなので色の明るさを元素間の濃度比較に使わない。"
+  },
+  {
+    "slug": "afm-grains",
+    "title": "AFM ナノ粒状表面",
+    "width": 868,
+    "height": 768,
+    "pixel_nm": 4,
+    "bar_nm": 500,
+    "subtext": "Height: 0–60 nm",
+    "model": "相関した基板粗さに多数の高さピークを加え、半径12 nmの放物面探針による形態学的膨張と高さノイズを適用した。",
+    "parameters": "データ領域768×768 px、4 nm/px、視野3.072 µm角。右の100 pxは高さカラーバーで、走査領域ではない。カラーマップmagma、共通範囲0–60 nm。"
+  },
+  {
+    "slug": "afm-terraces",
+    "title": "AFM 段差を持つ表面",
+    "width": 868,
+    "height": 768,
+    "pixel_nm": 4,
+    "bar_nm": 500,
+    "subtext": "Terraces: 3.2 nm steps",
+    "model": "ゆるく曲がった平行テラスに3.2 nmの段差と空間相関した小さな高さノイズを加えた。",
+    "parameters": "データ領域768×768 px、4 nm/px、視野3.072 µm角。高さ表示0–36 nm。右の100 pxは高さカラーバー。ステップは特定結晶の原子層高さを意味しない。"
+  }
+]
