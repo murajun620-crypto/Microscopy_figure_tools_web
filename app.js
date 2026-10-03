@@ -2,7 +2,7 @@ import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFrom
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
 import { buildPlan, paint } from './render.js?v=952b7e69af87';
 import { batchExport, exportImage } from './export.js?v=78d65294e65e';
-import { wheelZoom, pinchZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=5f8b230a1363';
+import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da674';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory } from './save-files.js?v=e4225fd7ab67';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=364b6e61ee9d';
@@ -20,37 +20,6 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
-const touchPoints = new Map();
-let pinch = null, touchSnapshot = null;
-const compactLayout = matchMedia('(max-width:900px)');
-const inlineSections = [$('calibrationSection'), $('cropSection')];
-let compactControlsInitialized = false;
-function refreshInlineEditing() {
-  $('previewEditingControls').hidden = !compactLayout.matches || !current;
-  document.body.classList.toggle('inline-editing', compactLayout.matches && !!current && !document.body.classList.contains('settings-view') && inlineSections.some(section=>section.open));
-}
-function arrangeEditingControls() {
-  if (compactLayout.matches) {
-    if (!compactControlsInitialized) { for (const section of inlineSections) section.open=false; compactControlsInitialized=true; }
-    $('previewEditingControls').append(...inlineSections);
-  } else $('editingControls').prepend(...inlineSections);
-  refreshInlineEditing(); requestAnimationFrame(render);
-}
-compactLayout.addEventListener('change', arrangeEditingControls);
-for (const section of inlineSections) section.addEventListener('toggle',()=>{ refreshInlineEditing(); requestAnimationFrame(render); });
-arrangeEditingControls();
-function showCompactPanel(settings) {
-  document.body.classList.toggle('settings-view', settings);
-  refreshInlineEditing();
-  $('showPreview').setAttribute('aria-pressed', String(!settings));
-  $('showSettings').setAttribute('aria-pressed', String(settings));
-  requestAnimationFrame(() => {
-    render();
-    if (matchMedia('(max-width:900px)').matches) window.scrollTo({ top:0, behavior:'instant' });
-  });
-}
-$('showPreview').addEventListener('click', () => showCompactPanel(false));
-$('showSettings').addEventListener('click', () => showCompactPanel(true));
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
 const representativeColors = [['白','#ffffff'],['黒','#000000'],['赤','#ff0000'],['黄','#ffff00'],['緑','#00ff00'],['水色','#00ffff'],['青','#0000ff'],['紫','#ff00ff']];
 const colorFields = [];
@@ -110,20 +79,12 @@ for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEvent
   if (next) action(()=>selectItem(next));
 });
 function setBusy(value) {
-  if (value) {
-    cancelWheelZoom();
-    if (touchSnapshot && current) {
-      current.settings=touchSnapshot.settings; measurement=touchSnapshot.measurement; measurementStart=touchSnapshot.measurementStart; pendingCrop=touchSnapshot.pendingCrop; cropStart=touchSnapshot.cropStart; drag=null;
-    }
-    for (const id of touchPoints.keys()) if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
-    touchPoints.clear(); pinch=touchSnapshot=null;
-  }
+  if (value) cancelWheelZoom();
   busy = value; document.body.classList.toggle('busy', value);
   $('projectInput').disabled=value;
   $('saveProjectButton').disabled=value||!items.length;
   for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeSelectedButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','colorMode','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
-  $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
   for(const id of ['saveDestination','chooseSaveFolder','includeSettings','saveDpi','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
@@ -239,7 +200,7 @@ function activateItem(item,decoded) {
   if (source) releaseImage(source);
   source = decoded.source; current = item; measurement = measurementStart = pendingCrop = drag = null;
   $('measurementInfo').textContent = '2点をクリック、またはドラッグ';
-  setTool('move',true); syncInputs(); renderList(); render();
+  setTool('move'); syncInputs(); renderList(); render();
   if (decoded.note) notify(decoded.note);
 }
 
@@ -272,7 +233,6 @@ async function addFiles(files) {
 }
 
 function render() {
-  refreshInlineEditing();
   $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current;
   if (!current || !source) { plan = null; canvas.width = canvas.height = 1; return; }
   const settings = current.settings, raw = tool === 'crop'||previewRaw;
@@ -280,7 +240,7 @@ function render() {
     const rawCrop=previewRaw&&tool!=='crop'?{x:0,y:0,width:current.width,height:current.height}:settings.crop;
     plan = raw ? { width:rawCrop.width,height:rawCrop.height,imageHeight:rawCrop.height,top:0,bottom:0,crop:rawCrop,annotations:[],warnings:[],fills:[] } : buildPlan(settings, context);
     const area = $('previewArea'), zoom = $('zoomSelect').value;
-    if (!area.clientWidth) return; // Settings occupy the screen on compact devices.
+    if (!area.clientWidth) return;
     const displayScale = zoom === 'fit' ? Math.min((area.clientWidth - 58) / plan.width, (area.clientHeight - 58) / plan.height, 1) : Number(zoom);
     const cssWidth = Math.max(1, plan.width * Math.max(0.01, displayScale)), cssHeight = Math.max(1, plan.height * Math.max(0.01, displayScale));
     previewScale = Math.min(cssWidth * Math.min(devicePixelRatio, 2) / plan.width, 2400 / Math.max(plan.width, plan.height));
@@ -333,12 +293,7 @@ function drawGuides() {
   }
   context.restore();
 }
-function setTool(value, revealPreview = false) {
-  if (compactLayout.matches && revealPreview && ['measure','crop'].includes(value)) {
-    $('calibrationSection').open = value === 'measure';
-    $('cropSection').open = value === 'crop';
-  }
-  if (revealPreview) showCompactPanel(false);
+function setTool(value) {
   tool = value; measurementStart = cropStart = drag = null;
   previewRaw=false;$('rawPreviewButton').classList.remove('active');$('processedPreviewButton').classList.add('active');
   for (const mode of ['move', 'measure', 'crop']) { $(`${mode}Tool`).classList.toggle('active', mode === value); $(`${mode}Tool`).setAttribute('aria-pressed', String(mode === value)); }
@@ -361,9 +316,9 @@ function updateCropInputs(crop) {
   for (const [key, id] of [['x', 'cropX'], ['y', 'cropY'], ['width', 'cropWidth'], ['height', 'cropHeight']]) $(id).value = crop[key]-(key==='x'?base.x:key==='y'?base.y:0);
   $('cropStatus').textContent=`左上 x=${crop.x-base.x}, y=${crop.y-base.y} / ${crop.width} × ${crop.height} px`;
 }
-function cropHit(p, touch = false) {
+function cropHit(p) {
   if(!pendingCrop)return null;
-  const c=pendingCrop,tolerance=(touch?20:8)/(canvas.getBoundingClientRect().width/plan.width),left=Math.abs(p.x-c.x)<tolerance,right=Math.abs(p.x-(c.x+c.width))<tolerance,top=Math.abs(p.y-c.y)<tolerance,bottom=Math.abs(p.y-(c.y+c.height))<tolerance;
+  const c=pendingCrop,tolerance=8/(canvas.getBoundingClientRect().width/plan.width),left=Math.abs(p.x-c.x)<tolerance,right=Math.abs(p.x-(c.x+c.width))<tolerance,top=Math.abs(p.y-c.y)<tolerance,bottom=Math.abs(p.y-(c.y+c.height))<tolerance;
   if(p.x<c.x-tolerance||p.x>c.x+c.width+tolerance||p.y<c.y-tolerance||p.y>c.y+c.height+tolerance)return null;
   if(top&&left)return 'top-left';if(top&&right)return 'top-right';if(bottom&&left)return 'bottom-left';if(bottom&&right)return 'bottom-right';
   if(!aspect()){if(top)return 'top';if(bottom)return 'bottom';if(left)return 'left';if(right)return 'right';}
@@ -374,23 +329,7 @@ function distanceToLine(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy,t=
 function moveMeasurement(operation,p){const c=current.settings.crop,[a,b]=operation.beforeMeasurement,dx=clamp(p.x-operation.down.x,c.x-Math.min(a.x,b.x),c.x+c.width-Math.max(a.x,b.x)),dy=clamp(p.y-operation.down.y,c.y-Math.min(a.y,b.y),c.y+c.height-Math.max(a.y,b.y));return [{x:a.x+dx,y:a.y+dy},{x:b.x+dx,y:b.y+dy}];}
 
 canvas.addEventListener('pointerdown', event => {
-  if (!current || busy || !plan || event.button !== 0) return;
-  if (event.pointerType === 'touch') {
-    canvas.setPointerCapture(event.pointerId);
-    touchPoints.set(event.pointerId, { x:event.clientX, y:event.clientY });
-    if (touchPoints.size === 1) touchSnapshot = { settings:copy(current.settings), measurement:copy(measurement), measurementStart:copy(measurementStart), pendingCrop:copy(pendingCrop), cropStart:copy(cropStart) };
-    if (pinch) return;
-    if (touchPoints.size === 2) {
-      cancelWheelZoom();
-      // A first finger may have started an edit; pinching must not commit it.
-      current.settings = touchSnapshot.settings; measurement = touchSnapshot.measurement; measurementStart = touchSnapshot.measurementStart; pendingCrop = touchSnapshot.pendingCrop; cropStart = touchSnapshot.cropStart; drag = null;
-      syncInputs(); render();
-      const [a,b] = [...touchPoints.values()], x=(a.x+b.x)/2, y=(a.y+b.y)/2, bounds=canvas.getBoundingClientRect();
-      pinch = { ids:[...touchPoints.keys()], distance:Math.hypot(a.x-b.x,a.y-b.y), scale:bounds.width/plan.width, u:(x-bounds.left)/bounds.width, v:(y-bounds.top)/bounds.height };
-      return;
-    }
-    if (pinch || touchPoints.size > 2) return;
-  }
+  if (!current || busy || !plan || event.button !== 0 || event.pointerType === 'touch') return;
   if(previewRaw) {
     canvas.setPointerCapture(event.pointerId);
     drag={mode:'pan',x:event.clientX,y:event.clientY,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop};
@@ -400,14 +339,14 @@ canvas.addEventListener('pointerdown', event => {
   if (tool !== 'move' && !insideImage(p)) return;
   canvas.setPointerCapture(event.pointerId);
   if (tool === 'measure') {
-    const tolerance=(event.pointerType==='touch'?20:8)/(canvas.getBoundingClientRect().width/plan.width);
+    const tolerance=8/(canvas.getBoundingClientRect().width/plan.width);
     let hit=measurement&&!measurementStart?measurement.findIndex(q=>Math.hypot(p.x-q.x,p.y-q.y)<tolerance):-1;
     if(hit<0&&measurement&&!measurementStart&&distanceToLine(p,...measurement)<tolerance)hit=2;
     const start = measurementStart || p;
     drag = { mode: 'measure', start, down: p, secondClick: !!measurementStart, moved: false,handle:hit,beforeMeasurement:measurement?copy(measurement):null };
     if(hit<0) measurement=[start,constrainedPoint(p,start,event)];render();
-  } else if (tool === 'crop' || pendingCrop && cropHit(p,event.pointerType==='touch')) {
-    try { const edit=cropHit(p,event.pointerType==='touch');drag={mode:'crop',start:cropStart||p,down:p,ratio:aspect(),edit,origin:pendingCrop?copy(pendingCrop):null,moved:false,secondClick:!!cropStart}; } catch (error) { notify(error.message, true); }
+  } else if (tool === 'crop' || pendingCrop && cropHit(p)) {
+    try { const edit=cropHit(p);drag={mode:'crop',start:cropStart||p,down:p,ratio:aspect(),edit,origin:pendingCrop?copy(pendingCrop):null,moved:false,secondClick:!!cropStart}; } catch (error) { notify(error.message, true); }
   } else {
     const q = canvasPoint(event), hit = [...plan.annotations].reverse().find(box => q.x >= box.x && q.x <= box.x + box.width && q.y >= box.y && q.y <= box.y + box.height);
     if (hit) { drag = { mode: 'move', kind: hit.kind, offset: { x: q.x - hit.x, y: q.y - hit.y }, before: copy(current.settings) }; canvas.style.cursor = 'grabbing'; }
@@ -415,12 +354,6 @@ canvas.addEventListener('pointerdown', event => {
   }
 });
 canvas.addEventListener('pointermove', event => {
-  if (touchPoints.has(event.pointerId)) touchPoints.set(event.pointerId, { x:event.clientX,y:event.clientY });
-  if (pinch) {
-    const [a,b] = pinch.ids.map(id=>touchPoints.get(id));
-    if (a && b && plan && !busy) queuePreviewZoom(pinchZoom(pinch.scale,pinch.distance,Math.hypot(a.x-b.x,a.y-b.y)), { x:(a.x+b.x)/2,y:(a.y+b.y)/2,u:pinch.u,v:pinch.v });
-    return;
-  }
   if (!current || !drag || busy) return;
   const p = boundedPoint(sourcePoint(event));
   if(drag.mode==='pan'){$('previewArea').scrollLeft=drag.left+drag.x-event.clientX;$('previewArea').scrollTop=drag.top+drag.y-event.clientY;return;}
@@ -440,13 +373,6 @@ const cropFromDrag = (start,end,ratio) => {
   return {...r,x:r.x+c.x,y:r.y+c.y};
 };
 canvas.addEventListener('pointerup', event => {
-  touchPoints.delete(event.pointerId);
-  if (pinch) {
-    if (!touchPoints.size) { pinch = touchSnapshot = null; }
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-    return;
-  }
-  if (!touchPoints.size) touchSnapshot = null;
   if (!drag) return;
   const operation = drag;
   if (operation.mode === 'measure') {
@@ -466,11 +392,8 @@ canvas.addEventListener('pointerup', event => {
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); render();
 });
 canvas.addEventListener('pointercancel', event => {
-  touchPoints.delete(event.pointerId);
-  if (pinch) { if (!touchPoints.size) pinch = touchSnapshot = null; return; }
   if (drag?.before) current.settings = drag.before;
-  if (touchSnapshot && current) { current.settings=touchSnapshot.settings; measurement=touchSnapshot.measurement; pendingCrop=touchSnapshot.pendingCrop; cropStart=touchSnapshot.cropStart; }
-  touchSnapshot=null; drag=null; measurementStart=null; if (current) { syncInputs(); render(); }
+  drag=null; measurementStart=null; if (current) { syncInputs(); render(); }
 });
 canvas.addEventListener('contextmenu',event=>{if(tool==='crop'){event.preventDefault();pendingCrop=cropStart=drag=null;current.settings.cropOptions.pending=null;current.history.push(current.settings);syncInputs();render();}});
 function queuePreviewZoom(zoom, anchor) {
@@ -529,7 +452,7 @@ $('imageInput').addEventListener('click',event=>{
   });
 });
 $('emptyOpenButton').addEventListener('click', () => $('imageInput').click());
-for (const [id, mode] of [['moveTool', 'move'], ['measureTool', 'measure'], ['measureButton', 'measure'], ['cropTool', 'crop'], ['cropButton', 'crop']]) $(id).addEventListener('click', () => { if (current && !busy) setTool(mode,true); });
+for (const [id, mode] of [['moveTool', 'move'], ['measureTool', 'measure'], ['measureButton', 'measure'], ['cropTool', 'crop'], ['cropButton', 'crop']]) $(id).addEventListener('click', () => { if (current && !busy) setTool(mode); });
 function updateAspectPreview() {
   const c=current.settings.crop,ratio=aspect(),mode=$('cropApplication').value;
   $('customRatio').hidden=$('aspectRatio').value!=='custom';
@@ -722,7 +645,6 @@ async function openProject(file){
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
-  showCompactPanel(false);
   notify(`プロジェクトを開きました（${items.length}枚）。編集を再開できます。`);
 }
 $('saveSettingsButton').addEventListener('click', () => {

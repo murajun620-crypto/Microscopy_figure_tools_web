@@ -12,9 +12,3 @@ export function wheelZoom(current, deltaY, deltaMode = 0, pageHeight = 800) {
 }
 
 export const zoomText = scale => `${Number((scale * 100).toFixed(1))}%`;
-
-// Touch pinching follows the ratio of finger distances, independent of pixels.
-export function pinchZoom(current, startDistance, distance) {
-  if (!Number.isFinite(startDistance) || startDistance <= 0 || !Number.isFinite(distance) || distance <= 0) return current;
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, current * distance / startDistance));
-}
