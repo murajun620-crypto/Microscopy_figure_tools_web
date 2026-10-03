@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=508c717ab6fd">
-  <script type="module" src="./app.js?v=667e53235e08"></script>
+  <script type="module" src="./app.js?v=3470191caa39"></script>
 </head>
 <body>
   <header class="app-header">
@@ -47,7 +47,7 @@
       <details id="batchPanel" class="batch-panel"><summary>画像をまとめて操作 <span id="batchCount" class="detail-value">0枚</span></summary><div class="batch-body"><p class="hint">デザイン・トリミング・出力設定は共通、校正・表示・文字列は画像ごとに保持します。未校正画像には校正済み画像の値を補います。トリミングはPython版と同じ絶対ピクセル座標です。連番対象は処理対象かつラベル表示の画像です。</p>
         <div class="batch-options"><button id="batchAll" class="button">全て対象</button><button id="batchNone" class="button">全て対象外</button><button id="batchBarsOn" class="button">バー全表示</button><button id="batchBarsOff" class="button">バー全非表示</button><button id="batchBarFirst" class="button">バー先頭のみ</button><button id="batchLabelsOn" class="button">ラベル全表示</button><button id="batchLabelsOff" class="button">ラベル全非表示</button></div>
         <p class="hint">ラベルの連番は「パネルラベル」、保存はプレビュー上部の「一括保存」で行います。</p></div></details>
-        <div class="file-delete-actions"><button id="removeSelectedButton" class="button small" disabled>チェックした画像を削除</button><button id="removeAllButton" class="quiet small" disabled>全画像を削除</button></div><p class="hint">チェックは一括処理・削除の対象です。削除は一覧からのみ行い、元ファイルは保持します。</p>
+        <div class="file-delete-actions"><button id="removeAllButton" class="quiet small" disabled>全画像を削除</button></div><p class="hint">チェックは一括処理の対象です。削除は一覧からのみ行い、元ファイルは保持します。</p>
         <div class="field-row"><button id="moveImageUp" class="quiet small">↑ 順序</button><button id="moveImageDown" class="quiet small">↓ 順序</button></div>
       </section>
       <fieldset id="editingControls" disabled>

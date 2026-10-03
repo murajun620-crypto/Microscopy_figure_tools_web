@@ -1,5 +1,5 @@
 // Display version; independent of the .mifito file format version.
-export const APP_VERSION = '1.0.1';
+export const APP_VERSION = '1.0.2';
 
 // View selection, zoom, folder permissions and undo history aren't edits.
 export function workspaceSnapshot(items, ui) {

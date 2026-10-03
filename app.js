@@ -6,7 +6,7 @@ import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da67
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=6423f563fd9b';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=2c42b014da86';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -158,14 +158,14 @@ function setBusy(value) {
   for(const id of ['settingsInput','openSettingsButton','settingsSaveMenuButton','saveSettingsButton','saveSessionButton'])$(id).disabled=value||!current;
   if(value||!current)closeSettingsSaveMenu();
   $('saveDpi').disabled=value||!current;
-  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeSelectedButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
+  for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
   for(const id of ['saveDestination','chooseSaveFolder','includeSettings','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
   for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
   for(const button of $('batchPanel').querySelectorAll('button')) button.disabled=value||!items.length;
-  for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
+  $('removeAllButton').disabled=value||!items.length;
   refreshSaveUI();
   $('undoButton').disabled = value || !current?.history.canUndo; $('redoButton').disabled = value || !current?.history.canRedo;
   if(current){
@@ -237,7 +237,7 @@ function renderList() {
   $('imageList').replaceChildren();
   for (const item of items) {
     const row = document.createElement('li'); row.className = `image-row${item === current ? ' selected' : ''}`;row.dataset.imageId=item.id;
-    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = item.enabled; checkbox.disabled = busy; checkbox.setAttribute('aria-label', `${item.name}を処理・削除対象にする`);
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = item.enabled; checkbox.disabled = busy; checkbox.setAttribute('aria-label', `${item.name}を処理対象にする`);
     checkbox.addEventListener('change', () => { item.enabled = checkbox.checked; updateBatch(); });
     const button = document.createElement('button'); button.disabled = busy; button.setAttribute('aria-label', `${item.name}を編集`);
     const img = document.createElement('img'); img.src = item.thumbnail; img.alt = '';
@@ -263,7 +263,6 @@ function renderList() {
 }
 function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
-  $('removeSelectedButton').disabled=busy||count<1;
   refreshSaveUI();
   scheduleWorkState();
 }
@@ -636,7 +635,6 @@ async function removeItems(removed) {
   if(!current){$('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';}
   notify(`${removed.length}枚を一覧から削除しました。元画像は保持されます。`);
 }
-$('removeSelectedButton').addEventListener('click',()=>action(()=>removeItems(items.filter(item=>item.enabled))));
 $('removeAllButton').addEventListener('click',()=>action(()=>removeItems([...items])));
 for(const [id,offset] of [['moveImageUp',-1],['moveImageDown',1]]) $(id).addEventListener('click',()=>{if(busy||!current)return;const index=items.indexOf(current),target=index+offset;if(target<0||target>=items.length)return;[items[index],items[target]]=[items[target],items[index]];renderList();});
 for(const [id,key,value] of [['batchAll','enabled',true],['batchNone','enabled',false],['batchBarsOn','barVisible',true],['batchBarsOff','barVisible',false],['batchLabelsOn','labelVisible',true],['batchLabelsOff','labelVisible',false]]) $(id).addEventListener('click',()=>{if(busy)return;for(const item of items){item[key]=value;if(key!=='enabled')item.settings[key==='barVisible'?'scaleBar':'panelLabel'].visible=value;}renderList();syncInputs();render();});
