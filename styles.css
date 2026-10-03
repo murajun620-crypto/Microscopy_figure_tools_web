@@ -33,6 +33,11 @@ input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .workspace{display:grid;grid-template-columns:310px minmax(0,1fr);height:calc(100dvh - 78px);min-height:620px}
 .sidebar{background:#fff;border-right:1px solid var(--border);overflow:auto}
 .file-section{padding:20px}
+.color-mode-setting{padding:0 20px 16px}
+.color-mode-setting label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:11px}
+.file-section .batch-panel{margin:10px 0;padding:0}
+.file-section .batch-panel summary{padding:10px 0}
+.file-section .batch-body{padding:0 0 10px}
 .section-heading{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 h2{font-size:14px;margin:0}
 .badge{font-size:10px;background:var(--soft);padding:2px 7px;border-radius:20px}

@@ -29,9 +29,9 @@ export function numberedLabel(index, settings) {
 export function labelSequenceChanges(items, settings, onlyEnabled = false) {
   let index = 0;
   return items.flatMap(item => {
+    if (onlyEnabled && !item.enabled) return [];
     const visible = item.labelVisible ?? item.settings.panelLabel.visible;
     if (settings.mode === 'none' || !visible) return [{ item, text:'' }];
-    if (onlyEnabled && !item.enabled) return [];
     return [{ item, text:numberedLabel(index++, settings) }];
   });
 }

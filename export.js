@@ -1,5 +1,5 @@
 import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=2d894542ff65';
-import { numberedLabel } from './label-numbering.js?v=69f203066172';
+import { numberedLabel } from './label-numbering.js?v=fe9f5790b43f';
 import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=deadb306aaf4';
 import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=952b7e69af87';
 import { inlinePlain } from './inline-text.js';
