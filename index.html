@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=507b76539a33">
-  <script type="module" src="./app.js?v=b3319fa288d0"></script>
+  <script type="module" src="./app.js?v=b0631dda15b7"></script>
 </head>
 <body>
   <header class="app-header">
@@ -156,7 +156,7 @@
       <p id="saveTargetInfo" class="save-target"></p><p id="saveBatchHint" class="hint" hidden>画像一覧でチェックした画像を、現在のデザインで保存します。</p>
       <label>保存形式<select id="exportFormat" aria-label="保存形式"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="svg">SVG</option><option value="pdf">PDF</option><option value="bmp">BMP</option><option value="tiff">TIFF（8-bit RGBA）</option><option value="pptx">PowerPoint（PPTX）</option></select></label>
       <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元画像と同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
-      <p id="saveFolderInfo" class="hint"></p><p id="saveCompatibility" class="hint" hidden>このブラウザでは各ファイルをダウンロードして保存します。</p>
+      <p id="saveFolderInfo" class="hint"></p><p id="saveCompatibility" class="hint" hidden>このブラウザでは元フォルダを指定できないため、ブラウザの保存先へ自動ダウンロードします。</p>
       <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
       <details id="saveAdvanced" class="save-options"><summary>詳細設定 <span id="saveOptionsInfo" class="detail-value">600 dpi</span></summary><div class="save-options-body">
         <label>解像度<select id="saveDpi" data-setting="output.dpi" data-number><option value="300">300 dpi</option><option value="600" selected>600 dpi（標準）</option><option value="1200">1200 dpi</option></select></label>
@@ -167,7 +167,7 @@
       </div></details>
       <p class="hint">ファイル名：元の名前_mifito。画像ごとのファイルとして保存します。</p>
       <p id="batchProgress" class="readout" role="status"></p>
-      <div id="downloadReceipt" class="download-receipt" hidden><strong>保存用ファイル</strong><div id="downloadList"></div><span>各リンクから保存してください。</span></div>
+      <details id="downloadReceipt" class="download-receipt" hidden><summary>ダウンロードの確認・再保存</summary><button id="downloadAllButton" class="button">全ファイルを再ダウンロード</button><p class="hint">保存が始まらない場合は、ブラウザの「複数ファイルのダウンロード」を許可してください。</p><div id="downloadList"></div></details>
     </section>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>

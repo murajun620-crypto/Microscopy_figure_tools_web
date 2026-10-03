@@ -3,6 +3,20 @@ import { uniqueName } from './core.js?v=2d894542ff65';
 export const extensionFor = format => format === 'jpeg' ? 'jpg' : format === 'tiff' ? 'tif' : format;
 export function outputBase(name, used = new Set()) { return `${uniqueName(name, used)}_mifito`; }
 
+// Sharing the picker ID also retains the last image folder when no handle exists.
+export const imagePickerOptions = () => ({ id:'mifito-images', multiple:true, types:[{description:'画像',accept:{'image/png':['.png'],'image/jpeg':['.jpg','.jpeg'],'image/bmp':['.bmp'],'image/tiff':['.tif','.tiff'],'image/svg+xml':['.svg']}}] });
+export const directoryPickerOptions = startIn => ({ id:'mifito-images', mode:'readwrite', ...(startIn?{startIn}:{}) });
+
+export async function rememberSourceDirectory(items, directory) {
+  for(const item of items) {
+    if(item.sourceDirectory||!item.sourceHandle)continue;
+    try {
+      const handle=await directory.getFileHandle(item.sourceHandle.name);
+      if(await handle.isSameEntry(item.sourceHandle))item.sourceDirectory=directory;
+    } catch(error) { if(error.name!=='NotFoundError')throw error; }
+  }
+}
+
 export async function ensureWritable(directory) {
   const options = { mode:'readwrite' };
   if (await directory.queryPermission(options) !== 'granted' && await directory.requestPermission(options) !== 'granted') {

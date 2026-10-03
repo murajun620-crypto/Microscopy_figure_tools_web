@@ -1,9 +1,9 @@
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
-import { SUPPORTED, canvasBlob, decodeImage, download, clearDownloads, releaseImage, thumbnail } from './io.js?v=5914fe0f6c1f';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
 import { buildPlan, paint } from './render.js?v=952b7e69af87';
-import { batchExport, exportImage } from './export.js?v=9a6559a6659d';
+import { batchExport, exportImage } from './export.js?v=ad92746b32bd';
 import { wheelZoom, pinchZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=5f8b230a1363';
-import { ensureWritable, writeFile, readFolder } from './save-files.js?v=04e07b42f342';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory } from './save-files.js?v=e4225fd7ab67';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=69f203066172';
 
 const $ = id => document.getElementById(id);
@@ -11,6 +11,7 @@ const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
 const folderSupported=typeof window.showDirectoryPicker==='function';
 const sourceFolders=new WeakMap();
+const sourceHandles=new WeakMap();
 let saveDirectory=null;
 let saveBatch=false;
 
@@ -123,7 +124,7 @@ function setBusy(value) {
   $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
-  for(const id of ['saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat','batchNumbering','closeSaveDialog']) $(id).disabled=value;
+  for(const id of ['saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat','batchNumbering','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
   for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
   for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
   refreshSaveUI();
@@ -251,7 +252,7 @@ async function addFiles(files) {
         settings.panelLabel={...copy(current.settings.panelLabel),visible:true,text:'',subtext:'',position:null};
         settings.output=copy(current.settings.output);
       }
-      const item = { id: crypto.randomUUID(), name: file.name, file, sourceDirectory:sourceFolders.get(file)||null, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
+      const item = { id: crypto.randomUUID(), name: file.name, file, sourceDirectory:sourceFolders.get(file)||null, sourceHandle:sourceHandles.get(file)||null, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
       items.push(item); added.push(item); total += file.size;
     } catch (error) { errors.push(`${file.name}：${error.message}`); }
     finally { if (decoded) releaseImage(decoded.source); }
@@ -516,7 +517,20 @@ for (const input of document.querySelectorAll('[data-setting]')) {
   try { if (!input.checkValidity()) throw new Error('入力値が範囲外です。'); commit(settings,['scaleBar','panelLabel','output'].includes(section)&&!['visible','text','subtext'].includes(key)?section:null); if(section==='cropOptions') updateAspectPreview(); } catch (error) { notify(error.message, true); syncInputs(); }
   });
 }
-for (const id of ['imageInput', 'folderInput']) $(id).addEventListener('change', () => { const files = [...$(id).files]; $(id).value = ''; action(() => addFiles(files)); });
+for (const id of ['imageInput', 'folderInput']) $(id).addEventListener('change', () => { const files = [...$(id).files]; $(id).value = ''; action(async()=>{const added=await addFiles(files);if(added.length&&folderSupported){$('saveDestination').value='source';refreshSaveUI();}}); });
+$('imageInput').addEventListener('click',event=>{
+  if(typeof window.showOpenFilePicker!=='function')return;
+  event.preventDefault();action(async()=>{
+    let handles;
+    try{handles=await window.showOpenFilePicker(imagePickerOptions());}
+    catch(error){if(error.name==='AbortError')return;throw error;}
+    const files=[];
+    for(const handle of handles){const file=await handle.getFile();sourceHandles.set(file,handle);files.push(file);}
+    const added=await addFiles(files);
+    if(saveDirectory)await rememberSourceDirectory(added,saveDirectory);
+    if(added.length){$('saveDestination').value=folderSupported?'source':'download';refreshSaveUI();}
+  });
+});
 $('emptyOpenButton').addEventListener('click', () => $('imageInput').click());
 for (const [id, mode] of [['moveTool', 'move'], ['measureTool', 'measure'], ['measureButton', 'measure'], ['cropTool', 'crop'], ['cropButton', 'crop']]) $(id).addEventListener('click', () => { if (current && !busy) setTool(mode,true); });
 function updateAspectPreview() {
@@ -696,7 +710,7 @@ function refreshSaveUI() {
   $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（保存画面の詳細設定で変更）`;
   const mode=$('saveDestination').value;
   $('chooseSaveFolder').hidden=mode!=='folder';
-  $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存先フォルダを選んでください。'):mode==='source'?'「フォルダから開く」で読み込んだ画像の元フォルダへ保存します。':'各ファイルをダウンロードします。保存先はブラウザの設定に従います。';
+  $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存ボタンを押すと保存先を選べます。'):mode==='source'?(current?.sourceDirectory?`元フォルダ：${current.sourceDirectory.name}`:current?.sourceHandle?'初回保存時に元フォルダを開きます。保存先を確認してください。':'初回保存時に保存先フォルダを確認してください。'):'全ファイルのダウンロードを自動で開始します。';
 }
 for(const [id,batch] of [['singleSaveButton',false],['batchSaveButton',true]]) $(id).addEventListener('click',()=>{
   if(busy||!current)return;
@@ -712,7 +726,7 @@ $('folderInput').closest('label').hidden=folderSupported;
 $('openSourceFolder').hidden=!folderSupported;
 $('saveCompatibility').hidden=folderSupported;
 $('chooseSaveFolder').addEventListener('click',()=>action(async()=>{
-  try{saveDirectory=await window.showDirectoryPicker({id:'mifito-output',mode:'readwrite'});refreshSaveUI();}
+  try{saveDirectory=await window.showDirectoryPicker(directoryPickerOptions(saveDirectory||current?.sourceDirectory||current?.sourceHandle));refreshSaveUI();}
   catch(error){if(error.name!=='AbortError')throw error;}
 }));
 $('openSourceFolder').addEventListener('click',()=>action(async()=>{
@@ -725,14 +739,19 @@ $('openSourceFolder').addEventListener('click',()=>action(async()=>{
   if(added.length){$('saveDestination').value='source';refreshSaveUI();}
 }));
 async function prepareSaver(targets) {
-  const mode=$('saveDestination').value;
-  if(mode==='folder'&&!saveDirectory)throw new Error('「保存先を選ぶ」でフォルダを指定してください。');
-  if(mode==='source'&&targets.some(item=>!item.sourceDirectory))throw new Error('元フォルダへ保存するには「フォルダから開く」で読み込んでください。または保存先を指定してください。');
+  let mode=$('saveDestination').value;
+  if((mode==='folder'&&!saveDirectory)||(mode==='source'&&targets.some(item=>!item.sourceDirectory))) {
+    const first=targets.find(item=>!item.sourceDirectory)||targets[0];
+    const directory=await window.showDirectoryPicker(directoryPickerOptions(mode==='source'?first.sourceHandle:saveDirectory||first.sourceDirectory||first.sourceHandle));
+    saveDirectory=directory;await rememberSourceDirectory(items,directory);
+    if(mode==='source'&&targets.some(item=>!item.sourceDirectory))mode='folder';
+    $('saveDestination').value=mode;refreshSaveUI();
+  }
   const directories=mode==='download'?[]:mode==='folder'?[saveDirectory]:[...new Set(targets.map(item=>item.sourceDirectory))];
   for(const directory of directories)await ensureWritable(directory);
   clearDownloads();
   return async(blob,name,item)=>{
-    if(mode==='download'){download(blob,name,{automatic:targets.length===1&&!$('multipleFormats').checked&&!$('includeSettings').checked});return name;}
+    if(mode==='download'){download(blob,name,{automatic:false});return name;}
     return writeFile(mode==='source'?item.sourceDirectory:saveDirectory,blob,name);
   };
 }
@@ -745,13 +764,15 @@ $('exportButton').addEventListener('click',()=>action(async()=>{
     batchController=new AbortController();$('cancelBatchButton').hidden=false;
     const template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
     const result=await batchExport(targets,template,current,formats,labelNumbering,batchController.signal,message=>{$('batchProgress').textContent=message;},saveFile,$('includeSettings').checked);
-    const verb=$('saveDestination').value==='download'?'生成しました。下のリンクから保存できます。':'保存しました。';
-    const message=`${result.saved}枚・${result.files.length}ファイルを${verb}${result.failures.length?` ${result.failures.length}枚失敗：${result.failures.map(f=>`${f.name}（${f.error}）`).join('、')}`:''}`;
+    const downloads=$('saveDestination').value==='download';
+    if(downloads){$('batchProgress').textContent='全ファイルのダウンロードを開始しています…';await downloadAll(batchController.signal);}
+    const message=`${result.saved}枚・${result.files.length}ファイル${downloads?'のダウンロードを開始しました。':'を保存しました。'}${result.failures.length?` ${result.failures.length}枚失敗：${result.failures.map(f=>`${f.name}（${f.error}）`).join('、')}`:''}`;
     $('batchProgress').textContent=message;notify(message,result.failures.length>0);
-  } catch(error){$('batchProgress').textContent=error.message;throw error;}
+  } catch(error){if(error.name==='AbortError'){$('batchProgress').textContent='保存をキャンセルしました。';return;}$('batchProgress').textContent=error.message;throw error;}
   finally{$('cancelBatchButton').hidden=true;batchController=null;renderList();}
 }));
 refreshSaveUI();
+$('downloadAllButton').addEventListener('click',()=>action(async()=>{const count=await downloadAll();$('batchProgress').textContent=`${count}ファイルのダウンロードを開始しました。`;}));
 $('copyButton').addEventListener('click',()=>action(async()=>{
   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('このブラウザでは画像コピーを利用できません。PNGを保存してください。');
   const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=false;settings.output.scale=1;}

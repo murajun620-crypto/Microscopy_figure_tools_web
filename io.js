@@ -17,18 +17,32 @@ export async function canvasBlob(canvas) {
 }
 
 const downloadUrls=[];
+const downloadLinks=[];
 export function clearDownloads() {
   for(const url of downloadUrls) URL.revokeObjectURL(url);
   downloadUrls.length=0;
+  downloadLinks.length=0;
   document.getElementById('downloadList').replaceChildren();
   document.getElementById('downloadReceipt').hidden=true;
 }
 export function download(blob,name,{automatic=true}={}) {
   const url=URL.createObjectURL(blob),anchor=document.createElement('a');
   downloadUrls.push(url); anchor.href=url;anchor.download=name;anchor.textContent=name;
+  downloadLinks.push(anchor);
   document.getElementById('downloadList').append(anchor);
   document.getElementById('downloadReceipt').hidden=false;
   if(automatic)anchor.click();
+}
+
+export async function downloadAll(signal) {
+  let started=0;
+  for(const anchor of [...downloadLinks]) {
+    if(signal?.aborted)throw new Error('ダウンロードを中止しました。開始済みの保存は続行されます。');
+    anchor.click();started++;
+    // Space the requests; browser download permission still applies.
+    await new Promise(resolve=>setTimeout(resolve,200));
+  }
+  return started;
 }
 
 // SVG is used only as an inert raster image, never inserted into the page DOM.
