@@ -57,7 +57,9 @@ export async function readProject(blob) {
   let offset = HEADER_BYTES + length;
   const images = [];
   for (const image of data.images) {
-    const original = blob.slice(offset,offset+image.bytes,image.type); offset += image.bytes;
+    // Keep an independent image snapshot: rewriting the opened .mifito file
+    // invalidates File-backed slices in Chromium, including later saves.
+    const original = new Blob([await blob.slice(offset,offset+image.bytes).arrayBuffer()],{type:image.type}); offset += image.bytes;
     if (await digest(original) !== image.sha256) throw new Error(`${image.name} の画像データが破損しています。`);
     images.push({...image,blob:original});
   }

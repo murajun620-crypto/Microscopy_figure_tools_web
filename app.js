@@ -5,7 +5,8 @@ import { batchExport, exportImage } from './export.js?v=51b4221c04db';
 import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da674';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
-import { createProject, readProject } from './project.js?v=364b6e61ee9d';
+import { createProject, readProject } from './project.js?v=e979f9d02ae5';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=266f4cee750c';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -19,6 +20,53 @@ let saveBatch=false;
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
+const workSaveState=new WorkSaveState();
+let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
+$('appVersion').textContent=`v${APP_VERSION}`;
+$('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
+function projectUI() {
+  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+}
+function pendingInputEdit() {
+  if(!current)return false;
+  for(const input of document.querySelectorAll('[data-setting],#imageList [data-item-key]')) {
+    let expected;
+    if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=current.settings[section][key];}
+    else {const item=items.find(item=>item.id===input.closest('[data-image-id]').dataset.imageId);expected=item?.[input.dataset.itemKey];}
+    if(input.type==='checkbox'){if(input.checked!==expected)return true;}
+    else if(input.type==='number'||input.type==='range'||input.hasAttribute('data-number')) {if(input.value===''?expected!=null&&expected!=='':Number(input.value)!==Number(expected))return true;}
+    else if(input.value!==String(expected??''))return true;
+  }
+  const crop=pendingCrop||current.settings.crop;
+  for(const [key,id] of [['x','cropX'],['y','cropY'],['width','cropWidth'],['height','cropHeight']]) {
+    const expected=crop[key]-(key==='x'?current.settings.crop.x:key==='y'?current.settings.crop.y:0);
+    if($(id).value===''||Number($(id).value)!==expected)return true;
+  }
+  return false;
+}
+function hasUnsavedWork() {
+  return !!items.length&&(projectSaving||pendingInputEdit()||workSaveState.isDirty(workspaceSnapshot(items,projectUI()),true));
+}
+function confirmUnsavedLeave(event) {
+  if(!hasUnsavedWork())return;
+  event.preventDefault();event.returnValue='';
+}
+function refreshWorkState() {
+  workStateQueued=false;
+  const dirty=hasUnsavedWork();
+  if(dirty!==leaveGuardInstalled){
+    if(dirty)window.addEventListener('beforeunload',confirmUnsavedLeave);
+    else window.removeEventListener('beforeunload',confirmUnsavedLeave);
+    leaveGuardInstalled=dirty;
+  }
+  const status=$('projectSaveStatus'), text=!items.length?'画像なし':projectSaving?'プロジェクト保存中…':dirty?'プロジェクト：未保存の変更があります':'プロジェクト：保存済み';
+  if(status.textContent!==text)status.textContent=text;
+  status.dataset.dirty=String(dirty);
+}
+function scheduleWorkState() {
+  if(!workStateQueued){workStateQueued=true;queueMicrotask(refreshWorkState);}
+}
+for(const name of ['input','change'])document.addEventListener(name,scheduleWorkState);
 function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
 const COLOR_PALETTE = {
@@ -130,6 +178,7 @@ function setBusy(value) {
   }
   syncColorFields();
   syncImageNavigation();
+  scheduleWorkState();
 }
 async function action(fn) {
   if (busy) return;
@@ -178,6 +227,7 @@ function shareSettings(section){
     else if(section==='output')item.settings.output=copy(template.output);
     item.history.push(item.settings);
   }
+  scheduleWorkState();
 }
 
 function renderList() {
@@ -212,6 +262,7 @@ function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
   $('removeSelectedButton').disabled=busy||count<1;
   refreshSaveUI();
+  scheduleWorkState();
 }
 
 async function selectItem(item) {
@@ -257,6 +308,7 @@ async function addFiles(files) {
 }
 
 function render() {
+  scheduleWorkState();
   $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current;
   if (!current || !source) { plan = null; canvas.width = canvas.height = 1; return; }
   const settings = current.settings, raw = tool === 'crop'||previewRaw;
@@ -622,14 +674,18 @@ $('saveProjectButton').addEventListener('click',()=>action(async()=>{
     try { handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'MiFiToプロジェクト',accept:{'application/octet-stream':['.mifito']}}]}); }
     catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
   }
-  const ui={formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  const ui=projectUI(), savedSnapshot=workspaceSnapshot(items,ui);
   notify('元画像と編集設定をプロジェクトに保存しています…');
-  const blob=await createProject(items,items.indexOf(current),ui);
-  if(handle){
-    const writer=await handle.createWritable();
-    try{await writer.write(blob);await writer.close();}catch(error){try{await writer.abort();}catch{}throw error;}
-    notify(`プロジェクトを保存しました（元画像${items.length}枚と編集設定）。`);
-  }else{download(blob,name);notify(`プロジェクトのダウンロードを開始しました（元画像${items.length}枚と編集設定）。`);}
+  projectSaving=true;scheduleWorkState();
+  try {
+    const blob=await createProject(items,items.indexOf(current),ui);
+    if(handle){
+      const writer=await handle.createWritable();
+      try{await writer.write(blob);await writer.close();}catch(error){try{await writer.abort();}catch{}throw error;}
+      notify(`プロジェクトを保存しました（元画像${items.length}枚と編集設定）。`);
+    }else{download(blob,name);notify(`プロジェクトのダウンロードを開始しました（元画像${items.length}枚と編集設定）。`);}
+    workSaveState.markSaved(savedSnapshot);
+  }finally{projectSaving=false;scheduleWorkState();}
 }));
 $('projectInput').addEventListener('change',()=>{
   const file=$('projectInput').files[0];$('projectInput').value='';
@@ -669,6 +725,7 @@ async function openProject(file){
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
+  workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
   notify(`プロジェクトを開きました（${items.length}枚）。編集を再開できます。`);
 }
 $('saveSettingsButton').addEventListener('click', () => {

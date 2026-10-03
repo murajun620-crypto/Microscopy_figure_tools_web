@@ -25,6 +25,9 @@ input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:#26483f;font-weight:700;font-size:18px;line-height:1.4}
 .brand-icon{display:block;width:40px;height:40px;flex-shrink:0}
 .brand small{display:block;font-size:9px;letter-spacing:2.3px;color:var(--muted);font-weight:400}
+.brand-name{display:flex;align-items:center;gap:8px}
+.app-version{font-size:10px;font-weight:400;letter-spacing:0;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 5px;white-space:nowrap}
+#projectSaveStatus[data-dirty=true]{color:#986325}
 .privacy{margin-left:auto;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:7px}
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#58a48b}
 .quiet{background:transparent;color:#526e63;border-radius:5px;padding:9px}

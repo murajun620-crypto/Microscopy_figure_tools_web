@@ -8,12 +8,12 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=7d27a6caaf03">
-  <script type="module" src="./app.js?v=9fc48a74061a"></script>
+  <link rel="stylesheet" href="./styles.css?v=fd351db7a4cf">
+  <script type="module" src="./app.js?v=c1484f7391ce"></script>
 </head>
 <body>
   <header class="app-header">
-    <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="40" height="40" alt=""><span>MiFiTo<small>MICROSCOPY FIGURE TOOLS</small></span></a>
+    <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="40" height="40" alt=""><span><span class="brand-name">MiFiTo <span id="appVersion" class="app-version" aria-label="バージョン"></span></span><small>MICROSCOPY FIGURE TOOLS</small></span></a>
     <span class="privacy"><span class="dot"></span>画像はこのブラウザ内で処理</span>
     <button id="helpButton" class="quiet">使い方</button>
   </header>
@@ -27,7 +27,8 @@
         <p class="hint">3枚は同じスケール・画像サイズ。一括処理を試せます。</p>
         <p class="hint">PNG / JPEG / BMP / SVG / TIFF</p>
         <div class="project-actions"><button id="saveProjectButton" class="button full" disabled>プロジェクトを保存</button><label class="button full file-button">プロジェクトを開く<input id="projectInput" type="file" accept=".mifito" aria-label="プロジェクトを開く"></label></div>
-        <p class="hint">一覧の全画像と編集設定を1つの.mifitoファイルに保存します。開くと現在の一覧を置き換え、画像を選び直さず再開できます。</p>
+        <p id="projectSaveStatus" class="hint" role="status" aria-live="polite">画像なし</p>
+        <p class="hint">一覧の全画像と編集設定を1つの.mifitoファイルに保存します。開くと現在の一覧を置き換え、画像を選び直さず再開できます。終了・更新前の未保存確認はプロジェクト保存が基準です。画像保存やコピーでは作業状態を保存しません。</p>
         <ul id="imageList" class="image-list" aria-label="読み込んだ画像"></ul>
       <details id="batchPanel" class="batch-panel"><summary>画像をまとめて操作 <span id="batchCount" class="detail-value">0枚</span></summary><div class="batch-body"><p class="hint">デザイン・トリミング・出力設定は共通、校正・表示・文字列は画像ごとに保持します。未校正画像には校正済み画像の値を補います。トリミングはPython版と同じ絶対ピクセル座標です。連番対象は処理対象かつラベル表示の画像です。</p>
         <div class="batch-options"><button id="batchAll" class="button">全て対象</button><button id="batchNone" class="button">全て対象外</button><button id="batchBarsOn" class="button">バー全表示</button><button id="batchBarsOff" class="button">バー全非表示</button><button id="batchBarFirst" class="button">バー先頭のみ</button><button id="batchLabelsOn" class="button">ラベル全表示</button><button id="batchLabelsOff" class="button">ラベル全非表示</button></div>
@@ -175,7 +176,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、画像欄の「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定交換にはJSONも引き続き使えます。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、画像欄の「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定交換にはJSONも引き続き使えます。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>
