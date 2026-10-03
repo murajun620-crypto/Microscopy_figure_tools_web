@@ -124,7 +124,7 @@ function setBusy(value) {
   $('previewEditingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
   for (const id of ['moveTool', 'measureTool', 'cropTool', 'exportButton','copyButton','rawPreviewButton','processedPreviewButton','zoomIn','zoomOut','zoomSelect']) $(id).disabled = value || !current;
-  for(const id of ['saveDestination','chooseSaveFolder','multipleFormats','includeSettings','saveDpi','exportFormat','batchNumbering','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
+  for(const id of ['saveDestination','chooseSaveFolder','includeSettings','saveDpi','batchNumbering','closeSaveDialog','downloadAllButton']) $(id).disabled=value;
   for(const input of document.querySelectorAll('[data-export-format]')) input.disabled=value;
   for(const id of ['removeSelectedButton','removeAllButton']) $(id).disabled=value||!items.length;
   refreshSaveUI();
@@ -687,12 +687,12 @@ $('settingsInput').addEventListener('change', () => {
       const previous=[...items];items.splice(0,items.length,...records.map(r=>r.image));for(const item of previous)if(!items.includes(item))URL.revokeObjectURL(item.thumbnail);
       await selectItem(items[0]);
       const formats=(data.output_formats??[data.output_format??'.png']).map(value=>value.replace(/^\./,'')).map(value=>value==='jpg'?'jpeg':value==='tif'?'tiff':value);
-      $('multipleFormats').checked=formats.length>1;for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);if(formats.length===1&&[...$('exportFormat').options].some(option=>option.value===formats[0]))$('exportFormat').value=formats[0];
+      for(const input of document.querySelectorAll('[data-export-format]'))input.checked=formats.includes(input.dataset.exportFormat);
     }else{const settings=parseProject(data,current);pendingCrop=null;commit(settings);setTool('move');}
     notify('設定を読み込みました。');
   });
 });
-function exportFormats(){const formats=$('multipleFormats').checked?[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat):[$('exportFormat').value];if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
+function exportFormats(){const formats=[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat);if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
 function refreshSaveUI() {
   const count=items.filter(item=>item.enabled).length;
   $('singleSaveButton').disabled=busy||!current;
@@ -704,21 +704,18 @@ function refreshSaveUI() {
   $('saveTargetInfo').textContent=saveBatch?`保存する画像：チェックした${count}枚`:(current?current.name:'画像を開いてください');
   $('saveBatchHint').hidden=!saveBatch;
   $('saveNumberingField').hidden=!saveBatch;
-  $('saveFormatChoices').hidden=!$('multipleFormats').checked;
-  $('exportFormat').disabled=busy||$('multipleFormats').checked;
-  $('saveOptionsInfo').textContent=[`${current?.settings.output.dpi??600} dpi`,$('multipleFormats').checked?'複数形式':'',$('includeSettings').checked?'設定JSON':'',saveBatch&&$('batchNumbering').checked?'連番':''].filter(Boolean).join(' · ');
-  $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（保存画面の詳細設定で変更）`;
+  $('copyButton').title=`表示中の画像を${current?.settings.output.dpi??600} dpiでコピー（保存画面の解像度で変更）`;
   const mode=$('saveDestination').value;
   $('chooseSaveFolder').hidden=mode!=='folder';
   $('saveFolderInfo').textContent=mode==='folder'?(saveDirectory?`保存先：${saveDirectory.name}`:'保存ボタンを押すと保存先を選べます。'):mode==='source'?(current?.sourceDirectory?`元フォルダ：${current.sourceDirectory.name}`:current?.sourceHandle?'初回保存時に元フォルダを開きます。保存先を確認してください。':'初回保存時に保存先フォルダを確認してください。'):'全ファイルのダウンロードを自動で開始します。';
 }
 for(const [id,batch] of [['singleSaveButton',false],['batchSaveButton',true]]) $(id).addEventListener('click',()=>{
   if(busy||!current)return;
-  saveBatch=batch;refreshSaveUI();$('saveAdvanced').open=false;$('saveDialog').showModal();
+  saveBatch=batch;refreshSaveUI();$('saveDialog').showModal();
 });
 $('closeSaveDialog').addEventListener('click',()=>{if(!busy)$('saveDialog').close();});
 $('saveDialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
-for(const id of ['multipleFormats','includeSettings','saveDpi','batchNumbering']) $(id).addEventListener('change',refreshSaveUI);
+for(const id of ['includeSettings','saveDpi','batchNumbering']) $(id).addEventListener('change',refreshSaveUI);
 $('saveDestination').addEventListener('change',refreshSaveUI);
 $('saveDestination').value=folderSupported?'folder':'download';
 for(const option of $('saveDestination').options)if(option.value!=='download')option.disabled=!folderSupported;

@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=507b76539a33">
-  <script type="module" src="./app.js?v=3ce66032efe0"></script>
+  <link rel="stylesheet" href="./styles.css?v=b75620b61cf3">
+  <script type="module" src="./app.js?v=0fe735a939a8"></script>
 </head>
 <body>
   <header class="app-header">
@@ -112,7 +112,7 @@
           <div class="detail-body">
             <div class="field-row"><label>出力倍率<select id="outputScale" data-setting="output.scale" data-number><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label><label>画像補間<select id="resampling" data-setting="output.resampling"><option value="nearest">最近傍</option><option value="smooth">滑らか</option></select></label></div>
             <div class="field-row"><label>印刷時のサイズ<input id="sizeCm" type="number" min="0.1" max="100" step="0.1" value="4" data-setting="output.sizeCm"></label><label>指定する辺<select id="sizeAxis" data-setting="output.sizeAxis"><option value="width">幅（cm）</option><option value="height">高さ（cm）</option></select></label></div>
-            <p class="hint">保存解像度はプレビュー下の「保存」で選べます。出力倍率は配置計算に使います。</p>
+            <p class="hint">保存解像度はプレビュー上部の保存ボタンから選べます。出力倍率は配置計算に使います。</p>
             <label class="check"><input id="pptEditable" type="checkbox" data-setting="output.pptEditable">PPTXのラベルを編集可能にする</label>
             <label class="check"><input id="pptIncludeLabel" type="checkbox" data-setting="output.pptIncludeLabel" checked>PPTXにラベル文字列を含める</label>
 
@@ -154,24 +154,21 @@
     <div class="dialog-heading"><h2 id="saveDialogTitle">画像を保存</h2><button id="closeSaveDialog" class="tool" aria-label="保存画面を閉じる">✕</button></div>
     <section class="save-panel" aria-label="画像の保存">
       <p id="saveTargetInfo" class="save-target"></p><p id="saveBatchHint" class="hint" hidden>画像一覧でチェックした画像を、現在のデザインで保存します。</p>
-      <label>保存形式<select id="exportFormat" aria-label="保存形式"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="svg">SVG</option><option value="pdf">PDF</option><option value="bmp">BMP</option><option value="tiff">TIFF（8-bit RGBA）</option><option value="pptx">PowerPoint（PPTX）</option></select></label>
+      <fieldset id="saveFormatChoices" class="save-formats"><legend>保存形式（複数選択可）</legend><div class="save-format-grid"><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="jpeg">JPEG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="bmp">BMP</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF（8-bit RGBA）</label><label class="check"><input type="checkbox" data-export-format="pptx">PowerPoint（PPTX）</label></div></fieldset>
+      <label>解像度<select id="saveDpi" data-setting="output.dpi" data-number><option value="300">300 dpi</option><option value="600" selected>600 dpi（標準）</option><option value="1200">1200 dpi</option></select></label>
+      <label class="check"><input id="includeSettings" type="checkbox" checked>設定JSONも別ファイルで保存</label>
+      <label id="saveNumberingField" class="check" hidden><input id="batchNumbering" type="checkbox">保存時にパネルラベルを連番にする</label>
+      <p class="hint">コピーも同じ解像度です。連番の種別は「パネルラベル」で変更できます。</p>
       <div class="save-destination"><label>保存先<select id="saveDestination"><option value="source">元画像と同じフォルダ</option><option value="folder">指定フォルダ</option><option value="download">ダウンロード</option></select></label><button id="chooseSaveFolder" class="button">保存先を選ぶ</button></div>
       <p id="saveFolderInfo" class="hint"></p><p id="saveCompatibility" class="hint" hidden>このブラウザでは元フォルダを指定できないため、ブラウザの保存先へ自動ダウンロードします。</p>
-      <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
-      <details id="saveAdvanced" class="save-options"><summary>詳細設定 <span id="saveOptionsInfo" class="detail-value">600 dpi</span></summary><div class="save-options-body">
-        <label>解像度<select id="saveDpi" data-setting="output.dpi" data-number><option value="300">300 dpi</option><option value="600" selected>600 dpi（標準）</option><option value="1200">1200 dpi</option></select></label>
-        <label id="saveNumberingField" class="check" hidden><input id="batchNumbering" type="checkbox">保存時にパネルラベルを連番にする</label>
-        <label class="check"><input id="multipleFormats" type="checkbox">複数形式で保存</label><div id="saveFormatChoices" class="batch-options" hidden><label class="check"><input type="checkbox" data-export-format="png" checked>PNG</label><label class="check"><input type="checkbox" data-export-format="jpeg">JPEG</label><label class="check"><input type="checkbox" data-export-format="svg">SVG</label><label class="check"><input type="checkbox" data-export-format="pdf">PDF</label><label class="check"><input type="checkbox" data-export-format="bmp">BMP</label><label class="check"><input type="checkbox" data-export-format="tiff">TIFF</label></div>
-        <label class="check"><input id="includeSettings" type="checkbox">設定JSONも別ファイルで保存</label>
-        <p class="hint">コピーにもこの解像度を使います。連番の種別は「パネルラベル」、印刷サイズは「出力・設定」で変更できます。</p>
-      </div></details>
       <p class="hint">ファイル名：元の名前_mifito。画像ごとのファイルとして保存します。</p>
       <p id="batchProgress" class="readout" role="status"></p>
       <details id="downloadReceipt" class="download-receipt" hidden><summary>ダウンロードの確認・再保存</summary><button id="downloadAllButton" class="button">全ファイルを再ダウンロード</button><p class="hint">保存が始まらない場合は、ブラウザの「複数ファイルのダウンロード」を許可してください。</p><div id="downloadList"></div></details>
     </section>
+    <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。解像度・連番・複数形式は保存画面の「詳細設定」で変更できます。PNG/JPEG/BMP/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>スマホ・タブレットでは、測定・校正とトリミングをプレビュー画面で操作できます。操作欄をスクロールしても画像を表示します。画像の一覧、スケールバーやラベルなどは「画像・設定」で変更します。画像上で2本指を広げる／狭めると拡大・縮小できます。＋／−ボタンでも調整できます。拡大した画像は「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。必要な画像と設定JSONを保存してください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度も同じ画面で選び、設定JSONは初期状態で保存します。PNG/JPEG/BMP/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>スマホ・タブレットでは、測定・校正とトリミングをプレビュー画面で操作できます。操作欄をスクロールしても画像を表示します。画像の一覧、スケールバーやラベルなどは「画像・設定」で変更します。画像上で2本指を広げる／狭めると拡大・縮小できます。＋／−ボタンでも調整できます。拡大した画像は「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。ページを閉じると編集内容は失われます。必要な画像と設定JSONを保存してください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>
