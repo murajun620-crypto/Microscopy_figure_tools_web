@@ -90,6 +90,9 @@ summary .detail-value+*{margin-left:0}
 .history-group{margin-left:auto}
 .zoom-label{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
 .zoom-label select{width:145px;font-size:11px;padding:6px 8px}
+.zoom-controls{display:flex;align-items:center;gap:3px;margin-left:auto}
+.zoom-step{min-width:36px;font-size:18px;padding:4px}
+.compact-navigation{display:none}
 .preview-area{position:relative;flex:1;min-height:260px;overflow:auto;border:1px solid #d8e1da;border-radius:9px;background-color:#e4e9e3;background-image:linear-gradient(45deg,#dae1d9 25%,transparent 25%),linear-gradient(-45deg,#dae1d9 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#dae1d9 75%),linear-gradient(-45deg,transparent 75%,#dae1d9 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0;display:grid;place-items:center;padding:28px}
 .canvas-frame{line-height:0;box-shadow:0 4px 24px #203d3024;background:transparent;margin:auto}
 .preview-shell{position:relative;display:flex;flex:1;min-width:0;min-height:260px}
@@ -164,20 +167,66 @@ body.busy .sidebar input,body.busy .sidebar button,body.busy .sidebar select,bod
 .empty-state h1{font-size:19px}
 }
 
-@media(max-width:640px){.app-header{height:65px}
-.brand{font-size:13px}
-.brand-icon{width:34px;height:34px}
+@media(max-width:900px){
+.app-header{height:65px;position:sticky;top:0;z-index:4;padding:0 max(14px,env(safe-area-inset-left))}
+.brand{font-size:16px}
+.brand-icon{width:36px;height:36px}
 .privacy{display:none}
 .app-header>.quiet{margin-left:auto}
-.workspace{height:auto;min-height:0;display:flex;flex-direction:column}
-.sidebar{border-right:0;border-bottom:1px solid var(--border);max-height:42dvh;order:1}
-.editor{min-height:58dvh}
-.preview-area{min-height:300px}
-.empty-state{padding:10px}
-.file-section{padding:14px 20px}
-.image-list{max-height:110px}
-.editor-toolbar{margin-bottom:10px}
-.zoom-label select{width:125px}
+.compact-navigation{position:sticky;top:65px;z-index:4;display:flex;gap:6px;padding:6px max(12px,env(safe-area-inset-left));background:#fff;border-bottom:1px solid var(--border)}
+.compact-navigation button{flex:1;min-height:44px;border-radius:7px;background:var(--soft);color:#526e63;font-weight:700}
+.compact-navigation button[aria-pressed=true]{background:var(--green);color:white}
+.workspace{height:auto;min-height:0;display:block}
+.sidebar{display:none;border-right:0;overflow:visible}
+body.settings-view .sidebar{display:block}
+body.settings-view .editor{display:none}
+.editor{padding:12px max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom));overflow:visible;min-height:calc(100dvh - 122px)}
+.preview-shell{flex:none;height:clamp(240px,44dvh,520px);min-height:240px}
+.preview-area{min-height:0;padding:24px 16px;overscroll-behavior:contain}
+.empty-state{padding:8px}
+.empty-state h1{margin:15px 0 10px}
+.empty-state p{margin-bottom:15px}
+.empty-art{width:130px;height:90px}
+.empty-state small{margin-top:8px}
+.preview-shell:has(.empty-state:not([hidden])){height:auto;min-height:430px}
+.file-section,.detail-body{padding:16px 20px}
+.image-list{max-height:220px}
+.editor-toolbar{gap:5px;margin-bottom:10px}
+.zoom-label select{width:155px;min-height:44px;font-size:14px}
+.zoom-controls{margin-left:0}
+.tool,.quiet,.small,.button{min-height:44px;font-size:13px}
+.tool{padding:8px 10px}
+.zoom-step{min-width:44px;font-size:21px}
+input[type=text],input[type=number],select{font-size:16px;min-height:44px}
+input[type=checkbox]{width:20px;height:20px}
+input[type=range]{min-height:32px}
+label{font-size:13px}
+summary{min-height:48px;font-size:14px}
+.hint,.readout{font-size:12px}
+.check{min-height:44px}
+.color-palette{max-width:none;gap:6px}
+.color-swatch{height:44px;min-height:44px}
+.preview-navigator .image-nav{width:44px;height:44px;min-height:44px}
+#previewImageCounter{font-size:13px}
+.editor-footer{align-items:flex-start}
+.editor-footer strong{overflow-wrap:anywhere}
 .editor-footer{padding-bottom:8px}
-.batch-options{gap:8px}
+.export-bar{gap:6px;padding:8px;flex-wrap:wrap}
+.export-bar select{width:100%;flex-basis:100%;font-size:16px}
+.export-bar button{flex:1;min-width:0}
+.batch-options{gap:8px;align-items:center}
+.batch-options label{font-size:13px;max-width:none}
+.batch-options select{font-size:16px}
+.batch-panel summary{font-size:13px}
+.batch-body{padding:0 12px 14px}
+.toast{bottom:max(12px,env(safe-area-inset-bottom))}
+dialog{padding:16px;max-height:80dvh;font-size:14px}
+}
+@media(pointer:coarse) and (min-width:901px), (min-width:901px) and (max-width:1100px){
+.button,.tool,.quiet,summary{min-height:44px}
+input[type=text],input[type=number],select{min-height:44px;font-size:16px}
+.tool,.quiet,label{font-size:13px}
+.zoom-label select{font-size:14px}
+.color-swatch{height:38px;min-height:38px}
+.preview-navigator .image-nav{width:44px;height:44px;min-height:44px}
 }
