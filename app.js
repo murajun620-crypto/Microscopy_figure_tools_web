@@ -1,13 +1,13 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
-import { buildPlan, paint } from './render.js?v=952b7e69af87';
-import { batchExport, exportImage } from './export.js?v=51b4221c04db';
-import { wheelZoom, zoomText, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=eee1f27da674';
+import { buildPlan, paint } from './render.js?v=e8144e6b4a62';
+import { batchExport, exportImage } from './export.js?v=6b77f8d4384d';
+import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
 import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=42fc67acf5cd';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c62e57cf117d';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -22,6 +22,7 @@ let saveBatch=false;
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
+let previewFrame = 0, spacePan = false, hoverPixel = null;
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -203,7 +204,7 @@ function syncInputs() {
   const c = current.settings.crop;
   updateCropInputs(pendingCrop || c);
   $('aspectRatio').value=current.settings.cropOptions.aspect;$('cropApplication').value=current.settings.cropOptions.application;$('customRatio').hidden=$('aspectRatio').value!=='custom';
-  $('cropStatus').textContent=pendingCrop?`選択範囲 ${pendingCrop.width} × ${pendingCrop.height} px`:'選択範囲なし';
+  if(!pendingCrop)$('cropStatus').textContent='選択範囲なし';
   const calibration = current.settings.calibration;
   $('pixelSize').value = calibration?.pixelSize ?? '';
   if (calibration) $('calibrationUnit').value = calibration.unit;
@@ -324,15 +325,15 @@ function render() {
     if (!area.clientWidth) return;
     const displayScale = zoom === 'fit' ? Math.min((area.clientWidth - 58) / plan.width, (area.clientHeight - 58) / plan.height, 1) : Number(zoom);
     const cssWidth = Math.max(1, plan.width * Math.max(0.01, displayScale)), cssHeight = Math.max(1, plan.height * Math.max(0.01, displayScale));
-    previewScale = Math.min(cssWidth * Math.min(devicePixelRatio, 2) / plan.width, 2400 / Math.max(plan.width, plan.height));
-    canvas.width = Math.max(1, Math.round(plan.width * previewScale)); canvas.height = Math.max(1, Math.round(plan.height * previewScale));
-    canvas.style.width = `${cssWidth}px`; canvas.style.height = `${cssHeight}px`;
-    paint(context, source, plan, settings, { scale: previewScale, annotations: !raw });
-    drawGuides();
+    previewScale = cssWidth / plan.width;
+    $('canvasFrame').style.width = `${cssWidth}px`; $('canvasFrame').style.height = `${cssHeight}px`;
+    paintPreview();
     const finalPlan = buildPlan(settings,context,false,settings.output.scale);
     const metrics = rasterMetrics(finalPlan, settings.output);
     $('outputInfo').textContent = `PNG ${metrics.width} × ${metrics.height} px · ${metrics.widthCm.toFixed(2)} × ${metrics.heightCm.toFixed(2)} cm · ${metrics.dpi} dpi`;
     $('viewInfo').textContent = `${tool==='crop'?'現在の画像（トリミング選択）':previewRaw?'元画像':'処理後画像'} · 表示 ${zoomText(displayScale)}`;
+    const barBox = finalPlan.annotations.find(box=>box.kind==='scaleBar');
+    $('barThicknessInfo').textContent = barBox ? `太さ ${barBox.thickness / settings.output.scale} px（画像座標）` : '';
     const warnings = finalPlan.warnings;
     $('instruction').classList.toggle('warning', warnings.length > 0 && tool === 'move');
     $('instruction').title = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。四隅・辺でサイズ、中央で位置を調整し適用します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
@@ -342,8 +343,26 @@ function render() {
   } catch (error) { $('instruction').hidden=false; $('instruction').textContent = error.message; $('instruction').classList.add('warning'); }
 }
 
+function paintPreview() {
+  if (!current || !source || !plan || $('canvasFrame').hidden) return;
+  const frame = $('canvasFrame').getBoundingClientRect(), area = $('previewArea'), bounds = area.getBoundingClientRect();
+  const tile = previewTile(frame, {left:bounds.left+area.clientLeft,top:bounds.top+area.clientTop,width:area.clientWidth,height:area.clientHeight}, devicePixelRatio);
+  canvas.style.left = `${tile.left}px`; canvas.style.top = `${tile.top}px`;
+  canvas.style.width = `${tile.width}px`; canvas.style.height = `${tile.height}px`;
+  canvas.width = tile.pixelWidth; canvas.height = tile.pixelHeight;
+  context.setTransform(canvas.width/tile.width,0,0,canvas.height/tile.height,0,0);
+  context.translate(-tile.left,-tile.top); context.scale(previewScale,previewScale);
+  const settings = tool==='crop' && previewScale>=4 ? {...current.settings,output:{...current.settings.output,resampling:'nearest'}} : current.settings;
+  paint(context,source,plan,settings,{annotations:tool!=='crop'&&!previewRaw});
+  drawGuides(); context.setTransform(1,0,0,1,0,0);
+}
+function schedulePreview() {
+  if (!previewFrame) previewFrame=requestAnimationFrame(()=>{previewFrame=0;paintPreview();});
+}
+$('previewArea').addEventListener('scroll',schedulePreview,{passive:true});
+
 function sourcePoint(event) {
-  return viewToImage({ x: event.clientX, y: event.clientY }, canvas.getBoundingClientRect(), plan.width, plan.height, plan.crop, plan.top);
+  return viewToImage({ x: event.clientX, y: event.clientY }, $('canvasFrame').getBoundingClientRect(), plan.width, plan.height, plan.crop, plan.top);
 }
 function canvasPoint(event) {
   const p = sourcePoint(event);
@@ -359,7 +378,7 @@ function boundedPoint(p) {
 }
 function drawGuides() {
   if (!plan||previewRaw) return;
-  context.save(); context.scale(previewScale, previewScale); context.lineWidth = 2 / previewScale; context.font = `${12 / previewScale}px sans-serif`;
+  context.save(); context.lineWidth = 1.5 / previewScale; context.font = `${12 / previewScale}px sans-serif`;
   if (measurement && tool !== 'crop') {
     const c = current.settings.crop, a = { x: measurement[0].x - c.x, y: measurement[0].y - c.y + plan.top }, b = { x: measurement[1].x - c.x, y: measurement[1].y - c.y + plan.top };
     context.strokeStyle = '#70e5d0'; context.fillStyle = '#70e5d0'; context.beginPath(); context.moveTo(a.x, a.y); context.lineTo(b.x, b.y); context.stroke();
@@ -375,10 +394,16 @@ function drawGuides() {
     for (let i = 1; i <= 2; i++) { context.beginPath(); context.moveTo(c.x + c.width * i / 3, c.y); context.lineTo(c.x + c.width * i / 3, c.y + c.height); context.moveTo(c.x, c.y + c.height * i / 3); context.lineTo(c.x + c.width, c.y + c.height * i / 3); context.stroke(); }
     context.setLineDash([]);context.fillStyle='#8df0d2';for(const x of [c.x,c.x+c.width/2,c.x+c.width]) for(const y of [c.y,c.y+c.height/2,c.y+c.height]) if(x!==c.x+c.width/2||y!==c.y+c.height/2) context.fillRect(x-3/previewScale,y-3/previewScale,6/previewScale,6/previewScale);
   }
+  if(tool==='crop' && hoverPixel && previewScale>=4) {
+    const x=hoverPixel.x-plan.crop.x,y=hoverPixel.y-plan.crop.y;
+    context.strokeStyle='#ffde59';context.lineWidth=1/previewScale;
+    context.strokeRect(x,y,1,1);
+  }
   context.restore();
 }
 function setTool(value) {
   tool = value; measurementStart = cropStart = drag = null;
+  hoverPixel=null;$('pointerCoordinates').textContent='';
   previewRaw=false;$('rawPreviewButton').classList.remove('active');$('processedPreviewButton').classList.add('active');
   for (const mode of ['move', 'measure', 'crop']) { $(`${mode}Tool`).classList.toggle('active', mode === value); $(`${mode}Tool`).setAttribute('aria-pressed', String(mode === value)); }
   canvas.style.cursor = value === 'move' ? 'default' : 'crosshair'; render();
@@ -402,7 +427,7 @@ function updateCropInputs(crop) {
 }
 function cropHit(p) {
   if(!pendingCrop)return null;
-  const c=pendingCrop,tolerance=8/(canvas.getBoundingClientRect().width/plan.width),left=Math.abs(p.x-c.x)<tolerance,right=Math.abs(p.x-(c.x+c.width))<tolerance,top=Math.abs(p.y-c.y)<tolerance,bottom=Math.abs(p.y-(c.y+c.height))<tolerance;
+  const c=pendingCrop,tolerance=8/previewScale,left=Math.abs(p.x-c.x)<tolerance,right=Math.abs(p.x-(c.x+c.width))<tolerance,top=Math.abs(p.y-c.y)<tolerance,bottom=Math.abs(p.y-(c.y+c.height))<tolerance;
   if(p.x<c.x-tolerance||p.x>c.x+c.width+tolerance||p.y<c.y-tolerance||p.y>c.y+c.height+tolerance)return null;
   if(top&&left)return 'top-left';if(top&&right)return 'top-right';if(bottom&&left)return 'bottom-left';if(bottom&&right)return 'bottom-right';
   if(!aspect()){if(top)return 'top';if(bottom)return 'bottom';if(left)return 'left';if(right)return 'right';}
@@ -413,8 +438,9 @@ function distanceToLine(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy,t=
 function moveMeasurement(operation,p){const c=current.settings.crop,[a,b]=operation.beforeMeasurement,dx=clamp(p.x-operation.down.x,c.x-Math.min(a.x,b.x),c.x+c.width-Math.max(a.x,b.x)),dy=clamp(p.y-operation.down.y,c.y-Math.min(a.y,b.y),c.y+c.height-Math.max(a.y,b.y));return [{x:a.x+dx,y:a.y+dy},{x:b.x+dx,y:b.y+dy}];}
 
 canvas.addEventListener('pointerdown', event => {
-  if (!current || busy || !plan || event.button !== 0 || event.pointerType === 'touch') return;
-  if(previewRaw) {
+  if (!current || busy || !plan || ![0,1].includes(event.button) || event.pointerType === 'touch') return;
+  event.preventDefault();canvas.focus({preventScroll:true});
+  if(previewRaw || spacePan || event.button===1) {
     canvas.setPointerCapture(event.pointerId);
     drag={mode:'pan',x:event.clientX,y:event.clientY,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop};
     return;
@@ -423,14 +449,14 @@ canvas.addEventListener('pointerdown', event => {
   if (tool !== 'move' && !insideImage(p)) return;
   canvas.setPointerCapture(event.pointerId);
   if (tool === 'measure') {
-    const tolerance=8/(canvas.getBoundingClientRect().width/plan.width);
+    const tolerance=8/previewScale;
     let hit=measurement&&!measurementStart?measurement.findIndex(q=>Math.hypot(p.x-q.x,p.y-q.y)<tolerance):-1;
     if(hit<0&&measurement&&!measurementStart&&distanceToLine(p,...measurement)<tolerance)hit=2;
     const start = measurementStart || p;
-    drag = { mode: 'measure', start, down: p, secondClick: !!measurementStart, moved: false,handle:hit,beforeMeasurement:measurement?copy(measurement):null };
+    drag = { mode: 'measure', start, down: p, downView:{x:event.clientX,y:event.clientY}, secondClick: !!measurementStart, moved: false,handle:hit,beforeMeasurement:measurement?copy(measurement):null };
     if(hit<0) measurement=[start,constrainedPoint(p,start,event)];render();
   } else if (tool === 'crop' || pendingCrop && cropHit(p)) {
-    try { const edit=cropHit(p);drag={mode:'crop',start:cropStart||p,down:p,ratio:aspect(),edit,origin:pendingCrop?copy(pendingCrop):null,moved:false,secondClick:!!cropStart}; } catch (error) { notify(error.message, true); }
+    try { const edit=cropStart?null:cropHit(p);drag={mode:'crop',start:cropStart||p,down:p,downView:{x:event.clientX,y:event.clientY},ratio:aspect(),edit,origin:pendingCrop?copy(pendingCrop):null,moved:false,secondClick:!!cropStart}; } catch (error) { notify(error.message, true); }
   } else {
     const q = canvasPoint(event), hit = [...plan.annotations].reverse().find(box => q.x >= box.x && q.x <= box.x + box.width && q.y >= box.y && q.y <= box.y + box.height);
     if (hit) { drag = { mode: 'move', kind: hit.kind, offset: { x: q.x - hit.x, y: q.y - hit.y }, before: copy(current.settings) }; canvas.style.cursor = 'grabbing'; }
@@ -438,14 +464,21 @@ canvas.addEventListener('pointerdown', event => {
   }
 });
 canvas.addEventListener('pointermove', event => {
-  if (!current || !drag || busy) return;
+  if (!current || !plan || busy) return;
+  if(tool==='crop') {
+    const p=sourcePoint(event);
+    hoverPixel=insideImage(p)?{x:Math.min(current.width-1,Math.floor(p.x)),y:Math.min(current.height-1,Math.floor(p.y))}:null;
+    $('pointerCoordinates').textContent=hoverPixel?`元画像 x=${hoverPixel.x}, y=${hoverPixel.y}`:'';
+    if(!drag)schedulePreview();
+  }
+  if(!drag)return;
   const p = boundedPoint(sourcePoint(event));
   if(drag.mode==='pan'){$('previewArea').scrollLeft=drag.left+drag.x-event.clientX;$('previewArea').scrollTop=drag.top+drag.y-event.clientY;return;}
-  if (drag.mode === 'measure') {if(drag.handle===2)measurement=moveMeasurement(drag,p);else if(drag.handle>=0) measurement[drag.handle]=constrainedPoint(p,measurement[1-drag.handle],event);else measurement[1]=constrainedPoint(p,drag.start,event); drag.moved ||= Math.hypot(p.x - drag.down.x, p.y - drag.down.y) > 2; updateMeasurement(); }
+  if (drag.mode === 'measure') {if(drag.handle===2)measurement=moveMeasurement(drag,p);else if(drag.handle>=0) measurement[drag.handle]=constrainedPoint(p,measurement[1-drag.handle],event);else measurement[1]=constrainedPoint(p,drag.start,event); drag.moved ||= Math.hypot(event.clientX-drag.downView.x,event.clientY-drag.downView.y)>3; updateMeasurement(); }
   else if (drag.mode === 'crop') {
     const c=current.settings.crop;
     if(drag.edit){const r=editCrop({...drag.origin,x:drag.origin.x-c.x,y:drag.origin.y-c.y},drag.edit,{x:drag.down.x-c.x,y:drag.down.y-c.y},{x:p.x-c.x,y:p.y-c.y},c.width,c.height,drag.ratio);pendingCrop={...r,x:r.x+c.x,y:r.y+c.y};}else pendingCrop=cropFromDrag(drag.start,p,drag.ratio);
-    drag.moved ||= Math.hypot(p.x-drag.down.x,p.y-drag.down.y)>2;updateCropInputs(pendingCrop);
+    drag.moved ||= Math.hypot(event.clientX-drag.downView.x,event.clientY-drag.downView.y)>3;updateCropInputs(pendingCrop);
   } else {
     const q = canvasPoint(event), box = plan.annotations.find(annotation => annotation.kind === drag.kind), c = current.settings.crop;
     current.settings[drag.kind].position = { x: clamp(q.x - drag.offset.x, 0, Math.max(0,c.width - box.width)), y: clamp(q.y - drag.offset.y, box.area.y, Math.max(box.area.y,box.area.y+box.area.height-box.height))-(box.band==='top'?0:plan.top) };
@@ -472,7 +505,7 @@ canvas.addEventListener('pointerup', event => {
     }
     if(pendingCrop) {updateCropInputs(pendingCrop);current.settings.cropOptions.pending=copy(pendingCrop);current.history.push(current.settings);}
   } else if (operation.mode === 'move') { current.history.push(current.settings);if(operation.kind==='scaleBar')shareSettings('scaleBar'); syncInputs(); }
-  drag = null; canvas.style.cursor = tool === 'move' ? 'default' : 'crosshair';
+  drag = null; canvas.style.cursor = spacePan ? 'grab' : tool === 'move' ? 'default' : 'crosshair';
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); render();
 });
 canvas.addEventListener('pointercancel', event => {
@@ -482,16 +515,19 @@ canvas.addEventListener('pointercancel', event => {
 canvas.addEventListener('contextmenu',event=>{if(tool==='crop'){event.preventDefault();pendingCrop=cropStart=drag=null;current.settings.cropOptions.pending=null;current.history.push(current.settings);syncInputs();render();}});
 function queuePreviewZoom(zoom, anchor) {
   const select = $('zoomSelect'), area = $('previewArea');
-  let option = select.querySelector('[data-custom-zoom]');
-  if (!option) { option = document.createElement('option'); option.dataset.customZoom = 'true'; select.add(option); }
-  option.value = String(zoom); option.textContent = zoomText(zoom); select.value = String(zoom);
+  if (![...select.options].some(option=>!option.dataset.customZoom && option.value===String(zoom))) {
+    let option = select.querySelector('[data-custom-zoom]');
+    if (!option) { option = document.createElement('option'); option.dataset.customZoom = 'true'; select.add(option); }
+    option.value = String(zoom); option.textContent = zoomText(zoom);
+  }
+  select.value = String(zoom);
   wheelZoomAnchor = anchor;
   if (!wheelZoomFrame) wheelZoomFrame = requestAnimationFrame(()=>{
     wheelZoomFrame = 0;
     const anchor = wheelZoomAnchor; wheelZoomAnchor = null;
     if (!plan || !current || !anchor) return;
     render();
-    const after = canvas.getBoundingClientRect();
+    const after = $('canvasFrame').getBoundingClientRect();
     area.scrollLeft += after.left + after.width * anchor.u - anchor.x;
     area.scrollTop += after.top + after.height * anchor.v - anchor.y;
   });
@@ -499,15 +535,21 @@ function queuePreviewZoom(zoom, anchor) {
 canvas.addEventListener('wheel',event=>{
   if (!event.ctrlKey || !plan || busy) return;
   event.preventDefault();
-  const bounds=canvas.getBoundingClientRect(), select=$('zoomSelect'), area=$('previewArea');
+  const bounds=$('canvasFrame').getBoundingClientRect(), select=$('zoomSelect'), area=$('previewArea');
   const scale=select.value==='fit'?bounds.width/plan.width:Number(select.value), zoom=wheelZoom(scale,event.deltaY,event.deltaMode,area.clientHeight);
   if (zoom!==scale) queuePreviewZoom(zoom,{x:event.clientX,y:event.clientY,u:(event.clientX-bounds.left)/bounds.width,v:(event.clientY-bounds.top)/bounds.height});
 },{passive:false});
 for (const [id,factor] of [['zoomIn',1.15],['zoomOut',1/1.15]]) $(id).addEventListener('click',()=>{
   if (!plan || !current || busy) return;
-  const bounds=canvas.getBoundingClientRect(), area=$('previewArea'), viewport=area.getBoundingClientRect(), select=$('zoomSelect');
+  const bounds=$('canvasFrame').getBoundingClientRect(), area=$('previewArea'), viewport=area.getBoundingClientRect(), select=$('zoomSelect');
   const scale=select.value==='fit'?bounds.width/plan.width:Number(select.value), x=viewport.left+area.clientWidth/2,y=viewport.top+area.clientHeight/2;
   queuePreviewZoom(clamp(scale*factor,MIN_ZOOM,MAX_ZOOM),{x,y,u:(x-bounds.left)/bounds.width,v:(y-bounds.top)/bounds.height});
+});
+$('zoomToCrop').addEventListener('click',()=>{
+  if(!current||!plan||busy)return;
+  const c=pendingCrop||current.settings.crop, area=$('previewArea'), viewport=area.getBoundingClientRect();
+  const zoom=clamp(Math.min((area.clientWidth-80)/c.width,(area.clientHeight-80)/c.height),MIN_ZOOM,MAX_ZOOM);
+  queuePreviewZoom(zoom,{x:viewport.left+area.clientLeft+area.clientWidth/2,y:viewport.top+area.clientTop+area.clientHeight/2,u:(c.x-plan.crop.x+c.width/2)/plan.width,v:(c.y-plan.crop.y+c.height/2+plan.top)/plan.height});
 });
 
 for (const input of document.querySelectorAll('[data-setting]')) {
@@ -604,12 +646,26 @@ function undo(redo = false) {
   measurement=measurementStart=drag=cropStart=null;pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
 }
 $('undoButton').addEventListener('click', () => undo()); $('redoButton').addEventListener('click', () => undo(true));
-$('zoomSelect').addEventListener('change',()=>{ cancelWheelZoom(); render(); });
+$('zoomSelect').addEventListener('change',()=>{
+  cancelWheelZoom();
+  if(!current || !plan || $('zoomSelect').value==='fit'){render();return;}
+  const bounds=$('canvasFrame').getBoundingClientRect(),area=$('previewArea'),viewport=area.getBoundingClientRect();
+  const x=viewport.left+area.clientLeft+area.clientWidth/2,y=viewport.top+area.clientTop+area.clientHeight/2;
+  queuePreviewZoom(Number($('zoomSelect').value),{x,y,u:(x-bounds.left)/bounds.width,v:(y-bounds.top)/bounds.height});
+});
 for(const [id,raw] of [['rawPreviewButton',true],['processedPreviewButton',false]]) $(id).addEventListener('click',()=>{setTool('move');previewRaw=raw;$('rawPreviewButton').classList.toggle('active',raw);$('processedPreviewButton').classList.toggle('active',!raw);render();});
 let resizeFrame; new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(render); }).observe($('previewArea'));
 document.addEventListener('keydown', event => {
   if(document.querySelector('dialog[open]'))return;
   const editing = event.target.matches('input, textarea, select');
+  if(!editing && current && !busy && event.code==='Space' && (event.target===canvas || event.target===document.body)) {event.preventDefault();spacePan=true;canvas.style.cursor='grab';return;}
+  if(!editing && current && !busy && tool==='crop' && pendingCrop && !drag && !event.ctrlKey && !event.metaKey && !event.altKey && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+    event.preventDefault();const step=event.shiftKey?10:1,base=current.settings.crop;
+    const local={...pendingCrop,x:pendingCrop.x-base.x,y:pendingCrop.y-base.y};
+    const next=editCrop(local,'move',{x:0,y:0},{x:event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0,y:event.key==='ArrowUp'?-step:event.key==='ArrowDown'?step:0},base.width,base.height);
+    pendingCrop={...next,x:next.x+base.x,y:next.y+base.y};cropStart=null;
+    current.settings.cropOptions.pending=copy(pendingCrop);current.history.push(current.settings);updateCropInputs(pendingCrop);render();return;
+  }
   if (event.key === 'Escape' && current && !busy) { if (drag?.before) current.settings = drag.before; drag = pendingCrop = cropStart = measurementStart = measurement = null; current.settings.cropOptions.pending=null;current.history.push(current.settings);setTool('move'); syncInputs(); }
   if (!editing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(event.shiftKey); }
   if((event.ctrlKey||event.metaKey)&&!editing) {
@@ -620,6 +676,8 @@ document.addEventListener('keydown', event => {
     if(key==='c'&&event.shiftKey){event.preventDefault();$('copyButton').click();}
   }
 });
+document.addEventListener('keyup',event=>{if(event.code==='Space'){spacePan=false;canvas.style.cursor=tool==='move'?'default':'crosshair';}});
+window.addEventListener('blur',()=>{spacePan=false;});
 for (const eventName of ['dragenter', 'dragover']) $('previewArea').addEventListener(eventName, event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } });
 $('previewArea').addEventListener('drop',event=>{
   event.preventDefault();event.stopPropagation();if(!busy)action(()=>openDroppedFiles([...event.dataTransfer.files]));

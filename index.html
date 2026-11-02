@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=d9fdb4f5bc9f">
-  <script type="module" src="./app.js?v=42fc67acf5cd"></script>
+  <link rel="stylesheet" href="./styles.css?v=d7ac90ad0896">
+  <script type="module" src="./app.js?v=e0e1206b1b54"></script>
 </head>
 <body>
   <header class="app-header">
@@ -73,6 +73,7 @@
             <div class="field-row"><label>縦横比<select id="aspectRatio" data-setting="cropOptions.aspect"><option value="free">自由</option><option value="source">元画像比率</option><option value="1:1">1 : 1</option><option value="4:3">4 : 3</option><option value="3:2">3 : 2</option><option value="16:9">16 : 9</option><option value="custom">カスタム</option></select></label><div id="customRatio" hidden class="field-row"><label>幅<input id="aspectWidth" type="number" min="0.001" max="1000" step="any" value="5" data-setting="cropOptions.width"></label><label>高さ<input id="aspectHeight" type="number" min="0.001" max="1000" step="any" value="4" data-setting="cropOptions.height"></label></div></div>
             <label>適用方法<select id="cropApplication" data-setting="cropOptions.application"><option value="selection">範囲指定した部分</option><option value="width">画像幅を使う（幅を維持）</option><option value="height">画像高さを使う（高さを維持）</option></select></label>
             <button id="cropButton" class="button full">▣ 範囲を指定</button>
+            <button id="zoomToCrop" class="button full" title="選択範囲を拡大します。Space＋ドラッグで移動、矢印キーで範囲を1 px移動（Shiftで10 px）">選択範囲に拡大</button>
             <p id="cropStatus" class="readout">選択範囲なし</p>
             <div class="field-row"><label>X<input id="cropX" type="number" min="0" step="1"></label><label>Y<input id="cropY" type="number" min="0" step="1"></label></div>
             <div class="field-row"><label>幅（px）<input id="cropWidth" type="number" min="10" step="1"></label><label>高さ（px）<input id="cropHeight" type="number" min="10" step="1"></label></div>
@@ -86,7 +87,8 @@
             <p class="hint">画像ごとの表示・非表示は、画像一覧の「バー・ラベル設定」で切り替えます。</p>
             <div class="field-row"><label>長さ<input id="barLength" type="number" min="0.000001" step="any" data-setting="scaleBar.length"></label><label>単位<select id="barUnit" data-setting="scaleBar.unit"><option>nm</option><option selected>µm</option><option>mm</option></select></label></div>
             <label>位置<select id="barAnchor" data-setting="scaleBar.anchor" class="anchor-select"></select></label>
-            <div class="field-row"><label>文字サイズ（%）<input id="barFont" type="number" min="0.1" max="20" step="0.1" data-setting="scaleBar.fontPercent" value="9"></label><label>線の太さ（%）<input id="barThickness" type="number" min="0.1" max="10" step="0.1" data-setting="scaleBar.thicknessPercent" value="0.8"></label></div>
+            <div class="field-row"><label>文字サイズ（%）<input id="barFont" type="number" min="0.1" max="20" step="0.1" data-setting="scaleBar.fontPercent" value="9"></label><label title="トリミング後画像の短辺×割合を、exe版と同じ方法で整数pxに丸めます">線の太さ（短辺の%）<input id="barThickness" type="number" min="0.1" max="10" step="0.01" data-setting="scaleBar.thicknessPercent" value="0.8"></label></div>
+            <p id="barThicknessInfo" class="readout" aria-live="polite"></p>
             <div class="field-row"><label>上下余白補正（%）<input id="barVerticalPadding" type="number" min="0" max="10" step="0.1" value="3" data-setting="scaleBar.verticalPaddingPercent"></label><label>バー－文字間隔（%）<input id="barGap" type="number" min="0" max="10" step="0.1" value="1" data-setting="scaleBar.gapPercent"></label></div>
             <div class="field-row"><label class="color-field">線色<input id="barColor" type="color" value="#ffffff" data-setting="scaleBar.color"></label><label class="color-field">文字色<input id="barTextColor" type="color" value="#ffffff" data-setting="scaleBar.textColor"></label></div>
             <div class="field-row"><label class="check"><input id="barTextVisible" type="checkbox" data-setting="scaleBar.showText" checked>長さの文字</label><label class="check"><input id="barBackground" type="checkbox" data-setting="scaleBar.background">個別背景を表示</label></div>
@@ -142,7 +144,7 @@
         <div class="tool-group"><button id="moveTool" class="tool active" aria-pressed="true" disabled>↖ 配置</button><button id="measureTool" class="tool" aria-pressed="false" disabled>↔ 測定</button><button id="cropTool" class="tool" aria-pressed="false" disabled>▣ トリミング</button></div>
         <div class="tool-group history-group"><button id="undoButton" class="tool" title="元に戻す（Ctrl+Z）" disabled>↶ 戻す</button><button id="redoButton" class="tool" title="やり直す（Ctrl+Shift+Z）" disabled>↷ やり直す</button></div>
         <div class="tool-group"><button id="rawPreviewButton" class="tool" disabled>元画像</button><button id="processedPreviewButton" class="tool active" disabled>処理後</button></div>
-        <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
+        <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option><option value="8">800%</option><option value="16">1600%</option><option value="32">3200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
       </div>
       <div class="save-launchers preview-file-actions" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button primary" disabled>この画像を保存</button><button id="batchSaveButton" class="button" title="一覧でチェックした画像を、現在のデザインで保存します。画像ごとの校正・表示・文字列は保持します。" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
       <div class="preview-options"><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
@@ -156,7 +158,7 @@
       </div>
       <div id="instruction" class="instruction" hidden></div>
       </div>
-      <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
+      <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span><span id="pointerCoordinates" aria-live="off"></span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
 
     </section>
   </main>

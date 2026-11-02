@@ -14,7 +14,8 @@ export function panelParts(style, includeLabel = true) {
 }
 function metrics(context, text, size) {
   context.font = font(size); const m = context.measureText(text);
-  const ascent = Math.round(m.fontBoundingBoxAscent ?? size * 1854 / 2048), descent = Math.round(m.fontBoundingBoxDescent ?? size * 434 / 2048);
+  const ascent = Math.max(Math.round(m.fontBoundingBoxAscent ?? size * 1854 / 2048),Math.ceil(m.actualBoundingBoxAscent ?? 0));
+  const descent = Math.max(Math.round(m.fontBoundingBoxDescent ?? size * 434 / 2048),Math.ceil(m.actualBoundingBoxDescent ?? 0));
   const left = Math.floor(-(m.actualBoundingBoxLeft ?? 0)), right = Math.ceil(m.actualBoundingBoxRight ?? m.width);
   const top = -Math.ceil(m.actualBoundingBoxAscent ?? size * .75), bottom = Math.ceil(m.actualBoundingBoxDescent ?? size * .2);
   return { advance: pyRound(m.width), left, right, top, bottom, tightWidth: Math.max(0, right - left), tightHeight: Math.max(0, bottom - top), ascent, descent, height: ascent + descent };
@@ -59,7 +60,8 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
     boxes.push({ kind:'scaleBar', anchor:bar.anchor, style:bar, x,y, width:totalWidth,height:totalHeight, band:outside ? 'bottom' : null, bandHeight:outside ? totalHeight : 0,
       backgroundRect:bar.background ? rect(cx-paddingX, cy-paddingTop, bgWidth,bgHeight) : null,
       barRect:rect(cx+Math.floor((contentWidth-barWidth)/2),barY,barWidth,thickness),
-      runs:bar.showText ? [{ text:`${lengthText(bar.length)} ${bar.unit}`, size:fontSize, x:cx+Math.floor((contentWidth-textWidth)/2), y:textY+m.ascent }] : [],
+      // Center the visible glyphs on the bar, not the padded text allocation.
+      runs:bar.showText ? [{ text:`${lengthText(bar.length)} ${bar.unit}`, size:fontSize, x:cx+Math.floor((contentWidth-barWidth)/2)+barWidth/2-(m.left+m.right)/2, y:textY+m.ascent }] : [],
       fontSize,barWidth,thickness,textWidth,textHeight,gap });
   } else if (bar.visible) warnings.push(settings.calibration ? 'スケールバーの長さを入力してください。' : '未校正：スケールバーは表示されません。');
   if (label.visible) {
