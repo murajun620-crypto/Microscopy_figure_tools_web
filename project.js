@@ -25,6 +25,7 @@ function validateManifest(data) {
   if (total > LIMITS.batchBytes) throw new Error('プロジェクトの元画像は合計256 MB以内にしてください。');
   const ui = data.ui;
   if (!ui || !Array.isArray(ui.formats) || ui.formats.length > FORMATS.length || ui.formats.some(format=>!FORMATS.includes(format)) || ![300,600,1200].includes(ui.dpi) || typeof ui.includeSettings !== 'boolean' || !['simple','detailed'].includes(ui.colorMode)) fail();
+  if(ui.cropScope!==undefined&&!['batch','individual'].includes(ui.cropScope))fail();
   return total;
 }
 

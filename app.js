@@ -1,17 +1,19 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ef359abed43b';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ef359abed43b';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=51203e011e9f';
 import { buildPlan, paint } from './render.js?v=a8cd87799c78';
 import { batchExport, exportImage } from './export.js?v=cb59335c526b';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=99d964043aba';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=94739a63602d';
-import { createProject, readProject } from './project.js?v=48bcd6dcf191';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=180e2a6dfbdb';
+import { createProject, readProject } from './project.js?v=d67fc8ccbab0';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=ad0e9f7f5d93';
+import { cropConflicts, prepareCrop, CropTransactions } from './crop-workflow.js?v=7a822a125430';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
+const cropTransactions=new CropTransactions();
 const folderSupported=typeof window.showDirectoryPicker==='function';
 const sourceFolders=new WeakMap();
 const sourceHandles=new WeakMap();
@@ -28,7 +30,7 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
@@ -147,7 +149,7 @@ function syncImageNavigation() {
   if ($('previewImageCounter').textContent !== counter) $('previewImageCounter').textContent = counter;
   $('previousImage').disabled = busy || index <= 0;
   $('nextImage').disabled = busy || index < 0 || index >= items.length - 1;
-  $('applyCropButton').textContent = items.length > 1 ? `全${items.length}枚にトリミングを適用` : 'トリミングを適用';
+  syncCropScope();
   $('previewNavigator').title = current?.name ?? '';
 }
 for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEventListener('click',()=>{
@@ -232,8 +234,7 @@ function commit(settings,shared=null) {
 function shareSettings(section){
   const template=current.settings;
   for(const item of items)if(item!==current){
-    if(section==='crop') {const c=clipCrop(template.crop,item.width,item.height);item.cropError=c?null:'共通のトリミング範囲がこの画像と重なりません。';if(c)item.settings.crop=c;item.settings.cropOptions={...copy(template.cropOptions),pending:null};}
-    else if(section==='scaleBar') {const visible=item.settings.scaleBar.visible;item.settings.scaleBar={...copy(template.scaleBar),visible};}
+    if(section==='scaleBar') {const visible=item.settings.scaleBar.visible;item.settings.scaleBar={...copy(template.scaleBar),visible};}
     else if(section==='panelLabel'){const p=item.settings.panelLabel;item.settings.panelLabel={...copy(template.panelLabel),visible:p.visible,text:p.text,subtext:p.subtext,position:p.position};}
     else if(section==='output')item.settings.output=copy(template.output);
     item.history.push(item.settings);
@@ -430,7 +431,17 @@ function updateCropInputs(crop) {
   const base=current.settings.crop;
   for (const [key, id] of [['x', 'cropX'], ['y', 'cropY'], ['width', 'cropWidth'], ['height', 'cropHeight']]) $(id).value = crop[key]-(key==='x'?base.x:key==='y'?base.y:0);
   $('cropStatus').textContent=`左上 x=${crop.x-base.x}, y=${crop.y-base.y} / ${crop.width} × ${crop.height} px`;
+  syncCropScope();
 }
+function syncCropScope() {
+  const individual=$('cropScope').value==='individual';
+  $('applyCropButton').textContent=individual?'この画像にトリミングを適用':items.length>1?`全${items.length}枚にトリミングを適用`:'トリミングを適用';
+  $('resetCropButton').textContent=individual?'この画像を全体に戻す':'全画像を全体に戻す';
+  const conflicts=current&&!individual?cropConflicts(items,pendingCrop||current.settings.crop):[];
+  $('cropScopeInfo').textContent=individual?'表示中の画像だけを変更します。他の画像の範囲は保持します。':conflicts.length?`範囲外：${conflicts.map(item=>`${item.name}（${item.width} × ${item.height} px）`).join('、')}。範囲を変更するか個別設定を選んでください。`:'全画像に同じ位置・サイズ（px）を適用します。画像ごとに変える場合は個別設定を選んでください。';
+  $('cropScopeInfo').classList.toggle('error',!!conflicts.length);
+}
+$('cropScope').addEventListener('change',()=>{syncCropScope();render();});
 function cropHit(p) {
   if(!pendingCrop)return null;
   const c=pendingCrop,tolerance=8/previewScale,left=Math.abs(p.x-c.x)<tolerance,right=Math.abs(p.x-(c.x+c.width))<tolerance,top=Math.abs(p.y-c.y)<tolerance,bottom=Math.abs(p.y-(c.y+c.height))<tolerance;
@@ -643,24 +654,25 @@ $('applyCropButton').addEventListener('click', () => {
     if(mode!=='selection') {const ratio=aspect(),r=dimensionCrop(c.width,c.height,ratio,mode);if(!r)throw new Error(ratio?'この比率では選択した画像の辺を維持できません。':'アスペクト比を選択してください。');next={...r,x:r.x+c.x,y:r.y+c.y};}
     if(next.width<10||next.height<10)throw new Error('幅と高さは10 px以上にしてください。');
     if(next.x<c.x||next.y<c.y||next.x+next.width>c.x+c.width||next.y+next.height>c.y+c.height)throw new Error('トリミング範囲が現在の画像を超えています。');
-    settings.crop=validateCrop(next,current.width,current.height);
-    if(settings.panelLabel.position) {settings.panelLabel.position.x=Math.max(0,settings.panelLabel.position.x-next.x+c.x);settings.panelLabel.position.y=Math.max(0,settings.panelLabel.position.y-next.y+c.y);}
-    settings.scaleBar.position=null;settings.scaleBar.fontPercent=9;pendingCrop=measurement=null;settings.cropOptions.pending=null;current.cropError=null;commit(settings,'crop');setTool('move');
-    const failed=items.filter(item=>item.cropError);
-    notify(`${items.length-failed.length}枚にトリミングを適用しました（元画像 x=${next.x}, y=${next.y} / ${next.width} × ${next.height} px）。${failed.length?` ${failed.length}枚は範囲が画像外です。◀▶で切り替えて確認してください。`:''}`,!!failed.length);
+    const updates=prepareCrop(items,current,next,$('cropScope').value);
+    for(const update of updates)buildPlan(update.settings,context);
+    cropTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');
+    notify(`${updates.length}枚にトリミングを適用しました（元画像 x=${next.x}, y=${next.y} / ${next.width} × ${next.height} px）。`);
   } catch (error) { notify(error.message, true); }
 });
 $('resetCropButton').addEventListener('click', () => {
-  try { const settings = copy(current.settings); settings.crop = { x: 0, y: 0, width: current.width, height: current.height }; settings.scaleBar.position=null;settings.scaleBar.fontPercent=9;pendingCrop=measurement=null;settings.cropOptions.pending=null; commit(settings);for(const item of items){item.cropError=null;item.settings.crop={x:0,y:0,width:item.width,height:item.height};item.settings.cropOptions.pending=null;}setTool('move'); } catch (error) { notify(error.message, true); }
+  try {const updates=prepareCrop(items,current,null,$('cropScope').value,true);for(const update of updates)buildPlan(update.settings,context);cropTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');notify(`${updates.length}枚を元画像全体に戻しました。`);} catch (error) { notify(error.message, true); }
 });
 function undo(redo = false) {
   if (!current || busy) return;
-  const before=current.settings;current.settings=redo?current.history.redo():current.history.undo();
-  for(const section of ['crop','scaleBar','panelLabel','output']){
-    const old=copy(before[section]),next=copy(current.settings[section]);
-    if(section==='scaleBar'){delete old.visible;delete next.visible;}
-    if(section==='panelLabel')for(const key of ['visible','text','subtext','position']){delete old[key];delete next[key];}
-    if(JSON.stringify(old)!==JSON.stringify(next))shareSettings(section);
+  if(!cropTransactions.step(current,redo,items)) {
+    const before=current.settings;current.settings=redo?current.history.redo():current.history.undo();
+    for(const section of ['scaleBar','panelLabel','output']){
+      const old=copy(before[section]),next=copy(current.settings[section]);
+      if(section==='scaleBar'){delete old.visible;delete next.visible;}
+      if(section==='panelLabel')for(const key of ['visible','text','subtext','position']){delete old[key];delete next[key];}
+      if(JSON.stringify(old)!==JSON.stringify(next))shareSettings(section);
+    }
   }
   current.barVisible=current.settings.scaleBar.visible;current.labelVisible=current.settings.panelLabel.visible;current.labelText=current.settings.panelLabel.text;current.subtext=current.settings.panelLabel.subtext;
   measurement=measurementStart=drag=cropStart=null;pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
@@ -847,6 +859,7 @@ async function openProject(file){
     else if(typeof value==='string'&&(input.tagName!=='SELECT'||[...input.options].some(option=>option.value===value)))input.value=value;
   }
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
+  $('cropScope').value=project.ui.cropScope??'batch';
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
