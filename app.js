@@ -7,8 +7,9 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=99d964043aba';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=94739a63602d';
 import { createProject, readProject } from './project.js?v=d67fc8ccbab0';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=ad0e9f7f5d93';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e15fc67ea70c';
 import { cropConflicts, prepareCrop, CropTransactions } from './crop-workflow.js?v=7a822a125430';
+import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -19,6 +20,7 @@ const sourceFolders=new WeakMap();
 const sourceHandles=new WeakMap();
 let saveDirectory=null;
 let projectHandle=null;
+let projectName='';
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
@@ -64,7 +66,11 @@ function refreshWorkState() {
     else window.removeEventListener('beforeunload',confirmUnsavedLeave);
     leaveGuardInstalled=dirty;
   }
-  const status=$('projectSaveStatus'), text=!items.length?'画像なし':projectSaving?'プロジェクト保存中…':dirty?'プロジェクト：未保存の変更があります':'プロジェクト：保存済み';
+  const label=projectName?`プロジェクト：${projectName}`:'プロジェクト';
+  const state=dirty?'未保存の変更があります':'保存済み';
+  const status=$('projectSaveStatus'), text=!items.length?'画像なし':projectSaving?`${label} 保存中…`:projectName?`${label}（${state}）`:`${label}：${state}`;
+  $('projectSaveButtonLabel').textContent=projectHandle?'上書き保存':'プロジェクトを保存';
+  $('saveProjectButton').title=projectHandle?`${projectHandle.name} に上書き保存します（Ctrl/Cmd＋S）`:'元画像と編集設定をプロジェクトに保存します（Ctrl/Cmd＋S）';
   if(status.textContent!==text)status.textContent=text;
   status.dataset.dirty=String(dirty);
 }
@@ -163,6 +169,8 @@ function setBusy(value) {
   $('projectInput').disabled=value;
   $('openProjectButton').disabled=value;
   $('saveProjectButton').disabled=value||!items.length;
+  $('projectSaveMenuButton').disabled=$('saveProjectAsButton').disabled=value||!items.length;
+  if(value||!items.length)closeProjectSaveMenu();
   for(const id of ['settingsInput','openSettingsButton','settingsSaveMenuButton','saveSettingsButton','saveSessionButton'])$(id).disabled=value||!current;
   if(value||!current)closeSettingsSaveMenu();
   $('saveDpi').disabled=value||!current;
@@ -742,6 +750,7 @@ async function removeItems(removed) {
   }
   for(const item of removed)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...retained);
+  if(!items.length){projectHandle=null;projectName='';}
   measurement=measurementStart=pendingCrop=drag=cropStart=null;
   renderList();syncInputs();render();setBusy(busy);
   if(!current){$('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';}
@@ -795,21 +804,31 @@ $('settingsSaveDropdown').addEventListener('focusout',event=>{if(!$('settingsSav
 $('settingsSaveDropdown').addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!$('settingsSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeSettingsSaveMenu();$('settingsSaveMenuButton').focus();}
 });
-$('saveProjectButton').addEventListener('click',()=>action(async()=>{
-  const name=`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
-  let saveFile;
-  try {saveFile=await prepareDocumentSaver(name,'MiFiToプロジェクト','.mifito');}
+function closeProjectSaveMenu(){ $('projectSaveMenu').hidden=true;$('projectSaveMenuButton').setAttribute('aria-expanded','false'); }
+$('projectSaveMenuButton').addEventListener('click',()=>{if(busy||!items.length)return;const open=$('projectSaveMenu').hidden;$('projectSaveMenu').hidden=!open;$('projectSaveMenuButton').setAttribute('aria-expanded',String(open));});
+document.addEventListener('click',event=>{if(!$('projectSaveDropdown').contains(event.target))closeProjectSaveMenu();});
+$('projectSaveDropdown').addEventListener('focusout',event=>{if(!$('projectSaveDropdown').contains(event.relatedTarget))closeProjectSaveMenu();});
+$('projectSaveDropdown').addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('projectSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeProjectSaveMenu();$('projectSaveMenuButton').focus();}});
+$('saveProjectButton').addEventListener('click',()=>saveProject(false));
+$('saveProjectAsButton').addEventListener('click',()=>saveProject(true));
+function saveProject(saveAs){return action(async()=>{
+  closeProjectSaveMenu();
+  const name=projectHandle?.name||projectName||`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
+  let target;
+  try {target=await prepareProjectSave({handle:projectHandle,saveAs,name,startIn:projectHandle||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});}
   catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
   const ui=projectUI(), savedSnapshot=workspaceSnapshot(items,ui);
   notify('元画像と編集設定をプロジェクトに保存しています…');
   projectSaving=true;scheduleWorkState();
   try {
     const blob=await createProject(items,items.indexOf(current),ui);
-    await saveFile(blob,name);
-    notify(`プロジェクトを保存しました（元画像${items.length}枚と編集設定）。`);
+    await target.write(blob);
+    const overwritten=target.handle===projectHandle&&!!projectHandle;
+    projectHandle=target.handle;projectName=target.name;
+    notify(target.handle?`${target.name} に${overwritten?'上書き':''}保存しました（元画像${items.length}枚と編集設定）。`:'プロジェクトをダウンロードしました。このブラウザではファイルへ直接上書きできません。');
     workSaveState.markSaved(savedSnapshot);
   }finally{projectSaving=false;scheduleWorkState();}
-}));
+});}
 async function prepareDocumentSaver(name, description, extension) {
   return documentSaver({name,id:'mifito-images',description,accept:{'application/octet-stream':[extension]},startIn:saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle,fallback:()=>async(blob,filename)=>{download(blob,filename);return filename;}});
 }
@@ -849,6 +868,7 @@ async function openProject(file){
   items.splice(0,items.length,...restored);
   clearDownloads();saveDirectory=null;previewRaw=false;$('zoomSelect').value='fit';
   projectHandle=sourceHandles.get(file)||null;
+  projectName=file.name;
   $('saveDestination').value=folderSupported?'source':'download';
   $('saveDpi').value=String(project.ui.dpi);$('includeSettings').checked=project.ui.includeSettings;
   const formats=restoreExportFormats(project.ui.formats);

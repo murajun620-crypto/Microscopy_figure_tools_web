@@ -35,6 +35,10 @@ input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .header-actions svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .privacy{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:7px;margin-right:10px}
 .settings-save-dropdown{position:relative}
+.project-save-dropdown{position:relative}
+.project-save-split{display:flex}
+.project-save-split #saveProjectButton{border-radius:7px 0 0 7px}
+.project-save-split #projectSaveMenuButton{border-radius:0 7px 7px 0;border-left:1px solid #ffffff55;padding:8px;min-width:28px}
 .save-menu-arrow{font-size:10px;color:var(--muted)}
 .header-menu{position:absolute;z-index:10;right:0;top:calc(100% + 8px);width:260px;padding:8px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px #143b2820;white-space:normal}
 .header-menu .button{width:100%;justify-content:flex-start}

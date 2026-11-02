@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=f2710c7248e4">
-  <script type="module" src="./app.js?v=799f9ff664eb"></script>
+  <link rel="stylesheet" href="./styles.css?v=279a70091698">
+  <script type="module" src="./app.js?v=4bf7182fa0fb"></script>
 </head>
 <body>
   <header class="app-header">
@@ -17,7 +17,10 @@
     <div class="header-actions" role="group" aria-label="プロジェクトと設定">
       <span class="privacy" title="画像はブラウザ内で処理します。外部には送信しません。" aria-label="画像はブラウザ内で処理"><span class="dot"></span>画像はブラウザ内で処理</span>
       <button id="openProjectButton" class="button quiet" title="元画像と編集設定をまとめて開きます（Ctrl/Cmd＋O）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>プロジェクトを開く</button>
-      <button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します（Ctrl/Cmd＋S）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>プロジェクトを保存</button>
+      <div id="projectSaveDropdown" class="project-save-dropdown">
+        <div class="project-save-split"><button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します（Ctrl/Cmd＋S）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span id="projectSaveButtonLabel">プロジェクトを保存</span></button><button id="projectSaveMenuButton" class="button primary" aria-label="プロジェクト保存のその他の操作" aria-expanded="false" aria-controls="projectSaveMenu" disabled>▾</button></div>
+        <div id="projectSaveMenu" class="header-menu" hidden><button id="saveProjectAsButton" class="button quiet" disabled>名前を付けて保存…</button></div>
+      </div>
       <input id="projectInput" type="file" accept=".mifito" aria-label="プロジェクトを開く" hidden>
       <button id="openSettingsButton" class="button quiet" title="設定JSONを開きます。先に元画像を開いてください（Ctrl/Cmd＋Shift＋O）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>設定を開く</button>
       <input id="settingsInput" type="file" accept=".json,application/json" aria-label="設定を開く" hidden disabled>
