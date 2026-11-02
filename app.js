@@ -1,13 +1,13 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ef359abed43b';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=4f685a2a5795';
-import { buildPlan, paint } from './render.js?v=2b0806633e4c';
-import { batchExport, exportImage } from './export.js?v=7db0850d271e';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=51203e011e9f';
+import { buildPlan, paint } from './render.js?v=a8cd87799c78';
+import { batchExport, exportImage } from './export.js?v=cb59335c526b';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=99d964043aba';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=94739a63602d';
 import { createProject, readProject } from './project.js?v=48bcd6dcf191';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=bce26fd6d506';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=180e2a6dfbdb';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -204,6 +204,8 @@ function syncInputs() {
   }
   $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = current.settings.panelLabel.anchor;
   const c = current.settings.crop;
+  const imageCrop=current.imageCrop;
+  $('selectSvgImageCrop').hidden=!imageCrop||imageCrop.x<c.x||imageCrop.y<c.y||imageCrop.x+imageCrop.width>c.x+c.width||imageCrop.y+imageCrop.height>c.y+c.height;
   updateCropInputs(pendingCrop || c);
   $('aspectRatio').value=current.settings.cropOptions.aspect;$('cropApplication').value=current.settings.cropOptions.application;$('customRatio').hidden=$('aspectRatio').value!=='custom';
   if(!pendingCrop)$('cropStatus').textContent=`適用中：元画像 x=${c.x}, y=${c.y} / ${c.width} × ${c.height} px`;
@@ -274,7 +276,7 @@ function updateBatch() {
 }
 
 async function selectItem(item) {
-  const decoded = await decodeImage(item.file);
+  const decoded = await decodeImage(item.file,item);
   if(!item.settings.calibration){const reference=items.find(candidate=>candidate.settings.calibration);if(reference)item.settings.calibration=copy(reference.settings.calibration);}
   activateItem(item,decoded);
   if(item.cropError)notify(`${item.name}：${item.cropError} トリミング範囲を変更するか、全体に戻してください。`,true);
@@ -282,6 +284,7 @@ async function selectItem(item) {
 function activateItem(item,decoded) {
   if (source) releaseImage(source);
   source = decoded.source; current = item; measurement = measurementStart = pendingCrop = drag = null;
+  item.imageCrop=decoded.imageCrop??null;
   pendingCrop=item.settings.cropOptions.pending?copy(item.settings.cropOptions.pending):null;
   $('measurementInfo').textContent = '2点をクリック、またはドラッグ';
   setTool(pendingCrop?'crop':'move'); syncInputs(); renderList(); render();
@@ -614,6 +617,11 @@ for(const axis of ['Width','Height']) $(`useImage${axis}`).addEventListener('cli
   const c=current.settings.crop;measurement=axis==='Width'?[{x:c.x,y:c.y+c.height/2},{x:c.x+c.width,y:c.y+c.height/2}]:[{x:c.x+c.width/2,y:c.y},{x:c.x+c.width/2,y:c.y+c.height}];measurementStart=null;setTool('move');updateMeasurement();render();
 });
 $('resetCalibrationButton').addEventListener('click',()=>{const s=copy(current.settings);s.calibration=null;measurement=null;commit(s);});
+$('selectSvgImageCrop').addEventListener('click',()=>{
+  if(!current?.imageCrop||busy)return;
+  pendingCrop=copy(current.imageCrop);current.settings.cropOptions={...current.settings.cropOptions,aspect:'free',application:'selection',pending:copy(pendingCrop)};
+  current.history.push(current.settings);setTool('crop');syncInputs();render();
+});
 $('calibrateButton').addEventListener('click', () => {
   try {
     if (!measurement || measurementStart) throw new Error('画像上の2点を測定してください。');
@@ -813,7 +821,7 @@ async function openProject(file){
   try{
     for(const record of project.images){
       const original=new File([record.blob],record.name,{type:record.type,lastModified:record.lastModified});
-      const decoded=await decodeImage(original);
+      const decoded=await decodeImage(original,record);
       try{
         if(decoded.width!==record.width||decoded.height!==record.height)throw new Error(`${record.name} の画像サイズが設定と一致しません。`);
         buildPlan(record.settings,context);

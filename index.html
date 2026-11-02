@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=64765d017ea6">
-  <script type="module" src="./app.js?v=01f81a937fa4"></script>
+  <script type="module" src="./app.js?v=5c671368465f"></script>
 </head>
 <body>
   <header class="app-header">
@@ -57,6 +57,7 @@
             <div class="field-row"><label>縦横比<select id="aspectRatio" data-setting="cropOptions.aspect"><option value="free">自由</option><option value="source">元画像比率</option><option value="1:1">1 : 1</option><option value="4:3">4 : 3</option><option value="3:2">3 : 2</option><option value="16:9">16 : 9</option><option value="custom">カスタム</option></select></label><div id="customRatio" hidden class="field-row"><label>幅<input id="aspectWidth" type="number" min="0.001" max="1000" step="any" value="5" data-setting="cropOptions.width"></label><label>高さ<input id="aspectHeight" type="number" min="0.001" max="1000" step="any" value="4" data-setting="cropOptions.height"></label></div></div>
             <label>適用方法<select id="cropApplication" data-setting="cropOptions.application"><option value="selection">範囲指定した部分</option><option value="width">画像幅を使う（幅を維持）</option><option value="height">画像高さを使う（高さを維持）</option></select></label>
             <button id="cropButton" class="button full">▣ 範囲を指定</button>
+            <button id="selectSvgImageCrop" class="button full" hidden>SVGの画像部分を選択</button>
             <button id="zoomToCrop" class="button full" title="選択範囲を拡大します。Space＋ドラッグで移動、矢印キーで範囲を1 px移動（Shiftで10 px）">選択範囲に拡大</button>
             <p id="cropStatus" class="readout">選択範囲なし</p>
             <div class="field-row"><label>X<input id="cropX" type="number" min="0" step="1"></label><label>Y<input id="cropY" type="number" min="0" step="1"></label></div>

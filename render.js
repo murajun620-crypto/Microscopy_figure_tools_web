@@ -38,9 +38,10 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
   const { crop, scaleBar: bar, panelLabel: label } = settings;
   const width = crop.width * scale, imageHeight = crop.height * scale, short = Math.min(width, imageHeight);
   const boxes = [], warnings = [];
-  if (bar.visible && settings.calibration && bar.length) {
-    const barWidth = Math.max(1, pyRound(scaleBarPixels(settings.calibration, bar.length, bar.unit) * scale));
-    if (barWidth >= width) throw new Error('スケールバーが画像の幅を超えています。');
+  const barWidth=bar.visible&&settings.calibration&&bar.length?Math.max(1,pyRound(scaleBarPixels(settings.calibration,bar.length,bar.unit)*scale)):null;
+  const tooWide=barWidth!==null&&barWidth>=width;
+  if(tooWide){if(strict)throw new Error('スケールバーが画像の幅を超えています。長さを短くしてから保存してください。');warnings.push('トリミング済み：スケールバーが画像幅を超えるため表示していません。長さを短くしてください。');}
+  if (barWidth!==null && !tooWide) {
     const fontSize = pixels(short, bar.fontPercent), m = metrics(context, `${lengthText(bar.length)} ${bar.unit}`, fontSize);
     const textWidth = bar.showText ? Math.max(m.advance, m.tightWidth) + Math.max(2, pyRound(fontSize * .12)) : 0;
     const textHeight = bar.showText ? m.height : 0, thickness = pixels(short, bar.thicknessPercent), gap = bar.showText ? pixels(short, bar.gapPercent, 0) : 0;
@@ -63,7 +64,7 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
       // Center the visible glyphs on the bar, not the padded text allocation.
       runs:bar.showText ? [{ text:`${lengthText(bar.length)} ${bar.unit}`, size:fontSize, x:cx+Math.floor((contentWidth-barWidth)/2)+barWidth/2-(m.left+m.right)/2, y:textY+m.ascent }] : [],
       fontSize,barWidth,thickness,textWidth,textHeight,gap });
-  } else if (bar.visible) warnings.push(settings.calibration ? 'スケールバーの長さを入力してください。' : '未校正：スケールバーは表示されません。');
+  } else if (bar.visible && !tooWide) warnings.push(settings.calibration ? 'スケールバーの長さを入力してください。' : '未校正：スケールバーは表示されません。');
   if (label.visible) {
     const [main, supplemental] = panelParts(label, includeLabel), fontSize = pixels(short, label.fontPercent);
     const m = metrics(context, main, fontSize), sub = textRuns(context, supplemental, fontSize);

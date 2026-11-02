@@ -1,7 +1,7 @@
 import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=ef359abed43b';
 import { numberedLabel } from './label-numbering.js?v=94739a63602d';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=4f685a2a5795';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=2b0806633e4c';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=51203e011e9f';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=a8cd87799c78';
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
@@ -110,7 +110,7 @@ export async function batchExport(items, template, original, format, numbering, 
     const item=items[index]; progress(`${index+1} / ${items.length}：${item.name}`); item.status='処理中';
     let source=null;
     try {
-      source=(await decodeImage(item.file)).source;
+      source=(await decodeImage(item.file,item)).source;
       const settings=batchSettings(template,original,item,labelIndex,numbering), base=outputBase(item.name,used);
       for (const outputFormat of formats) {
         if(signal.aborted)throw new Error('保存を中止しました。保存済みファイルは残ります。');
