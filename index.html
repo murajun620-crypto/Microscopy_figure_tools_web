@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=d7ac90ad0896">
-  <script type="module" src="./app.js?v=e0e1206b1b54"></script>
+  <link rel="stylesheet" href="./styles.css?v=64765d017ea6">
+  <script type="module" src="./app.js?v=01f81a937fa4"></script>
 </head>
 <body>
   <header class="app-header">
@@ -51,8 +51,22 @@
         <div class="field-row"><button id="moveImageUp" class="quiet small">↑ 順序</button><button id="moveImageDown" class="quiet small">↓ 順序</button></div>
       </section>
       <fieldset id="editingControls" disabled>
-        <details id="calibrationSection" open>
-          <summary><span class="step">1</span> 校正 <span id="calibrationBadge" class="detail-value">未設定</span></summary>
+        <details id="cropSection" open>
+          <summary><span class="step">1</span> トリミング <span id="cropBadge" class="detail-value">全体</span></summary>
+          <div class="detail-body">
+            <div class="field-row"><label>縦横比<select id="aspectRatio" data-setting="cropOptions.aspect"><option value="free">自由</option><option value="source">元画像比率</option><option value="1:1">1 : 1</option><option value="4:3">4 : 3</option><option value="3:2">3 : 2</option><option value="16:9">16 : 9</option><option value="custom">カスタム</option></select></label><div id="customRatio" hidden class="field-row"><label>幅<input id="aspectWidth" type="number" min="0.001" max="1000" step="any" value="5" data-setting="cropOptions.width"></label><label>高さ<input id="aspectHeight" type="number" min="0.001" max="1000" step="any" value="4" data-setting="cropOptions.height"></label></div></div>
+            <label>適用方法<select id="cropApplication" data-setting="cropOptions.application"><option value="selection">範囲指定した部分</option><option value="width">画像幅を使う（幅を維持）</option><option value="height">画像高さを使う（高さを維持）</option></select></label>
+            <button id="cropButton" class="button full">▣ 範囲を指定</button>
+            <button id="zoomToCrop" class="button full" title="選択範囲を拡大します。Space＋ドラッグで移動、矢印キーで範囲を1 px移動（Shiftで10 px）">選択範囲に拡大</button>
+            <p id="cropStatus" class="readout">選択範囲なし</p>
+            <div class="field-row"><label>X<input id="cropX" type="number" min="0" step="1"></label><label>Y<input id="cropY" type="number" min="0" step="1"></label></div>
+            <div class="field-row"><label>幅（px）<input id="cropWidth" type="number" min="10" step="1"></label><label>高さ（px）<input id="cropHeight" type="number" min="10" step="1"></label></div>
+            <button id="applyCropButton" class="button primary full">トリミングを適用</button><button id="resetCropButton" class="button full">全画像を全体に戻す</button>
+            <p class="crop-help">複数画像では同じ位置・サイズを全画像に適用します。右上の◀▶で結果を確認できます。元画像と校正値は保持します。</p>
+          </div>
+        </details>
+        <details id="calibrationSection">
+          <summary><span class="step">2</span> 校正 <span id="calibrationBadge" class="detail-value">未設定</span></summary>
           <div class="detail-body">
             <p class="hint">画像上の2点を測定し、実際の長さを入力します。</p>
             <button id="measureButton" class="button full">↔ 2点を測定</button>
@@ -65,20 +79,6 @@
             <button id="directCalibrationButton" class="button full">数値を直接設定</button>
             <button id="resetCalibrationButton" class="button full">校正をリセット</button>
             <p id="calibrationInfo" class="readout">スケールバーには校正が必要です</p>
-          </div>
-        </details>
-        <details id="cropSection">
-          <summary><span class="step">2</span> トリミング <span id="cropBadge" class="detail-value">全体</span></summary>
-          <div class="detail-body">
-            <div class="field-row"><label>縦横比<select id="aspectRatio" data-setting="cropOptions.aspect"><option value="free">自由</option><option value="source">元画像比率</option><option value="1:1">1 : 1</option><option value="4:3">4 : 3</option><option value="3:2">3 : 2</option><option value="16:9">16 : 9</option><option value="custom">カスタム</option></select></label><div id="customRatio" hidden class="field-row"><label>幅<input id="aspectWidth" type="number" min="0.001" max="1000" step="any" value="5" data-setting="cropOptions.width"></label><label>高さ<input id="aspectHeight" type="number" min="0.001" max="1000" step="any" value="4" data-setting="cropOptions.height"></label></div></div>
-            <label>適用方法<select id="cropApplication" data-setting="cropOptions.application"><option value="selection">範囲指定した部分</option><option value="width">画像幅を使う（幅を維持）</option><option value="height">画像高さを使う（高さを維持）</option></select></label>
-            <button id="cropButton" class="button full">▣ 範囲を指定</button>
-            <button id="zoomToCrop" class="button full" title="選択範囲を拡大します。Space＋ドラッグで移動、矢印キーで範囲を1 px移動（Shiftで10 px）">選択範囲に拡大</button>
-            <p id="cropStatus" class="readout">選択範囲なし</p>
-            <div class="field-row"><label>X<input id="cropX" type="number" min="0" step="1"></label><label>Y<input id="cropY" type="number" min="0" step="1"></label></div>
-            <div class="field-row"><label>幅（px）<input id="cropWidth" type="number" min="10" step="1"></label><label>高さ（px）<input id="cropHeight" type="number" min="10" step="1"></label></div>
-            <div class="field-row"><button id="applyCropButton" class="button primary">範囲を適用</button><button id="resetCropButton" class="button">全体に戻す</button></div>
-            <p class="hint">元画像を保持し、校正値を引き継ぎます。</p>
           </div>
         </details>
         <details open>
@@ -141,7 +141,7 @@
     </aside>
     <section id="editorPanel" class="editor" aria-label="画像編集">
       <div class="editor-toolbar">
-        <div class="tool-group"><button id="moveTool" class="tool active" aria-pressed="true" disabled>↖ 配置</button><button id="measureTool" class="tool" aria-pressed="false" disabled>↔ 測定</button><button id="cropTool" class="tool" aria-pressed="false" disabled>▣ トリミング</button></div>
+        <div class="tool-group"><button id="cropTool" class="tool" aria-pressed="false" disabled>▣ トリミング</button><button id="measureTool" class="tool" aria-pressed="false" disabled>↔ 測定</button><button id="moveTool" class="tool active" aria-pressed="true" disabled>↖ 配置</button></div>
         <div class="tool-group history-group"><button id="undoButton" class="tool" title="元に戻す（Ctrl+Z）" disabled>↶ 戻す</button><button id="redoButton" class="tool" title="やり直す（Ctrl+Shift+Z）" disabled>↷ やり直す</button></div>
         <div class="tool-group"><button id="rawPreviewButton" class="tool" disabled>元画像</button><button id="processedPreviewButton" class="tool active" disabled>処理後</button></div>
         <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option><option value="8">800%</option><option value="16">1600%</option><option value="32">3200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
@@ -154,7 +154,7 @@
         <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
       </div>
-      <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>‹</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>›</button></div>
+      <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>◀</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>▶</button></div>
       </div>
       <div id="instruction" class="instruction" hidden></div>
       </div>

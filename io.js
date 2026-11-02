@@ -1,4 +1,4 @@
-import { LIMITS, validateSize } from './core.js?v=2d894542ff65';
+import { LIMITS, validateSize } from './core.js?v=ef359abed43b';
 import { rasterSize } from './image-header.js';
 
 export const SUPPORTED = /\.(png|jpe?g|bmp|svg|tiff?)$/i;

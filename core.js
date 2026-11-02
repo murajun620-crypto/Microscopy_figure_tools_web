@@ -66,6 +66,13 @@ export function fitCropAspect(crop, width, height, ratio) {
 }
 export function editCrop(crop, mode, start, end, width, height, ratio = null) {
   if (mode === 'move') return { ...crop, x: clamp(crop.x + Math.floor(end.x) - Math.floor(start.x), 0, width - crop.width), y: clamp(crop.y + Math.floor(end.y) - Math.floor(start.y), 0, height - crop.height) };
+  // Handles lie on pixel boundaries. Preserve the grab offset instead of
+  // treating the pointer on the right/bottom boundary as another included pixel.
+  const dx = Math.round(end.x - start.x), dy = Math.round(end.y - start.y);
+  end = {
+    x: mode.includes('left') ? (end.x <= 0 ? 0 : crop.x + dx) : (end.x >= width ? width - 1 : crop.x + crop.width - 1 + dx),
+    y: mode.includes('top') ? (end.y <= 0 ? 0 : crop.y + dy) : (end.y >= height ? height - 1 : crop.y + crop.height - 1 + dy),
+  };
   if (ratio && mode.includes('-')) return cropFromPoints({ x: mode.endsWith('left') ? crop.x + crop.width - 1 : crop.x, y: mode.startsWith('top') ? crop.y + crop.height - 1 : crop.y }, end, width, height, ratio);
   let { x, y } = crop, right = x + crop.width, bottom = y + crop.height;
   if (mode.includes('left')) x = clamp(Math.floor(end.x), 0, right - 10);
@@ -73,6 +80,14 @@ export function editCrop(crop, mode, start, end, width, height, ratio = null) {
   if (mode.includes('top')) y = clamp(Math.floor(end.y), 0, bottom - 10);
   if (mode.includes('bottom')) bottom = clamp(Math.floor(end.y) + 1, y + 10, height);
   return { x, y, width: right - x, height: bottom - y };
+}
+
+// The preview gutter is part of the crop hit area. Points just outside the
+// image select its outermost pixel, with a constant screen-space tolerance.
+export function cropPointer(point, crop, scale, tolerance = 12) {
+  const gap = tolerance / scale;
+  if (point.x < crop.x - gap || point.y < crop.y - gap || point.x > crop.x + crop.width + gap || point.y > crop.y + crop.height + gap) return null;
+  return {x: clamp(point.x, crop.x, crop.x + crop.width), y: clamp(point.y, crop.y, crop.y + crop.height)};
 }
 
 export function validateCrop(crop, width, height) {

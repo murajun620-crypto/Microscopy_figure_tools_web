@@ -1,4 +1,4 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=2d894542ff65';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=ef359abed43b';
 import { inlineRuns } from './inline-text.js';
 
 export const FONT = 'Arial';

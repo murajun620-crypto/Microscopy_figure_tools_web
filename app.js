@@ -1,13 +1,13 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2d894542ff65';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=deadb306aaf4';
-import { buildPlan, paint } from './render.js?v=e8144e6b4a62';
-import { batchExport, exportImage } from './export.js?v=6b77f8d4384d';
+import { History, LIMITS, calibrationFromPoints, clamp, clipCrop, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ef359abed43b';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=4f685a2a5795';
+import { buildPlan, paint } from './render.js?v=2b0806633e4c';
+import { batchExport, exportImage } from './export.js?v=7db0850d271e';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=84ba3a3d158f';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=fe9f5790b43f';
-import { createProject, readProject } from './project.js?v=e979f9d02ae5';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c62e57cf117d';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=99d964043aba';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=94739a63602d';
+import { createProject, readProject } from './project.js?v=48bcd6dcf191';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=bce26fd6d506';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -147,6 +147,8 @@ function syncImageNavigation() {
   if ($('previewImageCounter').textContent !== counter) $('previewImageCounter').textContent = counter;
   $('previousImage').disabled = busy || index <= 0;
   $('nextImage').disabled = busy || index < 0 || index >= items.length - 1;
+  $('applyCropButton').textContent = items.length > 1 ? `全${items.length}枚にトリミングを適用` : 'トリミングを適用';
+  $('previewNavigator').title = current?.name ?? '';
 }
 for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEventListener('click',()=>{
   if (busy || !current) return;
@@ -204,7 +206,7 @@ function syncInputs() {
   const c = current.settings.crop;
   updateCropInputs(pendingCrop || c);
   $('aspectRatio').value=current.settings.cropOptions.aspect;$('cropApplication').value=current.settings.cropOptions.application;$('customRatio').hidden=$('aspectRatio').value!=='custom';
-  if(!pendingCrop)$('cropStatus').textContent='選択範囲なし';
+  if(!pendingCrop)$('cropStatus').textContent=`適用中：元画像 x=${c.x}, y=${c.y} / ${c.width} × ${c.height} px`;
   const calibration = current.settings.calibration;
   $('pixelSize').value = calibration?.pixelSize ?? '';
   if (calibration) $('calibrationUnit').value = calibration.unit;
@@ -273,15 +275,16 @@ function updateBatch() {
 
 async function selectItem(item) {
   const decoded = await decodeImage(item.file);
-  if(item.cropError){releaseImage(decoded.source);throw new Error(item.cropError);}
   if(!item.settings.calibration){const reference=items.find(candidate=>candidate.settings.calibration);if(reference)item.settings.calibration=copy(reference.settings.calibration);}
   activateItem(item,decoded);
+  if(item.cropError)notify(`${item.name}：${item.cropError} トリミング範囲を変更するか、全体に戻してください。`,true);
 }
 function activateItem(item,decoded) {
   if (source) releaseImage(source);
   source = decoded.source; current = item; measurement = measurementStart = pendingCrop = drag = null;
+  pendingCrop=item.settings.cropOptions.pending?copy(item.settings.cropOptions.pending):null;
   $('measurementInfo').textContent = '2点をクリック、またはドラッグ';
-  setTool('move'); syncInputs(); renderList(); render();
+  setTool(pendingCrop?'crop':'move'); syncInputs(); renderList(); render();
   if (decoded.note) notify(decoded.note);
 }
 
@@ -336,8 +339,8 @@ function render() {
     $('barThicknessInfo').textContent = barBox ? `太さ ${barBox.thickness / settings.output.scale} px（画像座標）` : '';
     const warnings = finalPlan.warnings;
     $('instruction').classList.toggle('warning', warnings.length > 0 && tool === 'move');
-    $('instruction').title = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。四隅・辺でサイズ、中央で位置を調整し適用します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
-    $('instruction').textContent = tool === 'move' ? warnings[0] || '' : '';
+    $('instruction').title = tool === 'measure' ? '2点をクリック、またはドラッグ。通常は水平、Shiftを押すと自由な角度です。' : tool === 'crop' ? '2点をクリック、またはドラッグして選択。画像端はすぐ外側の余白からも指定できます。四隅・辺でサイズ、中央で位置を調整します。' : warnings[0] || '注釈をドラッグして配置できます。画像外でも領域内で移動できます。';
+    $('instruction').textContent = tool === 'crop' ? `範囲を選び、左の「${$('applyCropButton').textContent}」を押してください。` : tool === 'move' ? warnings[0] || '' : '';
     $('instruction').hidden = !$('instruction').textContent;
     $('previewArea').title = $('instruction').title;
   } catch (error) { $('instruction').hidden=false; $('instruction').textContent = error.message; $('instruction').classList.add('warning'); }
@@ -437,15 +440,17 @@ function constrainedPoint(point,start,event){return event.shiftKey?point:{x:poin
 function distanceToLine(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy,t=length?clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/length,0,1):0;return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);}
 function moveMeasurement(operation,p){const c=current.settings.crop,[a,b]=operation.beforeMeasurement,dx=clamp(p.x-operation.down.x,c.x-Math.min(a.x,b.x),c.x+c.width-Math.max(a.x,b.x)),dy=clamp(p.y-operation.down.y,c.y-Math.min(a.y,b.y),c.y+c.height-Math.max(a.y,b.y));return [{x:a.x+dx,y:a.y+dy},{x:b.x+dx,y:b.y+dy}];}
 
-canvas.addEventListener('pointerdown', event => {
+$('previewArea').addEventListener('pointerdown', event => {
   if (!current || busy || !plan || ![0,1].includes(event.button) || event.pointerType === 'touch') return;
+  if(event.target!==canvas && (tool!=='crop' || previewRaw || !cropPointer(sourcePoint(event),current.settings.crop,previewScale))) return;
   event.preventDefault();canvas.focus({preventScroll:true});
   if(previewRaw || spacePan || event.button===1) {
     canvas.setPointerCapture(event.pointerId);
     drag={mode:'pan',x:event.clientX,y:event.clientY,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop};
     return;
   }
-  const p = sourcePoint(event);
+  const p = tool==='crop' ? cropPointer(sourcePoint(event),current.settings.crop,previewScale) : sourcePoint(event);
+  if(!p)return;
   if (tool !== 'move' && !insideImage(p)) return;
   canvas.setPointerCapture(event.pointerId);
   if (tool === 'measure') {
@@ -463,11 +468,11 @@ canvas.addEventListener('pointerdown', event => {
     else drag={mode:'pan',x:event.clientX,y:event.clientY,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop};
   }
 });
-canvas.addEventListener('pointermove', event => {
+$('previewArea').addEventListener('pointermove', event => {
   if (!current || !plan || busy) return;
   if(tool==='crop') {
-    const p=sourcePoint(event);
-    hoverPixel=insideImage(p)?{x:Math.min(current.width-1,Math.floor(p.x)),y:Math.min(current.height-1,Math.floor(p.y))}:null;
+    const p=cropPointer(sourcePoint(event),current.settings.crop,previewScale),c=current.settings.crop;
+    hoverPixel=p?{x:Math.min(c.x+c.width-1,Math.floor(p.x)),y:Math.min(c.y+c.height-1,Math.floor(p.y))}:null;
     $('pointerCoordinates').textContent=hoverPixel?`元画像 x=${hoverPixel.x}, y=${hoverPixel.y}`:'';
     if(!drag)schedulePreview();
   }
@@ -489,7 +494,7 @@ const cropFromDrag = (start,end,ratio) => {
   const c=current.settings.crop,r=cropFromPoints({x:start.x-c.x,y:start.y-c.y},{x:end.x-c.x,y:end.y-c.y},c.width,c.height,ratio);
   return {...r,x:r.x+c.x,y:r.y+c.y};
 };
-canvas.addEventListener('pointerup', event => {
+$('previewArea').addEventListener('pointerup', event => {
   if (!drag) return;
   const operation = drag;
   if (operation.mode === 'measure') {
@@ -499,7 +504,11 @@ canvas.addEventListener('pointerup', event => {
     else measurementStart = operation.start;
     updateMeasurement();
   } else if(operation.mode==='crop') {
-    if(!operation.edit) {
+    if(operation.edit) {
+      const c=current.settings.crop,p=boundedPoint(sourcePoint(event));
+      const r=editCrop({...operation.origin,x:operation.origin.x-c.x,y:operation.origin.y-c.y},operation.edit,{x:operation.down.x-c.x,y:operation.down.y-c.y},{x:p.x-c.x,y:p.y-c.y},c.width,c.height,operation.ratio);
+      pendingCrop={...r,x:r.x+c.x,y:r.y+c.y};
+    } else {
       pendingCrop=cropFromDrag(operation.start,boundedPoint(sourcePoint(event)),operation.ratio);
       cropStart=operation.moved||operation.secondClick?null:operation.start;
     }
@@ -508,10 +517,11 @@ canvas.addEventListener('pointerup', event => {
   drag = null; canvas.style.cursor = spacePan ? 'grab' : tool === 'move' ? 'default' : 'crosshair';
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); render();
 });
-canvas.addEventListener('pointercancel', event => {
+$('previewArea').addEventListener('pointercancel', event => {
   if (drag?.before) current.settings = drag.before;
   drag=null; measurementStart=null; if (current) { syncInputs(); render(); }
 });
+$('previewArea').addEventListener('pointerleave',()=>{hoverPixel=null;$('pointerCoordinates').textContent='';if(!drag)schedulePreview();});
 canvas.addEventListener('contextmenu',event=>{if(tool==='crop'){event.preventDefault();pendingCrop=cropStart=drag=null;current.settings.cropOptions.pending=null;current.history.push(current.settings);syncInputs();render();}});
 function queuePreviewZoom(zoom, anchor) {
   const select = $('zoomSelect'), area = $('previewArea');
@@ -627,7 +637,9 @@ $('applyCropButton').addEventListener('click', () => {
     if(next.x<c.x||next.y<c.y||next.x+next.width>c.x+c.width||next.y+next.height>c.y+c.height)throw new Error('トリミング範囲が現在の画像を超えています。');
     settings.crop=validateCrop(next,current.width,current.height);
     if(settings.panelLabel.position) {settings.panelLabel.position.x=Math.max(0,settings.panelLabel.position.x-next.x+c.x);settings.panelLabel.position.y=Math.max(0,settings.panelLabel.position.y-next.y+c.y);}
-    settings.scaleBar.position=null;settings.scaleBar.fontPercent=9;pendingCrop=measurement=null;settings.cropOptions.pending=null;commit(settings,'crop');setTool('move');
+    settings.scaleBar.position=null;settings.scaleBar.fontPercent=9;pendingCrop=measurement=null;settings.cropOptions.pending=null;current.cropError=null;commit(settings,'crop');setTool('move');
+    const failed=items.filter(item=>item.cropError);
+    notify(`${items.length-failed.length}枚にトリミングを適用しました（元画像 x=${next.x}, y=${next.y} / ${next.width} × ${next.height} px）。${failed.length?` ${failed.length}枚は範囲が画像外です。◀▶で切り替えて確認してください。`:''}`,!!failed.length);
   } catch (error) { notify(error.message, true); }
 });
 $('resetCropButton').addEventListener('click', () => {
