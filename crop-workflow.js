@@ -1,4 +1,4 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=ef359abed43b';
+import { copy, validateCrop, validateSettings } from './core.js?v=8f16dbd95a1d';
 
 export function cropTargets(items,current,scope) {
   if(!['batch','individual'].includes(scope)||!items.includes(current))throw new Error('トリミングの設定対象が不正です。');
@@ -26,15 +26,19 @@ export function prepareCrop(items,current,crop,scope,reset=false) {
 
 // Undo uses the scope of the original operation, even if the user switches
 // scope later. Images with newer edits are left alone instead of rewinding them.
-export class CropTransactions {
+export class SettingsTransactions {
   #undo=new WeakMap();#redo=new WeakMap();
-  apply(updates) {
+  apply(updates,{clearCropError=true,origin=null}={}) {
+    // A batch copy can change other images while the source stays identical.
+    // Keep an undo checkpoint on that source so its Undo button still works.
+    const changed=updates.some(({item,settings})=>JSON.stringify(item.history.entries[item.history.index])!==JSON.stringify(settings));
+    if(!changed)return;
     const records=[];
     for(const {item,settings} of updates) {
       const before=item.history.entries[item.history.index],beforeError=item.cropError;
-      item.settings=copy(settings);item.cropError=null;item.history.push(item.settings);
+      item.settings=copy(settings);if(clearCropError)item.cropError=null;item.history.push(item.settings,item===origin);
       const after=item.history.entries[item.history.index];
-      if(before!==after)records.push({item,before,after,beforeError});
+      if(before!==after)records.push({item,before,after,beforeError,afterError:item.cropError});
     }
     for(const record of records){this.#undo.set(record.after,records);this.#redo.set(record.before,records);}
   }
@@ -47,8 +51,9 @@ export class CropTransactions {
       if(!items.includes(item)||item.history.entries[item.history.index]!== (redo?before:after))continue;
       const index=item.history.index+(redo?1:-1);
       if(item.history.entries[index]!== (redo?after:before))continue;
-      item.settings=redo?item.history.redo():item.history.undo();item.cropError=redo?null:record.beforeError;
+      item.settings=redo?item.history.redo():item.history.undo();item.cropError=redo?record.afterError:record.beforeError;
     }
     return true;
   }
 }
+export { SettingsTransactions as CropTransactions };

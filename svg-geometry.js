@@ -1,4 +1,4 @@
-import { LIMITS, validateSize } from './core.js?v=ef359abed43b';
+import { LIMITS, validateSize } from './core.js?v=8f16dbd95a1d';
 
 export function svgLength(value) {
   const match=String(value??'').trim().match(/^([+]?(?:\d*\.\d+|\d+\.?)(?:e[+-]?\d+)?)\s*(px|pt|pc|in|cm|mm)?$/i);

@@ -116,8 +116,8 @@ export function defaultSettings(width, height) {
 
 export class History {
   constructor(initial, limit = 100) { this.limit = limit; this.entries = [copy(initial)]; this.index = 0; }
-  push(state) {
-    if (JSON.stringify(this.entries[this.index]) === JSON.stringify(state)) return;
+  push(state, force = false) {
+    if (!force && JSON.stringify(this.entries[this.index]) === JSON.stringify(state)) return;
     this.entries = this.entries.slice(0, this.index + 1); this.entries.push(copy(state));
     if (this.entries.length > this.limit) this.entries.shift();
     this.index = this.entries.length - 1;

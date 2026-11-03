@@ -1,0 +1,11 @@
+import { copy, validateSettings } from './core.js?v=8f16dbd95a1d';
+
+// Visibility and calibration belong to each image, even when sharing a style.
+export function prepareScaleBar(items,current,settings,scope) {
+  if(!['batch','individual'].includes(scope)||!items.includes(current))throw new Error('スケールバーの設定対象が不正です。');
+  return (scope==='individual'?[current]:items).map(item=>{
+    const next=copy(item===current?settings:item.settings);
+    next.scaleBar={...copy(settings.scaleBar),visible:item===current?settings.scaleBar.visible:item.settings.scaleBar.visible};
+    return {item,settings:validateSettings(next,item.width,item.height)};
+  });
+}

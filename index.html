@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=279a70091698">
-  <script type="module" src="./app.js?v=4bf7182fa0fb"></script>
+  <script type="module" src="./app.js?v=97abd3ec5909"></script>
 </head>
 <body>
   <header class="app-header">
@@ -90,6 +90,9 @@
         <details open>
           <summary><span class="step">3</span> スケールバー</summary>
           <div class="detail-body">
+            <label>スケールバーの設定対象<select id="barScope"><option value="batch">一括設定（全画像）</option><option value="individual">個別設定（この画像）</option></select></label>
+            <p id="barScopeInfo" class="crop-help" role="status"></p>
+            <button id="applyBarToAllButton" class="button full">現在のバー設定を全画像に適用</button>
             <p class="hint">画像ごとの表示・非表示は、画像一覧の「バー・ラベル設定」で切り替えます。</p>
             <div class="field-row"><label>長さ<input id="barLength" type="number" min="0.000001" step="any" data-setting="scaleBar.length"></label><label>単位<select id="barUnit" data-setting="scaleBar.unit"><option>nm</option><option selected>µm</option><option>mm</option></select></label></div>
             <label>位置<select id="barAnchor" data-setting="scaleBar.anchor" class="anchor-select"></select></label>

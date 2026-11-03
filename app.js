@@ -1,20 +1,21 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ef359abed43b';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=51203e011e9f';
-import { buildPlan, paint } from './render.js?v=a8cd87799c78';
-import { batchExport, exportImage } from './export.js?v=cb59335c526b';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=8f16dbd95a1d';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=19a9e4dc279a';
+import { buildPlan, paint } from './render.js?v=e43fa512af14';
+import { batchExport, exportImage } from './export.js?v=81e508c2cd01';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=99d964043aba';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=94739a63602d';
-import { createProject, readProject } from './project.js?v=d67fc8ccbab0';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e15fc67ea70c';
-import { cropConflicts, prepareCrop, CropTransactions } from './crop-workflow.js?v=7a822a125430';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=19ba3e04b0c5';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=20d9ca24d3fd';
+import { createProject, readProject } from './project.js?v=abb94e04d09c';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=bd225098dc4b';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f12df5a57801';
+import { prepareScaleBar } from './bar-workflow.js?v=cef806ad03b7';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
-const cropTransactions=new CropTransactions();
+const settingsTransactions=new SettingsTransactions();
 const folderSupported=typeof window.showDirectoryPicker==='function';
 const sourceFolders=new WeakMap();
 const sourceHandles=new WeakMap();
@@ -32,7 +33,7 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
@@ -156,6 +157,7 @@ function syncImageNavigation() {
   $('previousImage').disabled = busy || index <= 0;
   $('nextImage').disabled = busy || index < 0 || index >= items.length - 1;
   syncCropScope();
+  syncBarScope();
   $('previewNavigator').title = current?.name ?? '';
 }
 for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEventListener('click',()=>{
@@ -232,6 +234,7 @@ function syncInputs() {
 
 function commit(settings,shared=null) {
   if (!current) return;
+  if(shared==='scaleBar'){applyScaleBar(settings);return;}
   const next = validateSettings(settings, current.width, current.height);
   // Reject impossible geometry before adding it to history.
   buildPlan(next, context);
@@ -242,13 +245,29 @@ function commit(settings,shared=null) {
 function shareSettings(section){
   const template=current.settings;
   for(const item of items)if(item!==current){
-    if(section==='scaleBar') {const visible=item.settings.scaleBar.visible;item.settings.scaleBar={...copy(template.scaleBar),visible};}
-    else if(section==='panelLabel'){const p=item.settings.panelLabel;item.settings.panelLabel={...copy(template.panelLabel),visible:p.visible,text:p.text,subtext:p.subtext,position:p.position};}
+    if(section==='panelLabel'){const p=item.settings.panelLabel;item.settings.panelLabel={...copy(template.panelLabel),visible:p.visible,text:p.text,subtext:p.subtext,position:p.position};}
     else if(section==='output')item.settings.output=copy(template.output);
     item.history.push(item.settings);
   }
   scheduleWorkState();
 }
+function syncBarScope(){
+  const individual=$('barScope').value==='individual';
+  $('barScopeInfo').textContent=individual?'表示中の画像だけを変更します。位置のドラッグ変更もこの画像だけに適用します。':'変更したバー設定は全画像に適用します。校正値と表示・非表示は画像ごとに保持します。';
+  $('applyBarToAllButton').hidden=individual;
+  $('applyBarToAllButton').disabled=busy||!current?.settings.calibration||items.length<2;
+}
+function applyScaleBar(settings){
+  const updates=prepareScaleBar(items,current,settings,$('barScope').value);
+  for(const update of updates)buildPlan(update.settings,context);
+  settingsTransactions.apply(updates,{clearCropError:false,origin:current});
+  syncInputs();render();
+}
+$('barScope').addEventListener('change',syncBarScope);
+$('applyBarToAllButton').addEventListener('click',()=>{
+  if(busy||!current)return;
+  try{applyScaleBar(current.settings);notify(`${items.length}枚にバー設定を適用しました。`);}catch(error){notify(error.message,true);}
+});
 
 function renderList() {
   $('imageList').replaceChildren();
@@ -535,7 +554,13 @@ $('previewArea').addEventListener('pointerup', event => {
       cropStart=operation.moved||operation.secondClick?null:operation.start;
     }
     if(pendingCrop) {updateCropInputs(pendingCrop);current.settings.cropOptions.pending=copy(pendingCrop);current.history.push(current.settings);}
-  } else if (operation.mode === 'move') { current.history.push(current.settings);if(operation.kind==='scaleBar')shareSettings('scaleBar'); syncInputs(); }
+  } else if (operation.mode === 'move') {
+    if(operation.kind==='scaleBar'){
+      const settings=copy(current.settings);current.settings=operation.before;
+      try{applyScaleBar(settings);}catch(error){notify(error.message,true);}
+    }else current.history.push(current.settings);
+    syncInputs();
+  }
   drag = null; canvas.style.cursor = spacePan ? 'grab' : tool === 'move' ? 'default' : 'crosshair';
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); render();
 });
@@ -664,20 +689,19 @@ $('applyCropButton').addEventListener('click', () => {
     if(next.x<c.x||next.y<c.y||next.x+next.width>c.x+c.width||next.y+next.height>c.y+c.height)throw new Error('トリミング範囲が現在の画像を超えています。');
     const updates=prepareCrop(items,current,next,$('cropScope').value);
     for(const update of updates)buildPlan(update.settings,context);
-    cropTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');
+    settingsTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');
     notify(`${updates.length}枚にトリミングを適用しました（元画像 x=${next.x}, y=${next.y} / ${next.width} × ${next.height} px）。`);
   } catch (error) { notify(error.message, true); }
 });
 $('resetCropButton').addEventListener('click', () => {
-  try {const updates=prepareCrop(items,current,null,$('cropScope').value,true);for(const update of updates)buildPlan(update.settings,context);cropTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');notify(`${updates.length}枚を元画像全体に戻しました。`);} catch (error) { notify(error.message, true); }
+  try {const updates=prepareCrop(items,current,null,$('cropScope').value,true);for(const update of updates)buildPlan(update.settings,context);settingsTransactions.apply(updates);pendingCrop=measurement=cropStart=null;syncInputs();setTool('move');notify(`${updates.length}枚を元画像全体に戻しました。`);} catch (error) { notify(error.message, true); }
 });
 function undo(redo = false) {
   if (!current || busy) return;
-  if(!cropTransactions.step(current,redo,items)) {
+  if(!settingsTransactions.step(current,redo,items)) {
     const before=current.settings;current.settings=redo?current.history.redo():current.history.undo();
-    for(const section of ['scaleBar','panelLabel','output']){
+    for(const section of ['panelLabel','output']){
       const old=copy(before[section]),next=copy(current.settings[section]);
-      if(section==='scaleBar'){delete old.visible;delete next.visible;}
       if(section==='panelLabel')for(const key of ['visible','text','subtext','position']){delete old[key];delete next[key];}
       if(JSON.stringify(old)!==JSON.stringify(next))shareSettings(section);
     }
@@ -880,6 +904,7 @@ async function openProject(file){
   }
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
   $('cropScope').value=project.ui.cropScope??'batch';
+  $('barScope').value=project.ui.barScope??'batch';
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
