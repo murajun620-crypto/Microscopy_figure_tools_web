@@ -1,6 +1,6 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=226986b582ad';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=8c4f010f8fab';
 import { inlineRuns } from './inline-text.js';
-import { measurementLayout } from './annotations.js?v=daa6328fef07';
+import { measurementLayout } from './annotations.js?v=4aa49a1ad6dd';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=e51ec5833009';
 
 export const FONT = 'Arial';

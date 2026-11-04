@@ -1,5 +1,5 @@
 // Coordinate and settings logic is independent of the DOM and image renderer.
-import { validateAnnotations } from './annotations.js?v=daa6328fef07';
+import { validateAnnotations } from './annotations.js?v=4aa49a1ad6dd';
 export const UNITS = { nm: 0.001, 'µm': 1, mm: 1000 };
 export const LIMITS = { sourcePixels: 64_000_000, outputPixels: 64_000_000, edge: 16384, fileBytes: 128 * 1024 * 1024, batchBytes: 256 * 1024 * 1024, files: 100 };
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));

@@ -1,4 +1,4 @@
-import { LIMITS, validateSettings, validateSize } from './core.js?v=226986b582ad';
+import { LIMITS, validateSettings, validateSize } from './core.js?v=8c4f010f8fab';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
 // raster conversion, compression or external resources are needed to reopen it.

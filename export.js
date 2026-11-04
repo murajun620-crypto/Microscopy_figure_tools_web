@@ -1,11 +1,11 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=226986b582ad';
-import { numberedLabel } from './label-numbering.js?v=07a2ff47950e';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=205870627693';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=e60e8b8c728f';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=8c4f010f8fab';
+import { numberedLabel } from './label-numbering.js?v=d37e70d05896';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=feba446a001d';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=9d7bb3b95f43';
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
-import { outputBase, extensionFor } from './save-files.js?v=8c3ea7aadb88';
+import { outputBase, extensionFor } from './save-files.js?v=badc45c55ea4';
 
 export async function exportImage(source, settings, format) {
   if (format === 'svg') {
