@@ -7,12 +7,13 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=badc45c55ea4';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=d37e70d05896';
 import { createProject, readProject } from './project.js?v=7acfcaa1d5b3';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=94727eb7c0c8';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=ec17e35af4d3';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=a8ed6735856a';
 import { prepareScaleBar } from './bar-workflow.js?v=929a0a41f1c1';
 import { prepareCalibration } from './calibration-workflow.js?v=1c839b7e8e98';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
-import { AnnotationUI } from './annotation-ui.js?v=8315498a4e8b';
+import { AnnotationUI } from './annotation-ui.js?v=b5fe2eca7bf5';
+import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -134,7 +135,7 @@ function openColorPanel(input,title) {
   $('basic-colors').replaceChildren(...['#000000','#ffffff'].map(hex=>colorSwatch(hex)));
   $('recent-colors').replaceChildren(...recentColors.map(hex=>colorSwatch(hex)));
   $('custom-color').value=input.value; $('color-code').value=input.value; $('color-error').textContent='';
-  $('color-panel').showModal();
+  showDialog($('color-panel'));
 }
 function chooseColor(value) {
   if(!/^#[0-9a-f]{6}$/i.test(value)){$('color-error').textContent='#RRGGBB形式で入力してください。';return;}
@@ -148,6 +149,7 @@ $('apply-color-code').addEventListener('click',()=>chooseColor($('color-code').v
 $('color-code').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();chooseColor(event.target.value.trim());}});
 syncColorFields();
 compactHelp();
+setupMovableDialogs();
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
 
 function notify(message, error = false) {
@@ -1021,7 +1023,7 @@ function refreshSaveUI() {
 }
 for(const [id,batch] of [['singleSaveButton',false],['batchSaveButton',true]]) $(id).addEventListener('click',()=>{
   if(busy||!current)return;
-  saveBatch=batch;refreshSaveUI();$('saveDialog').showModal();
+  saveBatch=batch;refreshSaveUI();showDialog($('saveDialog'));
 });
 $('closeSaveDialog').addEventListener('click',()=>{if(!busy)$('saveDialog').close();});
 $('saveDialog').addEventListener('cancel',event=>{if(busy)event.preventDefault();});
@@ -1091,7 +1093,7 @@ $('copyButton').addEventListener('click',()=>action(async()=>{
   notify(`表示中の画像を${settings.output.dpi??600} dpiでクリップボードへコピーしました。`);
 }));
 $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(); $('batchProgress').textContent = '現在の画像の処理後に中止します…'; });
-$('helpButton').addEventListener('click', () => $('helpDialog').showModal()); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
+$('helpButton').addEventListener('click', () => showDialog($('helpDialog'))); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
 
 async function demo(count = 1) {
   // One acquisition scale and image size allow the same calibration and crop.

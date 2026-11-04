@@ -169,6 +169,16 @@ canvas{display:block;cursor:default}
 dialog{border:1px solid var(--border);border-radius:13px;width:min(620px,90vw);max-height:85vh;padding:24px;box-shadow:0 12px 60px #173d3029;color:#355346;font-size:12px;line-height:1.9}
 dialog::backdrop{background:#263f3555}
 .dialog-heading{display:flex;align-items:center;justify-content:space-between}
+.movable-dialog .dialog-heading{cursor:grab;user-select:none;touch-action:none;flex-shrink:0;gap:12px}
+.movable-dialog>.dialog-heading{position:sticky;top:-24px;z-index:2;background:white}
+.movable-dialog.color-dialog>.dialog-heading{top:-16px}
+.movable-dialog.annotation-editor>.dialog-heading{top:-20px}
+.movable-dialog.save-dialog>.dialog-heading{top:-20px}
+.movable-dialog .dialog-heading::before{content:'⠿';color:var(--muted);font-size:18px;line-height:1}
+.movable-dialog .dialog-heading>strong,.movable-dialog .dialog-heading>h2{flex:1;min-width:0}
+.movable-dialog .dialog-heading:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:4px}
+.dialog-dragging .dialog-heading{cursor:grabbing}
+#annotationEditor::backdrop,#color-panel::backdrop{background:transparent}
 dialog h2{font-size:19px}
 dialog ol{padding-left:22px}
 dialog li{padding-bottom:9px}

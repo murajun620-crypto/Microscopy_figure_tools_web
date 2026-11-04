@@ -1,5 +1,6 @@
 import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=4aa49a1ad6dd';
 import { paintMeasurements } from './annotation-render.js?v=e51ec5833009';
+import { showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
 export class AnnotationUI {
   constructor(api){
@@ -124,7 +125,7 @@ export class AnnotationUI {
       if(!box.annotation.locked)for(const p of box.annotation.type==='text'?[box.points[0]]:box.points){context.beginPath();context.arc(p.x,p.y,4/scale,0,Math.PI*2);context.fill();context.stroke();}
     }context.restore();
   }
-  edit(id=this.focused?.id){if(!id||this.api.busy())return;this.selected=new Set([id]);this.mode=null;this.sync();if(!this.dialog.open)this.dialog.showModal();this.fillForm();}
+  edit(id=this.focused?.id){if(!id||this.api.busy())return;this.selected=new Set([id]);this.mode=null;this.sync();if(!this.dialog.open)showDialog(this.dialog);this.fillForm();}
   fillForm(){
     const a=this.focused;if(!a){this.dialog.close();return;}
     $('annotationEditorTitle').textContent=`${ANNOTATION_NAMES[a.type]}の設定`;$('annotationResult').textContent=annotationValue(a,this.current.settings.calibration);
