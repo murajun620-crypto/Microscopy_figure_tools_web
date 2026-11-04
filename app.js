@@ -7,7 +7,7 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=19ba3e04b0c5';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=20d9ca24d3fd';
 import { createProject, readProject } from './project.js?v=cf92e332bf50';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=eb7e5f831f1b';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4434f8da3c33';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f12df5a57801';
 import { prepareScaleBar } from './bar-workflow.js?v=cef806ad03b7';
 import { prepareCalibration } from './calibration-workflow.js?v=c479a881933f';
@@ -38,9 +38,10 @@ function projectUI() {
 }
 function pendingInputEdit() {
   if(!current)return false;
-  for(const input of document.querySelectorAll('[data-setting],#imageList [data-item-key]')) {
+  for(const input of document.querySelectorAll('[data-setting],[data-opacity-for],#imageList [data-item-key]')) {
     let expected;
     if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=current.settings[section][key];}
+    else if(input.dataset.opacityFor){const [section,key]=$(input.dataset.opacityFor).dataset.setting.split('.');expected=Math.round(current.settings[section][key]*100);}
     else {const item=items.find(item=>item.id===input.closest('[data-image-id]').dataset.imageId);expected=item?.[input.dataset.itemKey];}
     if(input.type==='checkbox'){if(input.checked!==expected)return true;}
     else if(input.type==='number'||input.type==='range'||input.hasAttribute('data-number')) {if(input.value===''?expected!=null&&expected!=='':Number(input.value)!==Number(expected))return true;}
@@ -200,6 +201,7 @@ function setBusy(value) {
     $('labelOutsideTransparent').disabled=value||!p.visible||!p.anchor.startsWith('outside-');$('labelOutsideColor').disabled=$('labelOutsideTransparent').disabled||p.outsideTransparent;
   }
   syncColorFields();
+  for(const input of document.querySelectorAll('[data-opacity-for]'))input.disabled=$(input.dataset.opacityFor).disabled;
   syncImageNavigation();
   scheduleWorkState();
 }
@@ -216,6 +218,7 @@ function syncInputs() {
     const [section, key] = input.dataset.setting.split('.'), value = current.settings[section][key];
     if (input.type === 'checkbox') input.checked = value; else input.value = value ?? '';
   }
+  syncOpacityFields();
   $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = current.settings.panelLabel.anchor;
   const c = current.settings.crop;
   const imageCrop=current.imageCrop;
@@ -232,6 +235,23 @@ function syncInputs() {
   $('imageName').textContent = current.name; $('imageDimensions').textContent = `元画像 ${current.width.toLocaleString()} × ${current.height.toLocaleString()} px`;
   for(const row of $('imageList').children) {const item=items.find(item=>item.id===row.dataset.imageId);if(item)for(const input of row.querySelectorAll('[data-item-key]')){const value=item[input.dataset.itemKey];if(input.type==='checkbox')input.checked=value;else input.value=value??'';}}
   updateLabelFormat();setBusy(busy);
+}
+
+function syncOpacityFields(){
+  for(const input of document.querySelectorAll('[data-opacity-for]'))input.value=Math.round(Number($(input.dataset.opacityFor).value)*100);
+}
+for(const input of document.querySelectorAll('[data-opacity-for]')){
+  const slider=$(input.dataset.opacityFor);
+  slider.addEventListener('input',()=>{input.value=Math.round(slider.valueAsNumber*100);});
+  input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
+  input.addEventListener('change',()=>{
+    if(!current||busy||slider.disabled)return;
+    try{
+      if(!input.checkValidity()||!Number.isFinite(input.valueAsNumber))throw new Error('不透明度は0〜100%の整数で入力してください。');
+      const [section,key]=slider.dataset.setting.split('.'),settings=copy(current.settings);
+      settings[section][key]=input.valueAsNumber/100;commit(settings,section);
+    }catch(error){notify(error.message,true);syncOpacityFields();}
+  });
 }
 
 function commit(settings,shared=null) {

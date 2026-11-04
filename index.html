@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=279a70091698">
-  <script type="module" src="./app.js?v=b081a57051c4"></script>
+  <link rel="stylesheet" href="./styles.css?v=ba7e73d8d18b">
+  <script type="module" src="./app.js?v=175f0b95eac9"></script>
 </head>
 <body>
   <header class="app-header">
@@ -105,7 +105,7 @@
             <div class="field-row"><label class="color-field">線色<input id="barColor" type="color" value="#ffffff" data-setting="scaleBar.color"></label><label class="color-field">文字色<input id="barTextColor" type="color" value="#ffffff" data-setting="scaleBar.textColor"></label></div>
             <div class="field-row"><label class="check"><input id="barTextVisible" type="checkbox" data-setting="scaleBar.showText" checked>長さの文字</label><label class="check"><input id="barBackground" type="checkbox" data-setting="scaleBar.background">個別背景を表示</label></div>
             <label class="color-field">背景色<input id="barBackgroundColor" type="color" value="#000000" data-setting="scaleBar.backgroundColor"></label>
-            <label>背景の不透明度<input id="barOpacity" type="range" min="0" max="1" step="0.01" value="0.5" data-setting="scaleBar.opacity"></label>
+            <div class="opacity-field"><label for="barOpacity">背景の不透明度</label><div class="opacity-controls"><input id="barOpacity" type="range" min="0" max="1" step="0.01" value="0.5" data-setting="scaleBar.opacity"><div class="opacity-value"><input id="barOpacityValue" type="number" min="0" max="100" step="1" value="50" data-opacity-for="barOpacity" aria-label="スケールバーの背景の不透明度（%）"><span aria-hidden="true">%</span></div></div></div>
             <div class="field-row"><label class="check"><input id="barOutsideTransparent" type="checkbox" data-setting="scaleBar.outsideTransparent" checked>外側領域を透明</label><label class="color-field">外側領域の色<input id="barOutsideColor" type="color" value="#ffffff" data-setting="scaleBar.outsideColor"></label></div>
           </div>
         </details>
@@ -133,7 +133,7 @@
             <label>位置<select id="labelAnchor" data-setting="panelLabel.anchor" class="anchor-select"></select></label>
             <div class="field-row"><label class="color-field">文字色<input id="labelColor" type="color" value="#ffffff" data-setting="panelLabel.color"></label><label class="color-field">背景色<input id="labelBackgroundColor" type="color" value="#000000" data-setting="panelLabel.backgroundColor"></label></div>
             <label class="check"><input id="labelBackground" type="checkbox" data-setting="panelLabel.background">個別背景を表示</label>
-            <label>背景の不透明度<input id="labelOpacity" type="range" min="0" max="1" step="0.01" value="0.65" data-setting="panelLabel.opacity"></label>
+            <div class="opacity-field"><label for="labelOpacity">背景の不透明度</label><div class="opacity-controls"><input id="labelOpacity" type="range" min="0" max="1" step="0.01" value="0.65" data-setting="panelLabel.opacity"><div class="opacity-value"><input id="labelOpacityValue" type="number" min="0" max="100" step="1" value="65" data-opacity-for="labelOpacity" aria-label="パネルラベルの背景の不透明度（%）"><span aria-hidden="true">%</span></div></div></div>
             <div class="field-row"><label class="check"><input id="labelOutsideTransparent" type="checkbox" data-setting="panelLabel.outsideTransparent" checked>外側領域を透明</label><label class="color-field">外側領域の色<input id="labelOutsideColor" type="color" value="#ffffff" data-setting="panelLabel.outsideColor"></label></div>
             <p class="hint">図中文字はPython版と同じArial・標準です。サイズはトリミング後画像の短辺に対する割合。補足文字は $_2$・$^2$・$\alpha$ などを使用できます。</p>
           </div>
