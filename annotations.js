@@ -5,8 +5,12 @@ const finite=(n,min,max)=>{if(!Number.isFinite(n)||n<min||n>max)throw new Error(
 const color=s=>{if(typeof s!=='string'||!/^#[a-f\d]{6}$/i.test(s))throw new Error('注釈の色が不正です。');return s;};
 const bool=v=>{if(typeof v!=='boolean')throw new Error('注釈の表示設定が不正です。');return v;};
 const choice=(v,values)=>{if(!values.includes(v))throw new Error('注釈の設定が不正です。');return v;};
-export function newAnnotation(type,a,b=a,id=crypto.randomUUID()){
-  return {id,type,points:[{...a},{...b}],text:type==='text'?'テキスト':'',visible:true,locked:false,color:'#ffffff',opacity:1,fontPt:7,fontFamily:'Arial',bold:false,italic:false,rotation:0,align:'center',linePt:.5,lineStyle:'-',arrowStyle:type==='distance'||type==='diameter'?'<->':'->',arrowSizePt:5,unit:'auto',digits:3,labelOffset:{x:0,y:0},background:false,backgroundColor:'#000000',backgroundOpacity:.65};
+export function defaultAnnotationFontPt(settings,plan){
+  const axis=settings.output.sizeAxis==='width'?plan.width:plan.height;
+  return plan.barFontSize*(settings.output.sizeCm/2.54*72)/axis;
+}
+export function newAnnotation(type,a,b=a,id=crypto.randomUUID(),fontPt=7){
+  return {id,type,points:[{...a},{...b}],text:type==='text'?'テキスト':'',visible:true,locked:false,color:'#ffffff',opacity:1,fontPt,fontFamily:'Arial',bold:false,italic:false,rotation:0,align:'center',linePt:.5,lineStyle:'-',arrowStyle:type==='distance'||type==='diameter'?'<->':'->',arrowSizePt:5,unit:'auto',digits:3,labelOffset:{x:0,y:0},background:false,backgroundColor:'#000000',backgroundOpacity:.65};
 }
 export function validateAnnotations(value=[],width,height){
   if(!Array.isArray(value)||value.length>200)throw new Error('注釈は200個以内にしてください。');
@@ -17,7 +21,7 @@ export function validateAnnotations(value=[],width,height){
     const point=p=>({x:finite(p?.x,0,width),y:finite(p?.y,0,height)});
     const a={...newAnnotation(raw.type,{x:0,y:0},{x:0,y:0},raw.id),...raw};
     if(typeof a.text!=='string'||a.text.length>1000)throw new Error('注釈の文字は1000文字以内にしてください。');
-    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,1,72),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>','o-','o-o']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
+    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,.000001,10000),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>','o-','o-o']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
   });
 }
 export function annotationValue(a,calibration){

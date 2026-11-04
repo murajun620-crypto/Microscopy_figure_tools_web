@@ -1,6 +1,6 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=8c4f010f8fab';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=9637cfe3a98d';
 import { inlineRuns } from './inline-text.js';
-import { measurementLayout } from './annotations.js?v=4aa49a1ad6dd';
+import { measurementLayout } from './annotations.js?v=637a8fa91f67';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=e51ec5833009';
 
 export const FONT = 'Arial';
@@ -38,13 +38,13 @@ function textRuns(context, text, size) {
 // Output-scale rounding happens before layout, as in Qt, not after drawing.
 export function buildPlan(settings, context, strict = false, scale = 1, includeLabel = true) {
   const { crop, scaleBar: bar, panelLabel: label } = settings;
-  const width = crop.width * scale, imageHeight = crop.height * scale, short = Math.min(width, imageHeight);
+  const width = crop.width * scale, imageHeight = crop.height * scale, short = Math.min(width, imageHeight),barFontSize=pixels(short,bar.fontPercent);
   const boxes = [], warnings = [];
   const barWidth=bar.visible&&settings.calibration&&bar.length?Math.max(1,pyRound(scaleBarPixels(settings.calibration,bar.length,bar.unit)*scale)):null;
   const tooWide=barWidth!==null&&barWidth>=width;
   if(tooWide){if(strict)throw new Error('スケールバーが画像の幅を超えています。長さを短くしてから保存してください。');warnings.push('トリミング済み：スケールバーが画像幅を超えるため表示していません。長さを短くしてください。');}
   if (barWidth!==null && !tooWide) {
-    const fontSize = pixels(short, bar.fontPercent), m = metrics(context, `${lengthText(bar.length)} ${bar.unit}`, fontSize);
+    const fontSize = barFontSize, m = metrics(context, `${lengthText(bar.length)} ${bar.unit}`, fontSize);
     const textWidth = bar.showText ? Math.max(m.advance, m.tightWidth) + Math.max(2, pyRound(fontSize * .12)) : 0;
     const textHeight = bar.showText ? m.height : 0, thickness = pixels(short, bar.thicknessPercent), gap = bar.showText ? pixels(short, bar.gapPercent, 0) : 0;
     const paddingX = Math.max(1, pyRound(fontSize * .2)), paddingTop = Math.max(1, pyRound(fontSize * .15)), paddingBottom = paddingTop + Math.max(1, pyRound(fontSize * .1));
@@ -92,7 +92,7 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
     if(box.style.position) { box.x=clamp(box.style.position.x*scale,box.area.x,Math.max(box.area.x,width-box.width)); box.y=clamp(box.style.position.y*scale+shift,box.area.y,Math.max(box.area.y,box.area.y+box.area.height-box.height)); }
     if(box.band && !box.style.outsideTransparent) fills.push({...box.area,color:box.style.outsideColor});
   }
-  const plan={width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,annotations:boxes,fills,warnings};
+  const plan={width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,barFontSize,annotations:boxes,fills,warnings};
   plan.measurements=measurementLayout(settings,plan,context);return plan;
 }
 

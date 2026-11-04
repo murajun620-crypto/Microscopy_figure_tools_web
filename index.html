@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=760fcec6045d">
-  <script type="module" src="./app.js?v=9e438419f2a5"></script>
+  <script type="module" src="./app.js?v=780fb1a05c39"></script>
 </head>
 <body>
   <header class="app-header">
@@ -194,7 +194,7 @@
       <div class="field-row" data-ann-measured><label>単位<select data-ann-field="unit"><option value="auto">校正と同じ</option><option>nm</option><option>µm</option><option>mm</option></select></label><label>小数桁数<input data-ann-field="digits" type="number" min="0" max="6" step="1"></label></div>
       <div class="field-row"><label>始点X（px）<input data-ann-coordinate="0.x" type="number" min="0" step="any"></label><label>始点Y（px）<input data-ann-coordinate="0.y" type="number" min="0" step="any"></label></div>
       <div class="field-row" data-ann-end><label>終点X（px）<input data-ann-coordinate="1.x" type="number" min="0" step="any"></label><label>終点Y（px）<input data-ann-coordinate="1.y" type="number" min="0" step="any"></label></div>
-      <div class="field-row"><label>フォントサイズ（pt）<input data-ann-field="fontPt" type="number" min="1" max="72" step="0.1"></label><label>線幅（pt）<input data-ann-field="linePt" type="number" min="0.05" max="20" step="0.05"></label></div>
+      <div class="field-row"><label>フォントサイズ（pt）<input data-ann-field="fontPt" type="number" min="0.000001" max="10000" step="any"></label><label>線幅（pt）<input data-ann-field="linePt" type="number" min="0.05" max="20" step="0.05"></label></div>
       <div class="field-row"><label>線種<select data-ann-field="lineStyle"><option value="-">実線</option><option value="--">破線</option><option value="-.">一点鎖線</option><option value=":">点線</option></select></label><label>矢印<select data-ann-field="arrowStyle"><option value="->">片矢印</option><option value="<->">両矢印</option><option value="-|>">塗り矢印</option><option value="o-">丸矢印・片端（●──）</option><option value="o-o">丸矢印・両端（●──●）</option></select></label></div>
       <div class="field-row"><label>先端・丸のサイズ（pt）<input data-ann-field="arrowSizePt" type="number" min="1" max="40" step="0.5"></label><label>文字の回転（度）<input data-ann-field="rotation" type="number" min="-360" max="360" step="1"></label></div>
       <label>フォント<select id="annotationFont" data-ann-field="fontFamily"></select></label>

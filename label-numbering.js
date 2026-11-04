@@ -1,4 +1,4 @@
-import { sequenceLabel } from './core.js?v=8c4f010f8fab';
+import { sequenceLabel } from './core.js?v=9637cfe3a98d';
 
 // Mirrors SectionSettingsDialog.panel_numbering_settings in the Python app.
 export function panelNumbering(preset, values = {}) {

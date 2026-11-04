@@ -1,4 +1,4 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=4aa49a1ad6dd';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=637a8fa91f67';
 import { paintMeasurements } from './annotation-render.js?v=e51ec5833009';
 import { showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
@@ -71,7 +71,7 @@ export class AnnotationUI {
     const p=this.point(event),q=this.planPoint(p),plan=this.api.plan(),tolerance=8/this.api.scale();
     if(this.mode){
       this.stop(event);$('preview').focus({preventScroll:true});$('preview').setPointerCapture(event.pointerId);
-      if(!this.draft)this.draft=newAnnotation(this.mode,p,p);
+      if(!this.draft)this.draft=newAnnotation(this.mode,p,p,undefined,defaultAnnotationFontPt(this.current.settings,plan));
       this.gesture={kind:'create',start:p,client:{x:event.clientX,y:event.clientY},second:this.draft.points[0].x!==p.x||this.draft.points[0].y!==p.y};
       if(this.mode==='text'){this.finishCreate();this.edit();}this.api.render();return;
     }
