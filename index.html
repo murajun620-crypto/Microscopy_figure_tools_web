@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=279a70091698">
-  <script type="module" src="./app.js?v=fcc2c8f47e32"></script>
+  <script type="module" src="./app.js?v=b081a57051c4"></script>
 </head>
 <body>
   <header class="app-header">
@@ -161,7 +161,7 @@
       <div class="save-launchers preview-file-actions" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button primary" disabled>この画像を保存</button><button id="batchSaveButton" class="button" title="一覧でチェックした画像を、現在のデザインで保存します。画像ごとの校正・表示・文字列は保持します。" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
       <div class="preview-options"><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
       <div class="preview-surface">
-      <div class="preview-shell">
+      <div id="previewShell" class="preview-shell">
       <div id="previewArea" class="preview-area">
         <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>

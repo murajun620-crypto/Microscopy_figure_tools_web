@@ -7,7 +7,7 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=19ba3e04b0c5';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=20d9ca24d3fd';
 import { createProject, readProject } from './project.js?v=cf92e332bf50';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c7959181225e';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=eb7e5f831f1b';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f12df5a57801';
 import { prepareScaleBar } from './bar-workflow.js?v=cef806ad03b7';
 import { prepareCalibration } from './calibration-workflow.js?v=c479a881933f';
@@ -611,12 +611,16 @@ function queuePreviewZoom(zoom, anchor) {
     area.scrollTop += after.top + after.height * anchor.v - anchor.y;
   });
 }
-canvas.addEventListener('wheel',event=>{
-  if (!event.ctrlKey || !plan || busy) return;
+$('previewShell').addEventListener('wheel',event=>{
+  if (!event.ctrlKey) return;
   event.preventDefault();
+  if (!plan || busy) return;
   const bounds=$('canvasFrame').getBoundingClientRect(), select=$('zoomSelect'), area=$('previewArea');
   const scale=select.value==='fit'?bounds.width/plan.width:Number(select.value), zoom=wheelZoom(scale,event.deltaY,event.deltaMode,area.clientHeight);
-  if (zoom!==scale) queuePreviewZoom(zoom,{x:event.clientX,y:event.clientY,u:(event.clientX-bounds.left)/bounds.width,v:(event.clientY-bounds.top)/bounds.height});
+  // In the surrounding gutter, anchor to the nearest image edge instead of
+  // extrapolating a point outside the image and moving it out of the viewport.
+  const x=clamp(event.clientX,bounds.left,bounds.right),y=clamp(event.clientY,bounds.top,bounds.bottom);
+  if (zoom!==scale) queuePreviewZoom(zoom,{x,y,u:(x-bounds.left)/bounds.width,v:(y-bounds.top)/bounds.height});
 },{passive:false});
 for (const [id,factor] of [['zoomIn',1.15],['zoomOut',1/1.15]]) $(id).addEventListener('click',()=>{
   if (!plan || !current || busy) return;
