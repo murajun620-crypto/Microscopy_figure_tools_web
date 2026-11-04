@@ -2,14 +2,15 @@ import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=8f16dbd95a1d';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=19a9e4dc279a';
 import { buildPlan, paint } from './render.js?v=e43fa512af14';
-import { batchExport, exportImage } from './export.js?v=81e508c2cd01';
+import { batchExport, exportImage } from './export.js?v=f04f7ad2c684';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=19ba3e04b0c5';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=20d9ca24d3fd';
-import { createProject, readProject } from './project.js?v=abb94e04d09c';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=bd225098dc4b';
+import { createProject, readProject } from './project.js?v=cf92e332bf50';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c7959181225e';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f12df5a57801';
 import { prepareScaleBar } from './bar-workflow.js?v=cef806ad03b7';
+import { prepareCalibration } from './calibration-workflow.js?v=c479a881933f';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 
 const $ = id => document.getElementById(id);
@@ -33,7 +34,7 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
@@ -158,6 +159,7 @@ function syncImageNavigation() {
   $('nextImage').disabled = busy || index < 0 || index >= items.length - 1;
   syncCropScope();
   syncBarScope();
+  syncCalibrationScope();
   $('previewNavigator').title = current?.name ?? '';
 }
 for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEventListener('click',()=>{
@@ -268,6 +270,27 @@ $('applyBarToAllButton').addEventListener('click',()=>{
   if(busy||!current)return;
   try{applyScaleBar(current.settings);notify(`${items.length}枚にバー設定を適用しました。`);}catch(error){notify(error.message,true);}
 });
+function syncCalibrationScope(){
+  const individual=$('calibrationScope').value==='individual',target=individual?'この画像':`全${items.length}枚`;
+  $('calibrationScopeInfo').textContent=individual?'表示中の画像だけを校正します。画像を切り替えて、それぞれの値を設定できます。':'同じ撮影スケールの全画像に校正値を適用します。バーの長さ・色・配置は画像ごとに保持します。';
+  $('calibrateButton').textContent=`${target}を測定から校正`;
+  $('directCalibrationButton').textContent=`${target}に数値を適用`;
+  $('resetCalibrationButton').textContent=`${target}の校正をリセット`;
+  $('applyCalibrationToAllButton').hidden=individual;
+  $('applyCalibrationToAllButton').disabled=busy||!current?.settings.calibration||items.length<2;
+}
+function applyCalibration(calibration){
+  const updates=prepareCalibration(items,current,calibration,$('calibrationScope').value);
+  for(const update of updates)buildPlan(update.settings,context);
+  settingsTransactions.apply(updates,{clearCropError:false,origin:current});
+  measurement=measurementStart=null;$('measurementInfo').textContent='2点をクリック、またはドラッグ';syncInputs();setTool('move');
+  notify(`${updates.length}枚の校正を${calibration?'設定':'リセット'}しました。`);
+}
+$('calibrationScope').addEventListener('change',syncCalibrationScope);
+$('applyCalibrationToAllButton').addEventListener('click',()=>{
+  if(busy||!current?.settings.calibration)return;
+  try{applyCalibration(current.settings.calibration);}catch(error){notify(error.message,true);}
+});
 
 function renderList() {
   $('imageList').replaceChildren();
@@ -305,7 +328,6 @@ function updateBatch() {
 
 async function selectItem(item) {
   const decoded = await decodeImage(item.file,item);
-  if(!item.settings.calibration){const reference=items.find(candidate=>candidate.settings.calibration);if(reference)item.settings.calibration=copy(reference.settings.calibration);}
   activateItem(item,decoded);
   if(item.cropError)notify(`${item.name}：${item.cropError} トリミング範囲を変更するか、全体に戻してください。`,true);
 }
@@ -660,7 +682,10 @@ for(const id of ['cropX','cropY','cropWidth','cropHeight'])$(id).addEventListene
 for(const axis of ['Width','Height']) $(`useImage${axis}`).addEventListener('click',()=>{
   const c=current.settings.crop;measurement=axis==='Width'?[{x:c.x,y:c.y+c.height/2},{x:c.x+c.width,y:c.y+c.height/2}]:[{x:c.x+c.width/2,y:c.y},{x:c.x+c.width/2,y:c.y+c.height}];measurementStart=null;setTool('move');updateMeasurement();render();
 });
-$('resetCalibrationButton').addEventListener('click',()=>{const s=copy(current.settings);s.calibration=null;measurement=null;commit(s);});
+$('resetCalibrationButton').addEventListener('click',()=>{
+  if(busy||!current)return;
+  try{applyCalibration(null);}catch(error){notify(error.message,true);}
+});
 $('selectSvgImageCrop').addEventListener('click',()=>{
   if(!current?.imageCrop||busy)return;
   pendingCrop=copy(current.imageCrop);current.settings.cropOptions={...current.settings.cropOptions,aspect:'free',application:'selection',pending:copy(pendingCrop)};
@@ -669,14 +694,12 @@ $('selectSvgImageCrop').addEventListener('click',()=>{
 $('calibrateButton').addEventListener('click', () => {
   try {
     if (!measurement || measurementStart) throw new Error('画像上の2点を測定してください。');
-    const settings = copy(current.settings); settings.calibration = calibrationFromPoints(...measurement, $('knownLength').valueAsNumber, $('calibrationUnit').value);
-    settings.scaleBar.unit = settings.calibration.unit;settings.scaleBar.fontPercent=9;measurement=null; commit(settings); setTool('move'); notify('校正を設定しました。');
+    applyCalibration(calibrationFromPoints(...measurement, $('knownLength').valueAsNumber, $('calibrationUnit').value));
   } catch (error) { notify(error.message, true); }
 });
 $('directCalibrationButton').addEventListener('click', () => {
   try {
-    const settings = copy(current.settings); settings.calibration = { pixelSize: positive($('pixelSize').valueAsNumber, '1 pxあたりの長さ'), unit: $('calibrationUnit').value };
-    settings.scaleBar.unit = settings.calibration.unit;settings.scaleBar.fontPercent=9;measurement=null; commit(settings); setTool('move'); notify('校正を設定しました。');
+    applyCalibration({pixelSize:positive($('pixelSize').valueAsNumber,'1 pxあたりの長さ'),unit:$('calibrationUnit').value});
   } catch (error) { notify(error.message, true); syncInputs(); }
 });
 $('applyCropButton').addEventListener('click', () => {
@@ -905,6 +928,7 @@ async function openProject(file){
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
   $('cropScope').value=project.ui.cropScope??'batch';
   $('barScope').value=project.ui.barScope??'batch';
+  $('calibrationScope').value=project.ui.calibrationScope??'individual';
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
@@ -1016,7 +1040,7 @@ $('exportButton').addEventListener('click',()=>action(async()=>{
     const formats=exportFormats(),labelNumbering={enabled:false,cropMode:'individual'},saveFile=await prepareSaver(targets);
     await document.fonts.ready;
     batchController=new AbortController();$('cancelBatchButton').hidden=false;
-    const template=copy(current.settings);template.calibration??=copy(items.find(item=>item.settings.calibration)?.settings.calibration??null);
+    const template=copy(current.settings);
     const result=await batchExport(targets,template,current,formats,labelNumbering,batchController.signal,message=>{$('batchProgress').textContent=message;},saveFile,$('includeSettings').checked);
     const downloads=$('saveDestination').value==='download';
     if(downloads){$('batchProgress').textContent='全ファイルのダウンロードを開始しています…';await downloadAll(batchController.signal);}

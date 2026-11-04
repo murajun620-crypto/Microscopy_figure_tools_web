@@ -78,7 +78,7 @@ export function batchSettings(template, original, target, index, numbering) {
   const individual=numbering.cropMode==='individual'&&target.settings;
   const settings = copy(individual?target.settings:template);
   if(!individual) settings.crop = relativeCrop(template.crop, original.width, original.height, target.width, target.height);
-  else {if(target.cropError)throw new Error(target.cropError);settings.calibration??=copy(template.calibration);settings.output=copy(template.output);}
+  else {if(target.cropError)throw new Error(target.cropError);settings.output=copy(template.output);}
   settings.cropOptions.pending=null;
   // Preserve physical length per pixel, not the original image's physical width.
   // This assumes all selected images have the same acquisition calibration.
