@@ -1,11 +1,11 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=8f16dbd95a1d';
-import { numberedLabel } from './label-numbering.js?v=20d9ca24d3fd';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=19a9e4dc279a';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=e43fa512af14';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=c15dce8e380c';
+import { numberedLabel } from './label-numbering.js?v=1c0808d61057';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=4249ef30dd39';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=3bf42d1c6bd5';
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
-import { outputBase, extensionFor } from './save-files.js?v=19ba3e04b0c5';
+import { outputBase, extensionFor } from './save-files.js?v=0262bdd14c9f';
 
 export async function exportImage(source, settings, format) {
   if (format === 'svg') {
@@ -37,6 +37,11 @@ export async function exportImage(source, settings, format) {
         const textLayer=renderCanvas(source,settings,{image:false,annotationShapes:false,onlyAnnotationKind:box.kind});
         try{const text=await doc.embedPng(await(await canvasBlob(textLayer.canvas)).arrayBuffer());page.drawImage(text,{x:0,y:0,width,height});}
         finally{textLayer.canvas.width=textLayer.canvas.height=0;}
+      }
+      if(plan.measurements.length){
+        const layer=renderRaster(source,settings,{image:false,onlyAnnotationKind:'measurement'});
+        try{const picture=await doc.embedPng(await(await canvasBlob(layer.canvas)).arrayBuffer());page.drawImage(picture,{x:0,y:0,width,height});}
+        finally{layer.canvas.width=layer.canvas.height=0;}
       }
       return new Blob([await doc.save()], { type: 'application/pdf' });
     }

@@ -1,5 +1,7 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=8f16dbd95a1d';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=c15dce8e380c';
 import { inlineRuns } from './inline-text.js';
+import { measurementLayout } from './annotations.js?v=4ebf3ec35e75';
+import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=149942e57f03';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;
@@ -90,7 +92,8 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
     if(box.style.position) { box.x=clamp(box.style.position.x*scale,box.area.x,Math.max(box.area.x,width-box.width)); box.y=clamp(box.style.position.y*scale+shift,box.area.y,Math.max(box.area.y,box.area.y+box.area.height-box.height)); }
     if(box.band && !box.style.outsideTransparent) fills.push({...box.area,color:box.style.outsideColor});
   }
-  return {width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,annotations:boxes,fills,warnings};
+  const plan={width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,annotations:boxes,fills,warnings};
+  plan.measurements=measurementLayout(settings,plan,context);return plan;
 }
 
 export function paint(context, source, plan, settings, {scale=1,annotations=true,panelText=true,image=true,annotationShapes=true,onlyAnnotationKind=null}={}) {
@@ -110,6 +113,7 @@ export function paint(context, source, plan, settings, {scale=1,annotations=true
     }
     context.restore();
   }
+  if(annotations&&(!onlyAnnotationKind||onlyAnnotationKind==='measurement'))paintMeasurements(context,plan);
   context.restore();
 }
 export function renderCanvas(source,settings,options={}) {
@@ -117,14 +121,14 @@ export function renderCanvas(source,settings,options={}) {
   canvas.width=metrics.width;canvas.height=metrics.height;paint(canvas.getContext('2d'),source,plan,settings,options);
   return {canvas,plan,metrics};
 }
-export function renderRaster(source,settings) {
+export function renderRaster(source,settings,options={}) {
   const canvas=document.createElement('canvas'),plan=buildPlan(settings,canvas.getContext('2d'),true,settings.output.scale),metrics=rasterMetrics(plan,settings.output);
   canvas.width=metrics.width;canvas.height=metrics.height;
   const context=canvas.getContext('2d');
   // Draw the source once and rasterize text and bars at the final resolution.
   // Keep the preview's geometry; never enlarge already rasterized annotations.
   context.scale(metrics.width/plan.width,metrics.height/plan.height);
-  paint(context,source,plan,settings);
+  paint(context,source,plan,settings,options);
   return {canvas,plan,metrics};
 }
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
@@ -139,5 +143,6 @@ export function renderSvg(source,settings,options={}) {
     if(box.kind!=='panelLabel'||options.panelText!==false) for(const run of box.runs) shapes.push(`<text x="${run.x}" y="${run.y}" font-size="${run.size}" fill="${box.kind==='scaleBar'?s.textColor:s.color}">${escape(run.text)}</text>`);
     elements.push(`<g transform="translate(${pyRound(box.x)} ${pyRound(box.y)})" font-family="Arial, sans-serif" font-weight="400">${shapes.join('')}</g>`);
   }
+  elements.push(measurementsSvg(plan));
   return {markup:`<svg xmlns="http://www.w3.org/2000/svg" width="${metrics.widthCm}cm" height="${metrics.heightCm}cm" viewBox="0 0 ${metrics.width} ${metrics.height}">${elements.join('')}</svg>`,metrics};
 }

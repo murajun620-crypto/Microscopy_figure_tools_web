@@ -24,6 +24,11 @@ input[type=range]{width:100%;accent-color:var(--green);padding:0}
 .opacity-controls>input[type=range]{flex:1;min-width:0}
 .opacity-value{display:flex;align-items:center;gap:4px;flex:none}
 .opacity-value input[type=number]{width:68px;text-align:right}
+.annotation-editor{width:440px;max-height:85vh;border:1px solid var(--border);border-radius:12px;padding:20px;overflow:auto}
+.annotation-row{display:flex;align-items:center;gap:6px;padding:7px 3px;border-bottom:1px solid var(--border)}
+.annotation-row.selected{background:#e2f2eb}
+.annotation-row>button{flex:1;min-width:0;text-align:left;background:transparent;color:inherit}
+.annotation-align{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 0}
 input[type=color]{width:39px;height:30px;padding:3px;border-radius:5px}
 input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .app-header{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 32px;background:#fff;border-bottom:1px solid var(--border)}

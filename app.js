@@ -1,17 +1,18 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=8f16dbd95a1d';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=19a9e4dc279a';
-import { buildPlan, paint } from './render.js?v=e43fa512af14';
-import { batchExport, exportImage } from './export.js?v=f04f7ad2c684';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=c15dce8e380c';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=4249ef30dd39';
+import { buildPlan, paint } from './render.js?v=3bf42d1c6bd5';
+import { batchExport, exportImage } from './export.js?v=d81bfe6e5bfc';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=19ba3e04b0c5';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=20d9ca24d3fd';
-import { createProject, readProject } from './project.js?v=cf92e332bf50';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4434f8da3c33';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f12df5a57801';
-import { prepareScaleBar } from './bar-workflow.js?v=cef806ad03b7';
-import { prepareCalibration } from './calibration-workflow.js?v=c479a881933f';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=0262bdd14c9f';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=1c0808d61057';
+import { createProject, readProject } from './project.js?v=e3d3bf161b14';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=8aa2fad945c6';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=fe6f1998eb5a';
+import { prepareScaleBar } from './bar-workflow.js?v=386f20971407';
+import { prepareCalibration } from './calibration-workflow.js?v=410e3ddf6203';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
+import { AnnotationUI } from './annotation-ui.js?v=e773d9d9091a';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -29,6 +30,7 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
+let annotationUI=null;
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -38,6 +40,7 @@ function projectUI() {
 }
 function pendingInputEdit() {
   if(!current)return false;
+  if(annotationUI?.pending)return true;
   for(const input of document.querySelectorAll('[data-setting],[data-opacity-for],#imageList [data-item-key]')) {
     let expected;
     if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=current.settings[section][key];}
@@ -94,10 +97,10 @@ const COLOR_PALETTE = {
   };
 const colorFields = [], recentColors = [];
 let colorTarget = null;
-for (const input of document.querySelectorAll('input[type="color"][data-setting]')) {
+for (const input of document.querySelectorAll('input[type="color"][data-setting],input[type="color"][data-ann-field]')) {
   const title = input.parentElement.firstChild.textContent.trim();
-  const section = input.dataset.setting.split('.')[0];
-  const name = `${section === 'scaleBar' ? 'スケールバー' : 'パネルラベル'}の${title}`;
+  const section = input.dataset.setting?.split('.')[0];
+  const name = `${section === 'scaleBar' ? 'スケールバー' : section==='panelLabel'?'パネルラベル':'注釈'}の${title}`;
   input.setAttribute('aria-label',name);
   const wrapper = document.createElement('span'); wrapper.className = 'color-control';
   input.before(wrapper); wrapper.append(input); input.hidden=true;
@@ -202,6 +205,7 @@ function setBusy(value) {
   }
   syncColorFields();
   for(const input of document.querySelectorAll('[data-opacity-for]'))input.disabled=$(input.dataset.opacityFor).disabled;
+  annotationUI?.sync();
   syncImageNavigation();
   scheduleWorkState();
 }
@@ -475,9 +479,10 @@ function drawGuides() {
     context.strokeStyle='#ffde59';context.lineWidth=1/previewScale;
     context.strokeRect(x,y,1,1);
   }
-  context.restore();
+  context.restore();annotationUI?.guides(context);
 }
 function setTool(value) {
+  annotationUI?.cancelDrawing();
   tool = value; measurementStart = cropStart = drag = null;
   hoverPixel=null;$('pointerCoordinates').textContent='';
   previewRaw=false;$('rawPreviewButton').classList.remove('active');$('processedPreviewButton').classList.add('active');
@@ -1134,6 +1139,7 @@ async function demo(count = 1) {
 }
 for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
 for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
+annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();

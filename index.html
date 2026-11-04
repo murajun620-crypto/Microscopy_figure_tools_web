@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=ba7e73d8d18b">
-  <script type="module" src="./app.js?v=175f0b95eac9"></script>
+  <link rel="stylesheet" href="./styles.css?v=528412d3b3ef">
+  <script type="module" src="./app.js?v=4b7cb6dd5b8b"></script>
 </head>
 <body>
   <header class="app-header">
@@ -138,8 +138,20 @@
             <p class="hint">図中文字はPython版と同じArial・標準です。サイズはトリミング後画像の短辺に対する割合。補足文字は $_2$・$^2$・$\alpha$ などを使用できます。</p>
           </div>
         </details>
+        <details id="annotationsSection" open>
+          <summary><span class="step">5</span> 計測・注釈</summary>
+          <div class="detail-body">
+            <div class="field-row"><button id="addDistanceAnnotation" class="button" data-add-annotation="distance">＋ 2点間距離</button><button id="addDiameterAnnotation" class="button" data-add-annotation="diameter">＋ 円の直径</button></div>
+            <div class="field-row"><button class="button" data-add-annotation="text">＋ 文字</button><button class="button" data-add-annotation="segment">＋ 線</button><button class="button" data-add-annotation="arrow">＋ 矢印</button></div>
+            <p id="annotationStatus" class="readout" role="status">距離と直径の注釈には校正が必要です。</p>
+            <div id="annotationList" aria-label="画像の計測注釈"></div>
+            <div class="field-row"><button id="editAnnotationButton" class="button">設定</button><button id="copyAnnotationButton" class="button">複製</button><button id="deleteAnnotationButton" class="button">削除</button></div>
+            <details><summary>整列・重なり</summary><div class="annotation-align"><button data-ann-align="left" class="button">左揃え</button><button data-ann-align="center_h" class="button">左右中央</button><button data-ann-align="right" class="button">右揃え</button><button data-ann-align="top" class="button">上揃え</button><button data-ann-align="center_v" class="button">上下中央</button><button data-ann-align="bottom" class="button">下揃え</button><button data-ann-layer="front" class="button">最前面</button><button data-ann-layer="back" class="button">最背面</button></div></details>
+            <p class="hint">図上で選択・ドラッグ、ダブルクリックで設定。端点の丸を動かして範囲を調整します。Shiftで複数選択、Deleteで削除、Ctrl/Cmd＋C・Vでコピー・貼り付け。画像ごとに保存します。</p>
+          </div>
+        </details>
         <details>
-          <summary><span class="step">5</span> 出力</summary>
+          <summary><span class="step">6</span> 出力</summary>
           <div class="detail-body">
             <div class="field-row"><label>出力倍率<select id="outputScale" data-setting="output.scale" data-number><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label><label>画像補間<select id="resampling" data-setting="output.resampling"><option value="nearest">最近傍</option><option value="smooth">滑らか</option></select></label></div>
             <div class="field-row"><label>印刷時のサイズ<input id="sizeCm" type="number" min="0.1" max="100" step="0.1" value="4" data-setting="output.sizeCm"></label><label>指定する辺<select id="sizeAxis" data-setting="output.sizeAxis"><option value="width">幅（cm）</option><option value="height">高さ（cm）</option></select></label></div>
@@ -174,6 +186,27 @@
 
     </section>
   </main>
+  <dialog id="annotationEditor" class="annotation-editor" aria-labelledby="annotationEditorTitle">
+    <div class="dialog-heading"><strong id="annotationEditorTitle">注釈の設定</strong><button id="closeAnnotationEditor" class="button quiet">閉じる</button></div>
+    <p id="annotationResult" class="readout" role="status"></p>
+    <div class="detail-body">
+      <label>文字・測定名<input id="annotationText" data-ann-field="text" type="text" maxlength="1000"></label>
+      <div class="field-row" data-ann-measured><label>単位<select data-ann-field="unit"><option value="auto">校正と同じ</option><option>nm</option><option>µm</option><option>mm</option></select></label><label>小数桁数<input data-ann-field="digits" type="number" min="0" max="6" step="1"></label></div>
+      <div class="field-row"><label>始点X（px）<input data-ann-coordinate="0.x" type="number" min="0" step="any"></label><label>始点Y（px）<input data-ann-coordinate="0.y" type="number" min="0" step="any"></label></div>
+      <div class="field-row" data-ann-end><label>終点X（px）<input data-ann-coordinate="1.x" type="number" min="0" step="any"></label><label>終点Y（px）<input data-ann-coordinate="1.y" type="number" min="0" step="any"></label></div>
+      <div class="field-row"><label>フォントサイズ（pt）<input data-ann-field="fontPt" type="number" min="1" max="72" step="0.1"></label><label>線幅（pt）<input data-ann-field="linePt" type="number" min="0.05" max="20" step="0.05"></label></div>
+      <div class="field-row"><label>線種<select data-ann-field="lineStyle"><option value="-">実線</option><option value="--">破線</option><option value="-.">一点鎖線</option><option value=":">点線</option></select></label><label>矢印<select data-ann-field="arrowStyle"><option value="->">片矢印</option><option value="<->">両矢印</option><option value="-|>">塗り矢印</option></select></label></div>
+      <div class="field-row"><label>矢印サイズ（pt）<input data-ann-field="arrowSizePt" type="number" min="1" max="40" step="0.5"></label><label>文字の回転（度）<input data-ann-field="rotation" type="number" min="-360" max="360" step="1"></label></div>
+      <label>フォント<select id="annotationFont" data-ann-field="fontFamily"></select></label>
+      <div class="field-row"><label>文字の横揃え<select data-ann-field="align"><option value="left">左</option><option value="center">中央</option><option value="right">右</option></select></label><label class="color-field">色<input id="annotationColor" type="color" data-ann-field="color" value="#ffffff"></label></div>
+      <div class="field-row"><label class="check"><input type="checkbox" data-ann-field="bold">太字</label><label class="check"><input type="checkbox" data-ann-field="italic">斜体</label></div>
+      <div class="opacity-field"><label for="annotationOpacity">不透明度</label><div class="opacity-controls"><input id="annotationOpacity" type="range" min="0" max="100" step="1" data-ann-slider="opacity"><div class="opacity-value"><input type="number" min="0" max="100" step="1" data-ann-field="opacity" data-ann-percent aria-label="注釈の不透明度（%）"><span>%</span></div></div></div>
+      <label class="check"><input type="checkbox" data-ann-field="background">文字の背景を表示</label><label class="color-field">文字の背景色<input id="annotationBackgroundColor" type="color" data-ann-field="backgroundColor" value="#000000"></label>
+      <div class="opacity-field"><label for="annotationBackgroundOpacity">背景の不透明度</label><div class="opacity-controls"><input id="annotationBackgroundOpacity" type="range" min="0" max="100" step="1" data-ann-slider="backgroundOpacity"><div class="opacity-value"><input type="number" min="0" max="100" step="1" data-ann-field="backgroundOpacity" data-ann-percent aria-label="注釈の背景の不透明度（%）"><span>%</span></div></div></div>
+      <div class="field-row"><label>文字の位置補正X（px）<input data-ann-offset="x" type="number" step="any"></label><label>文字の位置補正Y（px）<input data-ann-offset="y" type="number" step="any"></label></div>
+      <div class="field-row"><label class="check"><input type="checkbox" data-ann-field="visible">表示</label><label class="check"><input type="checkbox" data-ann-field="locked">位置を固定</label></div>
+    </div>
+  </dialog>
   <dialog id="color-panel" class="color-dialog" aria-labelledby="color-panel-title">
     <div class="dialog-heading"><strong id="color-panel-title">色を選ぶ</strong><button type="button" class="button quiet" id="close-color-panel" aria-label="色パネルを閉じる">閉じる</button></div>
     <p>テーマの色</p><div id="color-swatches" class="color-swatches"></div>

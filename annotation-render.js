@@ -1,0 +1,26 @@
+const dash=(style,width)=>style==='--'?[6*width,3*width]:style==='-.'?[6*width,3*width,width,3*width]:style===':'?[width,2*width]:[];
+export function paintMeasurements(context,plan){
+  if(!plan.measurements?.length)return;
+  context.save();context.beginPath();context.rect(0,plan.top,plan.width,plan.imageHeight);context.clip();
+  for(const box of plan.measurements??[])for(const s of box.primitives){
+    context.save();context.globalAlpha=s.opacity;context.strokeStyle=context.fillStyle=s.color;
+    if(s.type==='line'||s.type==='circle'){context.lineWidth=s.width;context.setLineDash(dash(s.dash,s.width));context.beginPath();if(s.type==='line'){context.moveTo(s.from.x,s.from.y);context.lineTo(s.to.x,s.to.y);}else context.arc(s.center.x,s.center.y,s.radius,0,Math.PI*2);context.stroke();}
+    else if(s.type==='polygon'){context.beginPath();s.points.forEach((p,i)=>i?context.lineTo(p.x,p.y):context.moveTo(p.x,p.y));context.closePath();context.fill();}
+    else if(s.type==='rect'){context.translate(s.origin.x,s.origin.y);context.rotate(s.rotation*Math.PI/180);context.fillRect(s.x-s.origin.x,s.y-s.origin.y,s.width,s.height);}
+    else {context.translate(s.x,s.y);context.rotate(s.rotation*Math.PI/180);context.font=s.font;context.textAlign=s.align;context.textBaseline='alphabetic';context.fillText(s.text,0,0);}
+    context.restore();
+  }context.restore();
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+export function measurementsSvg(plan){
+  const shapes=[];
+  for(const box of plan.measurements??[])for(const s of box.primitives){
+    const common=`opacity="${s.opacity}"`,stroke=`stroke="${s.color}" stroke-width="${s.width}" stroke-dasharray="${dash(s.dash,s.width).join(' ')}" fill="none" ${common}`;
+    if(s.type==='line')shapes.push(`<line x1="${s.from.x}" y1="${s.from.y}" x2="${s.to.x}" y2="${s.to.y}" ${stroke}/>`);
+    else if(s.type==='circle')shapes.push(`<circle cx="${s.center.x}" cy="${s.center.y}" r="${s.radius}" ${stroke}/>`);
+    else if(s.type==='polygon')shapes.push(`<polygon points="${s.points.map(p=>`${p.x},${p.y}`).join(' ')}" fill="${s.color}" ${common}/>`);
+    else if(s.type==='rect')shapes.push(`<rect x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}" fill="${s.color}" ${common} transform="rotate(${s.rotation} ${s.origin.x} ${s.origin.y})"/>`);
+    else shapes.push(`<text x="${s.x}" y="${s.y}" font-family="${esc(s.fontFamily)}" font-size="${s.fontSize}" font-weight="${s.bold?'700':'400'}" font-style="${s.italic?'italic':'normal'}" text-anchor="${{left:'start',center:'middle',right:'end'}[s.align]}" fill="${s.color}" ${common} transform="rotate(${s.rotation} ${s.x} ${s.y})">${esc(s.text)}</text>`);
+  }
+  return `<defs><clipPath id="mifito-measurements"><rect x="0" y="${plan.top}" width="${plan.width}" height="${plan.imageHeight}"/></clipPath></defs><g clip-path="url(#mifito-measurements)">${shapes.join('')}</g>`;
+}
