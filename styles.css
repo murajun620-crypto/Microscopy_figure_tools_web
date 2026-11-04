@@ -9,14 +9,15 @@
 .image-options summary{min-height:24px;font-size:11px;padding:4px 0}
 .image-options label{margin:6px 0}
 body{margin:0;min-width:1000px}
-button,input,select{font:inherit}
+button,input,select,textarea{font:inherit}
 button,label.file-button{cursor:pointer}
 button{border:0}
 button:disabled{cursor:default;opacity:.42}
 a{color:var(--green)}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,canvas:focus-visible,a:focus-visible{outline:3px solid #78b7a7;outline-offset:2px}
-input,select{min-width:0;border:1px solid #ccd8d1;border-radius:6px;background:white;color:inherit;padding:8px 9px}
-input[type=number],input[type=text],select{width:100%}
+input,select,textarea{min-width:0;border:1px solid #ccd8d1;border-radius:6px;background:white;color:inherit;padding:8px 9px}
+input[type=number],input[type=text],select,textarea{width:100%}
+textarea{resize:vertical}
 input[type=checkbox]{accent-color:var(--green);width:15px;height:15px;flex-shrink:0}
 input[type=range]{width:100%;accent-color:var(--green);padding:0}
 .opacity-field{display:flex;flex-direction:column;gap:6px}

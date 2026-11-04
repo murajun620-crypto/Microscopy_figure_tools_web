@@ -1,5 +1,5 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=4ebf3ec35e75';
-import { paintMeasurements } from './annotation-render.js?v=149942e57f03';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=daa6328fef07';
+import { paintMeasurements } from './annotation-render.js?v=e51ec5833009';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
 export class AnnotationUI {
   constructor(api){

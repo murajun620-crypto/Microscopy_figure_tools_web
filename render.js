@@ -1,7 +1,7 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=c15dce8e380c';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=226986b582ad';
 import { inlineRuns } from './inline-text.js';
-import { measurementLayout } from './annotations.js?v=4ebf3ec35e75';
-import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=149942e57f03';
+import { measurementLayout } from './annotations.js?v=daa6328fef07';
+import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=e51ec5833009';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;

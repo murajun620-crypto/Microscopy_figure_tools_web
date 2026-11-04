@@ -17,7 +17,7 @@ export function validateAnnotations(value=[],width,height){
     const point=p=>({x:finite(p?.x,0,width),y:finite(p?.y,0,height)});
     const a={...newAnnotation(raw.type,{x:0,y:0},{x:0,y:0},raw.id),...raw};
     if(typeof a.text!=='string'||a.text.length>1000)throw new Error('注釈の文字は1000文字以内にしてください。');
-    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,1,72),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
+    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,1,72),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>','o-','o-o']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
   });
 }
 export function annotationValue(a,calibration){
@@ -41,20 +41,21 @@ export function measurementLayout(settings,plan,context){
   return (settings.annotations??[]).filter(a=>a.visible).map(a=>{
     const points=a.points.map(p=>({x:(p.x-c.x)*scale,y:(p.y-c.y)*scale+plan.top})),[p,q]=points,mid={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
     const fontSize=a.fontPt*pt,font=`${a.italic?'italic ':''}${a.bold?'bold ':''}${fontSize}px ${a.fontFamily}`;
-    context.font=font;const text=annotationValue(a,settings.calibration),tm=context.measureText(text),tw=tm.width,th=fontSize*1.2;
+    context.font=font;const text=annotationValue(a,settings.calibration),lines=text.replace(/\r\n?/g,'\n').split('\n'),lineHeight=fontSize*1.2,tw=Math.max(...lines.map(line=>context.measureText(line).width)),th=lineHeight*lines.length;
     let anchor={...p};
     if(a.type==='diameter'){
       const radius=Math.hypot(q.x-p.x,q.y-p.y)/2,gap=fontSize*.3;
-      const above=mid.y-radius-gap;
+      const above=mid.y-radius-gap-(th-lineHeight);
       anchor={x:mid.x,y:above-fontSize>=plan.top?above:mid.y+radius+fontSize+gap};
     }else if(a.type!=='text'){
       const length=Math.hypot(q.x-p.x,q.y-p.y)||1;
       let nx=(q.y-p.y)/length,ny=-(q.x-p.x)/length;
       if(ny>0){nx=-nx;ny=-ny;}
       const clearance=Math.abs(nx)*tw/2+Math.abs(ny)*th/2+fontSize*.3;
-      anchor={x:mid.x+nx*clearance,y:mid.y+ny*clearance+fontSize*.35};
+      const baseline=fontSize*.35-(th-lineHeight)/2;
+      anchor={x:mid.x+nx*clearance,y:mid.y+ny*clearance+baseline};
       const left=anchor.x-(a.align==='center'?tw/2:a.align==='right'?tw:0);
-      if(left<0||left+tw>plan.width||anchor.y-fontSize<plan.top||anchor.y-fontSize+th>plan.top+plan.imageHeight)anchor={x:mid.x-nx*clearance,y:mid.y-ny*clearance+fontSize*.35};
+      if(left<0||left+tw>plan.width||anchor.y-fontSize<plan.top||anchor.y-fontSize+th>plan.top+plan.imageHeight)anchor={x:mid.x-nx*clearance,y:mid.y-ny*clearance+baseline};
     }
     if(a.type!=='text'){
       const inset=a.align==='center'?tw/2:a.align==='right'?tw:0;
@@ -73,13 +74,16 @@ export function measurementLayout(settings,plan,context){
           const r={x:tip.x-head*Math.cos(angle-.4),y:tip.y-head*Math.sin(angle-.4)},s={x:tip.x-head*Math.cos(angle+.4),y:tip.y-head*Math.sin(angle+.4)};
           if(a.arrowStyle==='-|>')primitives.push({type:'polygon',points:[tip,r,s],color:a.color,opacity:a.opacity});else{line(tip,r);line(tip,s);}
         };
-        if(Math.hypot(q.x-p.x,q.y-p.y)>0){arrow(q,angle);if(a.arrowStyle==='<->')arrow(p,angle+Math.PI);}
+        if(['o-','o-o'].includes(a.arrowStyle)){
+          for(const center of a.arrowStyle==='o-o'?[p,q]:[p])primitives.push({type:'dot',center,radius:head/2,color:a.color,opacity:a.opacity});
+        }
+        else if(Math.hypot(q.x-p.x,q.y-p.y)>0){arrow(q,angle);if(a.arrowStyle==='<->')arrow(p,angle+Math.PI);}
       }
     }
     const hasText=['text','distance','diameter'].includes(a.type);
     if(hasText&&text){
       if(a.background)primitives.push({type:'rect',x:tx-fontSize*.15,y:ty-fontSize*.1,width:tw+fontSize*.3,height:th+fontSize*.2,color:a.backgroundColor,opacity:a.opacity*a.backgroundOpacity,rotation:a.rotation,origin:label});
-      primitives.push({type:'text',x:label.x,y:label.y,text,color:a.color,opacity:a.opacity,font,fontSize,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,align:a.align,rotation:a.rotation});
+      primitives.push({type:'text',x:label.x,y:label.y,text,lines,lineHeight,color:a.color,opacity:a.opacity,font,fontSize,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,align:a.align,rotation:a.rotation});
     }
     const corners=[[tx,ty],[tx+tw,ty],[tx+tw,ty+th],[tx,ty+th]].map(([x,y])=>{const r=a.rotation*Math.PI/180;return {x:label.x+(x-label.x)*Math.cos(r)-(y-label.y)*Math.sin(r),y:label.y+(x-label.x)*Math.sin(r)+(y-label.y)*Math.cos(r)};});
     const textBox=hasText?{x:Math.min(...corners.map(p=>p.x)),y:Math.min(...corners.map(p=>p.y)),width:Math.max(...corners.map(p=>p.x))-Math.min(...corners.map(p=>p.x)),height:Math.max(...corners.map(p=>p.y))-Math.min(...corners.map(p=>p.y))}:null;
@@ -91,6 +95,7 @@ export function hitAnnotation(layout,p,tolerance=6){
     const t=box.textBox;
     if(t&&p.x>=t.x-tolerance&&p.x<=t.x+t.width+tolerance&&p.y>=t.y-tolerance&&p.y<=t.y+t.height+tolerance)return {box,part:box.annotation.type==='text'?'move':'label'};
     const [a,b]=box.points;
+    for(const dot of box.primitives.filter(s=>s.type==='dot'))if(Math.hypot(p.x-dot.center.x,p.y-dot.center.y)<=dot.radius+tolerance)return {box,part:'move'};
     if(box.radius!==null&&Math.abs(Math.hypot(p.x-box.mid.x,p.y-box.mid.y)-box.radius)<=tolerance)return {box,part:'move'};
     if(box.annotation.type!=='text'){
       const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy,t=len?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len)):0;
