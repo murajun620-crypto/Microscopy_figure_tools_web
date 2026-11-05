@@ -158,7 +158,11 @@ function syncMapColorbar(){
   option.disabled=!s.customPalette;option.textContent=s.customPalette?`アップロード：${s.customPalette.name}`:'アップロード配色';
   const gradient=`linear-gradient(to right,${mapStops(s).map(p=>`${p.color} ${p.position*100}%`).join(',')})`;
   $('mapPalettePreview').style.background=gradient;
-  for(const button of document.querySelectorAll('[data-map-style]')){button.disabled=busy||!current;button.setAttribute('aria-pressed',String(button.dataset.mapStyle===s.style));button.querySelector('.map-style-bar').style.background=gradient;}
+  for(const button of document.querySelectorAll('[data-map-style]')){button.disabled=busy||!current;button.setAttribute('aria-pressed',String(button.dataset.mapStyle===s.style));button.querySelector('.map-style-bar').style.background=gradient;
+    const range=button.querySelector('.map-style-range'),number=value=>Number(value.toFixed(s.digits)).toLocaleString('en-US',{useGrouping:false,maximumFractionDigits:s.digits});
+    if(range){range.firstChild.textContent=number(s.min);range.lastElementChild.textContent=number(s.max);}
+    button.querySelector('.map-style-label').textContent=button.dataset.mapStyle==='full'?[s.title,s.unit?`(${s.unit})`:''].filter(Boolean).join(' '):button.dataset.mapStyle==='unit'?s.unit:'バーのみ';
+  }
   $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeFields').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
   $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;
 }

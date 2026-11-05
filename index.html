@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=2e1c5dc28b4c">
-  <script type="module" src="./app.js?v=06264a844636"></script>
+  <link rel="stylesheet" href="./styles.css?v=a02bb32974ab">
+  <script type="module" src="./app.js?v=18b06d88dbf5"></script>
 </head>
 <body>
   <header class="app-header">
@@ -161,9 +161,9 @@
             <p class="hint" data-help-for="#uploadMapPalette">横長・縦長のバー画像（PNG/JPEG/WebP）、Gwyddionのgradientファイル、位置・RGBのCSV、配色JSONを読み込めます。文字や目盛りは含めず、色の部分だけを選んでください。</p>
             <label class="check"><input id="mapReverse" type="checkbox" data-setting="mapColorbar.reverse">配色を反転</label>
             <fieldset class="map-style-choices"><legend>表示スタイル</legend>
-              <button type="button" data-map-style="bar-only"><span class="map-style-bar"></span><span>バーのみ</span></button>
-              <button type="button" data-map-style="full"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span>Height (nm)</span></button>
-              <button type="button" data-map-style="unit"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span>nm</span></button>
+              <button type="button" data-map-style="bar-only" aria-label="バーのみ" title="バーのみ"><span class="map-style-bar"></span><span class="map-style-label">バーのみ</span></button>
+              <button type="button" data-map-style="full" aria-label="目盛り・マップ名・単位" title="目盛り・マップ名・単位"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span class="map-style-label">Height (nm)</span></button>
+              <button type="button" data-map-style="unit" aria-label="目盛り・単位" title="目盛り・単位"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span class="map-style-label">nm</span></button>
             </fieldset>
             <div id="mapRangeFields" class="field-row"><label>最小値<input id="mapMin" type="number" step="any" value="0" data-setting="mapColorbar.min"></label><label>最大値<input id="mapMax" type="number" step="any" value="1" data-setting="mapColorbar.max"></label></div>
             <label id="mapTitleField">マップ名<input id="mapTitle" type="text" list="mapTitleOptions" maxlength="100" value="Height" data-setting="mapColorbar.title"></label>
