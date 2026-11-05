@@ -7,12 +7,12 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=72f2ee7b8ce5';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=e84107d34445';
 import { createProject, readProject } from './project.js?v=a08a6e5ee86f';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e206805a6eca';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3097a17351f6';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=9e226fb1081e';
 import { prepareScaleBar } from './bar-workflow.js?v=d07ae3642a81';
 import { prepareCalibration } from './calibration-workflow.js?v=a9bca7c1eda8';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
-import { AnnotationUI } from './annotation-ui.js?v=57f47519ace1';
+import { AnnotationUI } from './annotation-ui.js?v=50bec83d7b9a';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
 
 const $ = id => document.getElementById(id);
@@ -178,6 +178,7 @@ function setBusy(value) {
   busy = value; document.body.classList.toggle('busy', value);
   $('projectInput').disabled=value;
   $('openProjectButton').disabled=value;
+  $('newProjectButton').disabled=value;
   $('saveProjectButton').disabled=value||!items.length;
   $('projectSaveMenuButton').disabled=$('saveProjectAsButton').disabled=value||!items.length;
   if(value||!items.length)closeProjectSaveMenu();
@@ -790,7 +791,7 @@ document.addEventListener('keydown', event => {
     const key=event.key.toLowerCase();
     if(key==='s'){event.preventDefault();$(event.shiftKey?'settingsSaveMenuButton':'saveProjectButton').click();}
     if(key==='o'){event.preventDefault();$(event.altKey?'imageInput':event.shiftKey?'openSettingsButton':'openProjectButton').click();}
-    if(key==='n'){event.preventDefault();$('removeAllButton').click();}
+    if(key==='n'){event.preventDefault();$('newProjectButton').click();}
     if(key==='c'&&event.shiftKey){event.preventDefault();$('copyButton').click();}
   }
 });
@@ -867,6 +868,44 @@ function applyPanelLabels(onlyEnabled) {
 }
 $('applyPanelLabels').addEventListener('click',()=>applyPanelLabels($('labelApplySelected').checked));
 const projectLabelControls=['panelFormat','panelBranchParent','batchSequence','batchStart','batchStartLetter','batchPrefix','batchSeparator','batchUppercase'];
+function newProject(){
+  if(busy||projectSaving)return;
+  cancelWheelZoom();cancelAnimationFrame(previewFrame);previewFrame=0;
+  annotationUI?.reset();
+  for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
+  if(source)releaseImage(source);
+  for(const item of items)URL.revokeObjectURL(item.thumbnail);
+  items.length=0;source=current=plan=null;
+  projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
+  measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
+  colorTarget=null;recentColors.length=0;clearDownloads();
+  for(const input of document.querySelectorAll('input,select,textarea')){
+    if(input.tagName==='SELECT')input.selectedIndex=Math.max(0,[...input.options].findIndex(option=>option.defaultSelected));
+    else if(input.type==='checkbox'||input.type==='radio')input.checked=input.defaultChecked;
+    else input.value=input.type==='file'?'':input.defaultValue;
+  }
+  $('saveDestination').value=folderSupported?'source':'download';
+  $('zoomSelect').value='fit';setTool('move');
+  $('previewArea').scrollLeft=$('previewArea').scrollTop=0;
+  $('measurementInfo').textContent='2点をクリック、またはドラッグ';
+  $('cropStatus').textContent='選択範囲なし';$('cropBadge').textContent='全体';
+  $('customRatio').hidden=true;$('selectSvgImageCrop').hidden=true;$('barThicknessInfo').textContent='';
+  $('calibrationBadge').textContent='未設定';$('calibrationInfo').textContent='スケールバーには校正が必要です';
+  $('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';
+  $('viewInfo').textContent='プレビュー';
+  $('pointerCoordinates').textContent='';$('batchProgress').textContent='';
+  $('instruction').textContent='';$('instruction').hidden=true;$('instruction').classList.remove('warning');
+  $('previewArea').removeAttribute('title');
+  renderList();updateLabelFormat();syncOpacityFields();setBusy(false);render();
+  workSaveState.markSaved(workspaceSnapshot(items,projectUI()));refreshWorkState();
+  notify('新規プロジェクトを作成しました。画像を開いて始めてください。');
+}
+$('newProjectButton').addEventListener('click',()=>{
+  if(busy||projectSaving)return;
+  if(hasUnsavedWork())showDialog($('newProjectDialog'));else newProject();
+});
+for(const id of ['closeNewProjectDialog','cancelNewProjectButton'])$(id).addEventListener('click',()=>$('newProjectDialog').close());
+$('discardProjectButton').addEventListener('click',newProject);
 $('openProjectButton').addEventListener('click',()=>{if(!busy)$('projectInput').click();});
 $('openSettingsButton').addEventListener('click',()=>{if(!busy&&current)$('settingsInput').click();});
 function closeSettingsSaveMenu(){

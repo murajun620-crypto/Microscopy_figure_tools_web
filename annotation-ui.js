@@ -27,6 +27,7 @@ export class AnnotationUI {
   get current(){return this.api.current();}
   get annotations(){return this.current?.settings.annotations??[];}
   get focused(){return this.annotations.find(a=>this.selected.has(a.id));}
+  reset(){this.cancelDrawing();this.selected.clear();this.clipboard=[];this.itemId=null;this.formState='';if(this.dialog.open)this.dialog.close();}
   formValues(){return JSON.stringify([...this.dialog.querySelectorAll('[data-ann-field],[data-ann-coordinate],[data-ann-offset]')].map(input=>input.type==='checkbox'?input.checked:input.value));}
   get pending(){return this.dialog.open&&this.formState!==this.formValues();}
   commit(annotations){try{const settings=clone(this.current.settings);settings.annotations=annotations;this.api.commit(settings);return true;}catch(error){this.api.notify(error.message,true);this.sync();return false;}}

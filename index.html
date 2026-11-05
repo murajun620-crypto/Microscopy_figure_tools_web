@@ -8,14 +8,15 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=760fcec6045d">
-  <script type="module" src="./app.js?v=780fb1a05c39"></script>
+  <link rel="stylesheet" href="./styles.css?v=34b21578f25f">
+  <script type="module" src="./app.js?v=edb3843caaf0"></script>
 </head>
 <body>
   <header class="app-header">
     <a class="brand" href="./" aria-label="MiFiTo ホーム"><img class="brand-icon" src="./assets/mifito.svg" width="36" height="36" alt=""><span class="brand-name">MiFiTo <span class="brand-web">Web</span><span id="appVersion" class="app-version" aria-label="バージョン"></span></span></a>
     <div class="header-actions" role="group" aria-label="プロジェクトと設定">
       <span class="privacy" title="画像はブラウザ内で処理します。外部には送信しません。" aria-label="画像はブラウザ内で処理"><span class="dot"></span>画像はブラウザ内で処理</span>
+      <button id="newProjectButton" class="button quiet" title="新しい作業を始めます（Ctrl/Cmd＋N）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5v5h5M8 14h8m-4-4v8"/></svg>新規プロジェクト</button>
       <button id="openProjectButton" class="button quiet" title="元画像と編集設定をまとめて開きます（Ctrl/Cmd＋O）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg>プロジェクトを開く</button>
       <div id="projectSaveDropdown" class="project-save-dropdown">
         <div class="project-save-split"><button id="saveProjectButton" class="button primary" title="一覧の全画像と編集設定をまとめて保存します（Ctrl/Cmd＋S）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span id="projectSaveButtonLabel">プロジェクトを保存</span></button><button id="projectSaveMenuButton" class="button primary" aria-label="プロジェクト保存のその他の操作" aria-expanded="false" aria-controls="projectSaveMenu" disabled>▾</button></div>
@@ -186,6 +187,11 @@
 
     </section>
   </main>
+  <dialog id="newProjectDialog" class="new-project-dialog" aria-labelledby="newProjectTitle" aria-describedby="newProjectMessage">
+    <div class="dialog-heading"><h2 id="newProjectTitle">新規プロジェクト</h2><button id="closeNewProjectDialog" class="button quiet" aria-label="新規作成をキャンセル">閉じる</button></div>
+    <p id="newProjectMessage">プロジェクトに未保存の変更があります。保存せずに新規プロジェクトを作成しますか？現在の作業内容は失われます。</p>
+    <div class="new-project-actions"><button id="cancelNewProjectButton" class="button" autofocus>キャンセル</button><button id="discardProjectButton" class="button primary">保存せずに新規作成</button></div>
+  </dialog>
   <dialog id="annotationEditor" class="annotation-editor" aria-labelledby="annotationEditorTitle">
     <div class="dialog-heading"><strong id="annotationEditorTitle">注釈の設定</strong><button id="closeAnnotationEditor" class="button quiet">閉じる</button></div>
     <p id="annotationResult" class="readout" role="status"></p>
