@@ -10,7 +10,7 @@ export const MAP_PALETTES=[
   palette('blue-red','青・白・赤',['#164792','#ffffff','#b51d30']),
   palette('blue','ブルー',['#07142b','#174f91','#2ba8bc','#e3f8ed']),
 ];
-export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,fontPercent:5,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
+export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
 const bad=()=>{throw new Error('カラーバーの設定または配色データが不正です。');};
 const num=(n,a,b)=>Number.isFinite(n)&&n>=a&&n<=b?n:bad();
 const col=s=>typeof s==='string'&&/^#[a-f\d]{6}$/i.test(s)?s:bad();
@@ -29,7 +29,7 @@ export function validateMapColorbar(raw){
   const customPalette=s.customPalette===null?null:validateMapPalette(s.customPalette);
   if(s.palette==='custom'&&!customPalette)bad();
   if(!(s.max>s.min)||!Number.isInteger(s.ticks)||!Number.isInteger(s.digits))bad();
-  return {visible:bool(s.visible),side:choice(s.side,['right','bottom','top','left']),palette:choice(s.palette,[...MAP_PALETTES.map(p=>p.id),'custom']),customPalette,reverse:bool(s.reverse),lengthPercent:num(s.lengthPercent,10,100),widthPercent:num(s.widthPercent,.1,30),gapPercent:num(s.gapPercent,0,20),min:num(s.min,-1e15,1e15),max:num(s.max,-1e15,1e15),title:str(s.title,100),unit:str(s.unit,30),style:choice(s.style,['full','unit','bar-only']),ticks:num(s.ticks,2,9),digits:num(s.digits,0,8),fontPercent:num(s.fontPercent,.5,15),textColor:col(s.textColor),backgroundColor:col(s.backgroundColor),transparent:bool(s.transparent)};
+  return {visible:bool(s.visible),side:choice(s.side,['right','bottom','top','left']),palette:choice(s.palette,[...MAP_PALETTES.map(p=>p.id),'custom']),customPalette,reverse:bool(s.reverse),lengthPercent:num(s.lengthPercent,10,100),widthPercent:num(s.widthPercent,.1,30),gapPercent:num(s.gapPercent,0,20),min:num(s.min,-1e15,1e15),max:num(s.max,-1e15,1e15),title:str(s.title,100),unit:str(s.unit,30),style:choice(s.style,['full','unit','bar-only']),ticks:num(s.ticks,2,9),digits:num(s.digits,0,8),textColor:col(s.textColor),backgroundColor:col(s.backgroundColor),transparent:bool(s.transparent)};
 }
 export function mapStops(s){const stops=(s.palette==='custom'?s.customPalette:MAP_PALETTES.find(p=>p.id===s.palette)).stops;return s.reverse?[...stops].reverse().map(p=>({...p,position:1-p.position})):stops;}
 export function parseMapPalette(text,name='アップロード配色'){
@@ -69,15 +69,21 @@ export function extendMapPlan(plan,s,context){
   if(!(s.max>s.min))throw new Error('カラーバーの最大値は最小値より大きくしてください。');
   const vertical=['left','right'].includes(s.side),edge=vertical?plan.imageHeight:plan.width;
   const length=edge*s.lengthPercent/100,thickness=length*s.widthPercent/100,short=Math.min(plan.width,plan.imageHeight);
-  const fontSize=Math.max(1,short*s.fontPercent/100),pad=Math.max(2,short*.008),gap=short*s.gapPercent/100,tick=fontSize*.25;
+  const fontSize=plan.barFontSize,pad=Math.max(2,short*.008),gap=short*s.gapPercent/100,tick=fontSize*.25,textGap=Math.max(2,fontSize*.18);
   const show=s.style!=='bar-only',title=s.style==='full'?[s.title,s.unit?`(${s.unit})`:''].filter(Boolean).join(' '):s.style==='unit'?s.unit:'';
   const labels=show?Array.from({length:Math.trunc(s.ticks)},(_,i)=>{const t=i/(Math.trunc(s.ticks)-1);return {t,text:fmt(s.min+(s.max-s.min)*t,Math.trunc(s.digits))};}):[];
-  context.font=`${fontSize}px Arial`;const labelWidth=Math.max(0,...labels.map(p=>context.measureText(p.text).width));
-  const titleWidth=title?context.measureText(title).width:0;
-  const titleBand=title?fontSize*1.4:0;
-  const extent=gap+thickness+pad+(show?(vertical?labelWidth:fontSize*1.3)+tick+pad:0)+titleBand;
-  // Very long titles may need additional space along the edge; fit their font only.
-  const titleSize=Math.min(fontSize,length/Math.max(1,titleWidth)*fontSize);
+  context.font=`${fontSize}px Arial`;
+  // Keep the same font as the scale-bar text. Wrap long names instead of shrinking.
+  const titleLines=[];let line='';
+  for(const char of title){if(line&&context.measureText(line+char).width>length){titleLines.push(line.trim());line='';}line+=char;}
+  if(line.trim())titleLines.push(line.trim());
+  const measurements=[...labels.map(p=>p.text),...titleLines,'Mg'].map(t=>context.measureText(t));
+  const ascent=Math.max(fontSize*.75,...measurements.map(m=>m.fontBoundingBoxAscent??m.actualBoundingBoxAscent??fontSize*.92));
+  const descent=Math.max(fontSize*.2,...measurements.map(m=>m.fontBoundingBoxDescent??m.actualBoundingBoxDescent??fontSize*.24));
+  const textHeight=ascent+descent,lineHeight=Math.max(textHeight,fontSize*1.15);
+  const labelWidth=Math.max(0,...labels.map(p=>context.measureText(p.text).width));
+  const titleHeight=titleLines.length?textHeight+(titleLines.length-1)*lineHeight:0;
+  const extent=gap+thickness+pad+(show?tick+pad+(vertical?labelWidth:textHeight):0)+(titleHeight?textGap+titleHeight:0);
   const left=s.side==='left'?Math.ceil(extent):0,offsetY=s.side==='top'?Math.ceil(extent):0;
   const width=plan.width+(vertical?Math.ceil(extent):0),height=plan.height+(!vertical?Math.ceil(extent):0);
   const imageWidth=plan.width,top=plan.top+offsetY;
@@ -86,19 +92,21 @@ export function extendMapPlan(plan,s,context){
   else{x=(imageWidth-length)/2;y=s.side==='bottom'?plan.height+gap:offsetY-gap-thickness;}
   const rect={x,y,width:vertical?thickness:length,height:vertical?length:thickness};
   const texts=[],lines=[];
-  const add=(text,x,y,align='center',rotation=0,size=fontSize)=>texts.push({text,x,y,align,rotation,size});
+  const add=(text,x,y,align='center',rotation=0)=>texts.push({text,x,y,align,rotation,size:fontSize,ascent,descent});
   for(const p of labels){
     if(vertical){const yy=y+length*(1-p.t),xx=s.side==='right'?x+thickness:x,sign=s.side==='right'?1:-1;
-      lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*(tick+pad),Math.max(y+fontSize,Math.min(y+length,yy+fontSize*.35)),sign===1?'left':'right');
+      lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*(tick+pad),Math.max(y+ascent,Math.min(y+length-descent,yy+(ascent-descent)/2)),sign===1?'left':'right');
     }else{const xx=x+length*p.t,yy=s.side==='bottom'?y+thickness:y,sign=s.side==='bottom'?1:-1;
-      lines.push({x1:xx,y1:yy,x2:xx,y2:yy+sign*tick});add(p.text,xx,sign===1?yy+tick+pad+fontSize:yy-tick-pad,p.t===0?'left':p.t===1?'right':'center');}
+      lines.push({x1:xx,y1:yy,x2:xx,y2:yy+sign*tick});add(p.text,xx,sign===1?yy+tick+pad+ascent:yy-tick-pad-descent,p.t===0?'left':p.t===1?'right':'center');}
   }
-  if(title){if(vertical)add(title,s.side==='right'?width-pad-fontSize*.25:pad+fontSize,y+length/2,'center',-90,titleSize);
-    else add(title,x+length/2,s.side==='bottom'?height-pad:y-tick-pad-fontSize*1.4,'center',0,titleSize);}
+  titleLines.forEach((text,i)=>{
+    if(vertical){const xx=s.side==='right'?x+thickness+tick+pad+labelWidth+textGap+descent+i*lineHeight:pad+descent+(titleLines.length-1-i)*lineHeight;add(text,xx,y+length/2,'center',-90);}
+    else{const baseline=s.side==='bottom'?y+thickness+tick+pad+textHeight+textGap+ascent+i*lineHeight:y-tick-pad-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
+  });
   const background=vertical?{x:s.side==='left'?0:imageWidth,y:0,width:width-imageWidth,height}:{x:0,y:s.side==='top'?0:plan.height,width,height:height-plan.height};
   const fills=plan.fills.map(r=>({...r,x:r.x+left,y:r.y+offsetY}));if(!s.transparent)fills.push({...background,color:s.backgroundColor});
   const annotations=plan.annotations.map(b=>({...b,x:b.x+left,y:b.y+offsetY,area:{...b.area,x:b.area.x+left,y:b.area.y+offsetY}}));
-  return {...plan,width,height,top,left,offsetY,imageWidth,fills,annotations,mapColorbar:{rect,vertical,stops:mapStops(s),texts,lines,textColor:s.textColor,lineWidth:Math.max(.5,short*.001),settings:s}};
+  return {...plan,width,height,top,left,offsetY,imageWidth,fills,annotations,mapColorbar:{rect,vertical,stops:mapStops(s),texts,lines,textColor:s.textColor,lineWidth:Math.max(.5,short*.001),settings:s,fontSize}};
 }
 export function paintMapColorbar(c,plan){
   const b=plan.mapColorbar;if(!b)return;const r=b.rect;c.save();

@@ -1,20 +1,21 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=eac79f613727';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=5b86235e7982';
-import { buildPlan, paint } from './render.js?v=ec5cfd9ff6a6';
-import { batchExport, exportImage } from './export.js?v=1da37ac72183';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=79be34412c0c';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=82cb040df96d';
+import { buildPlan, paint } from './render.js?v=6539d4b6daa5';
+import { batchExport, exportImage } from './export.js?v=7bed2148b870';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=77c895f5b033';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=bcc7af57e196';
-import { createProject, readProject } from './project.js?v=f307bec396f9';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e13ebbc80f71';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=7d5bbfab5734';
-import { prepareScaleBar } from './bar-workflow.js?v=0fa16edd0523';
-import { prepareCalibration } from './calibration-workflow.js?v=273dd0178ff9';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=7d72f3a917dc';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=512d1f952d26';
+import { createProject, readProject } from './project.js?v=c2f089e14dd4';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=699f80240b2a';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ab98168713f5';
+import { prepareScaleBar } from './bar-workflow.js?v=c8d84d9a91f8';
+import { prepareCalibration } from './calibration-workflow.js?v=14370ceddad2';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=02e7e21eac39';
+import { estimateSourcePalette } from './palette-estimation.js?v=d4985aba80ea';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=51138f5dbc19';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -32,7 +33,7 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
-let annotationUI=null;
+let annotationUI=null,mapEstimate=null;
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -164,9 +165,22 @@ function syncMapColorbar(){
     button.querySelector('.map-style-label').textContent=button.dataset.mapStyle==='full'?[s.title,s.unit?`(${s.unit})`:''].filter(Boolean).join(' '):button.dataset.mapStyle==='unit'?s.unit:'バーのみ';
   }
   $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeFields').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
+  $('estimateMapPalette').disabled=busy||!current;
+  $('mapEstimateResult').hidden=!mapEstimate||mapEstimate.imageId!==current?.id||mapEstimate.signature!==JSON.stringify([current?.settings.crop,s.palette,s.customPalette]);
+  if(mapEstimate)$('mapEstimateResult').textContent=mapEstimate.text;
   $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;
 }
 for(const button of document.querySelectorAll('[data-map-style]'))button.addEventListener('click',()=>{if(busy||!current)return;const s=copy(current.settings);s.mapColorbar.style=button.dataset.mapStyle;commit(s);});
+$('estimateMapPalette').addEventListener('click',()=>{
+  if(!current||busy)return;
+  action(async()=>{
+    const candidates=current.settings.mapColorbar.customPalette?[...MAP_PALETTES,{id:'custom',...current.settings.mapColorbar.customPalette}]:MAP_PALETTES;
+    const result=estimateSourcePalette(source,current.settings.crop,candidates);
+    if(result.confident){const s=copy(current.settings);s.mapColorbar.palette=result.palette;s.mapColorbar.visible=true;commit(s);}
+    const text=result.confident?`配色の推定：${result.name}。最小・最大値、単位、色の向きは元のマップで確認してください。`:`${result.reason} 現在の配色は変更していません。`;
+    mapEstimate={imageId:current.id,text,signature:JSON.stringify([current.settings.crop,current.settings.mapColorbar.palette,current.settings.mapColorbar.customPalette])};syncMapColorbar();notify(text);
+  });
+});
 $('uploadMapPalette').addEventListener('click',()=>{if(!busy&&current)$('mapPaletteInput').click();});
 $('mapPaletteInput').addEventListener('change',()=>{
   const file=$('mapPaletteInput').files[0];$('mapPaletteInput').value='';if(!file||!current||busy)return;

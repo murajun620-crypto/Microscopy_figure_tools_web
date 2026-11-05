@@ -1,6 +1,6 @@
-import { LIMITS, validateSize } from './core.js?v=eac79f613727';
+import { LIMITS, validateSize } from './core.js?v=79be34412c0c';
 import { rasterSize } from './image-header.js';
-import { identity, multiply, svgCoordinate, svgLength, svgRasterPlan, svgTransform, transformedImage } from './svg-geometry.js?v=81e375dd8984';
+import { identity, multiply, svgCoordinate, svgLength, svgRasterPlan, svgTransform, transformedImage } from './svg-geometry.js?v=9ce4baa695f7';
 
 export const SUPPORTED = /\.(png|jpe?g|bmp|svg|tiff?)$/i;
 const scripts = new Map();
