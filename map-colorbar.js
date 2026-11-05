@@ -1,6 +1,8 @@
-// Original MiFiTo palettes; no Gwyddion or MetroPro palette assets are bundled.
+// Palette provenance and reference definitions: COLORBAR_PALETTES.md.
 const palette=(id,name,colors)=>({id,name,stops:colors.map((color,i)=>({position:i/(colors.length-1),color}))});
 export const MAP_PALETTES=[
+  {"id":"gwyddion","name":"Gwyddion.net（黒・茶・金・白）","stops":[{"position":0.0,"color":"#000000"},{"position":0.344671,"color":"#a8280f"},{"position":0.687075,"color":"#f3c25d"},{"position":1.0,"color":"#ffffff"}]},
+  {"id":"metropro","name":"MetroPro（虹色・Gwyddion再現）","stops":[{"position":0.0,"color":"#0008e7"},{"position":0.00229095,"color":"#0008e7"},{"position":0.0652921,"color":"#002cd3"},{"position":0.119129,"color":"#0053ad"},{"position":0.183276,"color":"#007f80"},{"position":0.233677,"color":"#00a45b"},{"position":0.304696,"color":"#00d629"},{"position":0.369989,"color":"#12ff00"},{"position":0.430699,"color":"#83ff00"},{"position":0.4937,"color":"#f6ff00"},{"position":0.575029,"color":"#ffbd00"},{"position":0.646048,"color":"#ff8700"},{"position":0.717068,"color":"#ff4c00"},{"position":0.774341,"color":"#ff1f00"},{"position":0.841924,"color":"#ff2323"},{"position":0.899198,"color":"#ff6161"},{"position":0.954181,"color":"#ff6565"},{"position":1.0,"color":"#ff6565"}]},
   palette('thermal','熱色（黒・赤・黄・白）',['#000000','#491828','#9d293d','#d44228','#efb619','#ffffff']),
   palette('gray','グレースケール',['#000000','#ffffff']),
   palette('gold','ゴールド',['#100900','#6b3508','#d78915','#ffe8a2']),
@@ -40,7 +42,11 @@ export function parseMapPalette(text,name='アップロード配色'){
   if(rows.some(r=>r.length!==(gwy?5:4)||r.some(v=>!Number.isFinite(v))))bad();
   const divisor=gwy||rows.every(r=>r.slice(1,4).every(v=>v<=1))?1:255;
   const hex=values=>'#'+values.map(v=>Math.round(num(v,0,divisor)/divisor*255).toString(16).padStart(2,'0')).join('');
-  return validateMapPalette({name,stops:rows.map(r=>({position:r[0],color:hex(r.slice(1,4))}))});
+  const stops=rows.map(r=>({position:r[0],color:hex(r.slice(1,4))}));
+  // Gwyddion resources can contain redundant endpoints: the last zero and
+  // first one define the visible ramp (including the published MetroPro map).
+  if(gwy){while(stops.length>2&&stops[1].position===0)stops.shift();while(stops.length>2&&stops.at(-2).position===1)stops.pop();}
+  return validateMapPalette({name,stops});
 }
 export async function paletteFromFile(file){
   if(file.size>8*1024*1024)throw new Error('配色ファイルは8 MB以内にしてください。');

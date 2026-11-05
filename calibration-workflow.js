@@ -1,4 +1,4 @@
-import { copy, validateSettings } from './core.js?v=ada81c393075';
+import { copy, validateSettings } from './core.js?v=eac79f613727';
 
 // Calibration has its own scope, independent of bar styling and crop scope.
 export function prepareCalibration(items,current,calibration,scope) {

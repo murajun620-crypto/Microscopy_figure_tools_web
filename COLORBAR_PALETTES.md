@@ -1,16 +1,34 @@
-# カラーバー配色の出典と利用条件
+# カラーバー配色の出典と実装
 
-MiFiToの標準6配色（熱色・グレースケール・ゴールド・スペクトル・青白赤・ブルー）は、MiFiTo用に色の制御点を独自に定義しています。Gwyddion／MetroProの配色データ、画面、ライブラリは転載・同梱していません。
+MiFiTo v1.8.1は次の8配色を備えています。配色は色の制御点からブラウザ内で描画し、他のアプリの実行プログラムや画面画像は同梱しません。
 
-配色全般を「著作権がない」と一括して判断することはできません。ソフトウェア自体の権利と、個別の配色データの利用条件も区別する必要があります。
+| 選択肢 | 配色・出典 |
+| --- | --- |
+| Gwyddion.net（黒・茶・金・白） | Gwyddion公式リポジトリの同名gradientの位置とRGB値に基づきます。 |
+| MetroPro（虹色・Gwyddion再現） | Gwyddionが公開するMetroProの虹色再現gradientに基づきます。ZYGO製品から取り出したファイルではなく、全バージョンのMetroProとの一致を保証するものではありません。 |
+| 熱色・グレースケール・ゴールド・スペクトル・青白赤・ブルー | MiFiTo用に独自に定義した6配色です。 |
 
-- Gwyddion公式の利用条件はGNU GPLです。著作権がないという意味ではなく、配布する場合のソース提供などの条件が記載されています。個別のgradientファイルについて、無条件の再配布を認める例外は今回確認できませんでした。このため、著作権なしの素材として取り込んでいません。
-  https://gwyddion.net/documentation/user-guide-en/licensing.html
-- MetroProのZYGO使用許諾ではソフトウェアの所有権・著作権と使用制限を定めています。個別の配色データを別アプリで再配布できる許諾は今回確認できませんでした。そのため同梱していません。以下はZYGOのReference GuideをCaltech/LIGOが公開しているものです。
-  https://labcit.ligo.caltech.edu/~coreopt/metropro/ZygoAnalysisTools-forMike/MetroPro%20Reference%20Guide.pdf
-- ユーザーが用意したバー画像・配色ファイルは端末内で読み込み、そのプロジェクト／設定JSONへ色の制御点として保存します。サーバーへ送信したり標準配色として再配布したりしません。
+参考にした公式の数値定義：
 
-Gwyddion形式の読み込みは、公式ドキュメントに公開された `Gwyddion resource GwyGradient` のテキスト形式（位置・RGB・alpha）を独自に実装しています。Gwyddionのプログラムコードは使用していません。公式説明のとおりalphaは使用せず、色として読み込みます。
-https://gwyddion.net/documentation/user-guide-en/resources.html
+- [Gwyddion.net](https://sourceforge.net/p/gwyddion/code/30745/tree/trunk/gwyddion/data/gradients/Gwyddion.net)
+- [MetroPro](https://sourceforge.net/p/gwyddion/code/30745/tree/trunk/gwyddion/data/gradients/MetroPro)
+- [Gwyddionの変更履歴](https://gwyddion.net/news.php#v2.36)：MetroProの虹色を再現する配色を追加したことが記載されています。
+- [gradientの仕様](https://gwyddion.net/documentation/user-guide-en/resources.html)：制御点間はRGBの線形補間です。
 
-その他の読み込み形式：横長／縦長のPNG・JPEG・WebP、位置とRGBのCSV（0〜1または0〜255）、`{"name":"配色名","stops":[{"position":0,"color":"#000000"},{"position":1,"color":"#ffffff"}]}` 形式のJSON。
+RGBは8-bitへ丸めています。MetroPro定義の重複端点はGwyddionと同じく「位置0の最後の色」「位置1の最初の色」として扱います。読み込んだマップの色・範囲に合わせて配色と最小値・最大値を指定してください。画像そのものの配色や測定値は変更しません。
+
+## 著作権との区別
+
+ソフトウェア全体のライセンスと、色の並びそのものが著作物に当たるかは別の問題です。GwyddionがGPLであることや、MetroPro本体に著作権表示があることだけで、同様のカラーバーの描画が禁止されるわけではありません。単純な配色・一般的なグラデーションに、当然に著作権があるという扱いはしていません。ただし、あらゆる配色や画像・プログラム・ファイルが無条件で再利用可能という意味ではありません。
+
+- [文化庁：著作物の要件](https://www.bunka.go.jp/seisaku/chosakuken/kaizoku/faq.html)
+- [米国著作権局：色・色付けについて（§906.3）](https://www.copyright.gov/comp3/chap900/ch900-visual-art.pdf#page=11)
+- [Gwyddion本体のライセンス](https://gwyddion.net/documentation/user-guide-en/licensing.html)
+
+## 配色の読み込み
+
+ユーザーが用意したバー画像・配色ファイルは端末内で読み込み、配色の制御点をプロジェクトと設定JSONへ保存します。外部サーバーへ送信しません。
+
+対応形式：文字や目盛りを除いた横長／縦長のPNG・JPEG・WebP、Gwyddion gradient、位置とRGBのCSV（0〜1または0〜255）、`{"name":"配色名","stops":[{"position":0,"color":"#000000"},{"position":1,"color":"#ffffff"}]}`形式のJSON。
+
+Gwyddion形式は公開仕様に基づくMiFiToの読み込み処理を使います。alphaは公式仕様のとおり色の描画には使いません。
