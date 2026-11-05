@@ -1,8 +1,8 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=79be34412c0c';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=582aae7da9ac';
 import { inlineRuns } from './inline-text.js';
 import { measurementLayout } from './annotations.js?v=f0f0548434a2';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=32064deaf5ae';
-import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=51138f5dbc19';
+import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=193ee0fdb114';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;

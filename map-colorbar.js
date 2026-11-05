@@ -82,8 +82,17 @@ export function extendMapPlan(plan,s,context){
   const descent=Math.max(fontSize*.2,...measurements.map(m=>m.fontBoundingBoxDescent??m.actualBoundingBoxDescent??fontSize*.24));
   const textHeight=ascent+descent,lineHeight=Math.max(textHeight,fontSize*1.15);
   const labelWidth=Math.max(0,...labels.map(p=>context.measureText(p.text).width));
+  // With endpoint ticks, use the empty middle of their row for the map name.
+  // Keep a separate row when a middle tick or a long title would overlap it.
+  const titleWidth=titleLines.length===1?context.measureText(titleLines[0]).width:Infinity;
+  const titleStart=(length-titleWidth)/2,titleEnd=(length+titleWidth)/2;
+  const shareTitleRow=s.side==='bottom'&&titleLines.length===1&&labels.every(p=>{
+    const w=context.measureText(p.text).width,xx=length*p.t;
+    const a=p.t===0?xx:p.t===1?xx-w:xx-w/2;
+    return a+w+fontSize*.25<=titleStart||a-fontSize*.25>=titleEnd;
+  });
   const titleHeight=titleLines.length?textHeight+(titleLines.length-1)*lineHeight:0;
-  const extent=gap+thickness+pad+(show?tick+pad+(vertical?labelWidth:textHeight):0)+(titleHeight?textGap+titleHeight:0);
+  const extent=gap+thickness+pad+(show?tick+pad+(vertical?labelWidth:textHeight):0)+(titleHeight&&!shareTitleRow?textGap+titleHeight:0);
   const left=s.side==='left'?Math.ceil(extent):0,offsetY=s.side==='top'?Math.ceil(extent):0;
   const width=plan.width+(vertical?Math.ceil(extent):0),height=plan.height+(!vertical?Math.ceil(extent):0);
   const imageWidth=plan.width,top=plan.top+offsetY;
@@ -101,7 +110,7 @@ export function extendMapPlan(plan,s,context){
   }
   titleLines.forEach((text,i)=>{
     if(vertical){const xx=s.side==='right'?x+thickness+tick+pad+labelWidth+textGap+descent+i*lineHeight:pad+descent+(titleLines.length-1-i)*lineHeight;add(text,xx,y+length/2,'center',-90);}
-    else{const baseline=s.side==='bottom'?y+thickness+tick+pad+textHeight+textGap+ascent+i*lineHeight:y-tick-pad-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
+    else{const baseline=s.side==='bottom'?y+thickness+tick+pad+ascent+(shareTitleRow?0:textHeight+textGap+i*lineHeight):y-tick-pad-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
   });
   const background=vertical?{x:s.side==='left'?0:imageWidth,y:0,width:width-imageWidth,height}:{x:0,y:s.side==='top'?0:plan.height,width,height:height-plan.height};
   const fills=plan.fills.map(r=>({...r,x:r.x+left,y:r.y+offsetY}));if(!s.transparent)fills.push({...background,color:s.backgroundColor});
