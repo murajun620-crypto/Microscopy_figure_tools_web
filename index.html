@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=a02bb32974ab">
-  <script type="module" src="./app.js?v=b49df5773470"></script>
+  <script type="module" src="./app.js?v=40a3eaee2567"></script>
 </head>
 <body>
   <header class="app-header">
@@ -175,7 +175,7 @@
             <p class="map-help">値・単位・配色は元のマップに合わせて設定してください。元画像の色や測定値は変更しません。</p>
             <div class="field-row"><label>長さ（画像の辺の%）<input id="mapLength" type="number" min="10" max="100" step="any" value="100" data-setting="mapColorbar.lengthPercent"></label><label>幅（バーの長さの%）<input id="mapWidth" type="number" min="0.1" max="30" step="any" value="5.555555555555555" data-setting="mapColorbar.widthPercent"></label></div>
             <label>画像との間隔（%）<input id="mapGap" type="number" min="0" max="20" step="any" value="2" data-setting="mapColorbar.gapPercent"></label><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
-            <div class="field-row"><label class="color-field">文字・枠線色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
+            <div class="field-row"><label class="color-field">文字・目盛り色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
             <label class="check"><input id="mapTransparent" type="checkbox" data-setting="mapColorbar.transparent">背景を透明にする</label>
             <button id="applyMapToAll" class="button full">このカラーバーを全画像に適用</button>
           </div>

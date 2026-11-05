@@ -121,7 +121,7 @@ export function paintMapColorbar(c,plan){
   const b=plan.mapColorbar;if(!b)return;const r=b.rect;c.save();
   const gradient=b.vertical?c.createLinearGradient(0,r.y+r.height,0,r.y):c.createLinearGradient(r.x,0,r.x+r.width,0);
   for(const s of b.stops)gradient.addColorStop(s.position,s.color);
-  c.fillStyle=gradient;c.fillRect(r.x,r.y,r.width,r.height);c.fillStyle=c.strokeStyle=b.textColor;c.lineWidth=b.lineWidth;c.strokeRect(r.x,r.y,r.width,r.height);
+  c.fillStyle=gradient;c.fillRect(r.x,r.y,r.width,r.height);c.fillStyle=c.strokeStyle=b.textColor;c.lineWidth=b.lineWidth;
   for(const l of b.lines){c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);c.stroke();}
   for(const t of b.texts){c.save();c.translate(t.x,t.y);c.rotate(t.rotation*Math.PI/180);c.font=`${t.size}px Arial, sans-serif`;c.textAlign=t.align;c.textBaseline='alphabetic';c.fillText(t.text,0,0);c.restore();}c.restore();
 }
@@ -129,5 +129,5 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 export function mapColorbarSvg(plan){
   const b=plan.mapColorbar;if(!b)return '';const r=b.rect;
   const vector=b.vertical?`x1="0" y1="${r.y+r.height}" x2="0" y2="${r.y}"`:`x1="${r.x}" y1="0" x2="${r.x+r.width}" y2="0"`;
-  return `<defs><linearGradient id="mifito-map" gradientUnits="userSpaceOnUse" ${vector}>${b.stops.map(s=>`<stop offset="${s.position}" stop-color="${s.color}"/>`).join('')}</linearGradient></defs><g fill="${b.textColor}" stroke="${b.textColor}" stroke-width="${b.lineWidth}"><rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="url(#mifito-map)"/>${b.lines.map(l=>`<line x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('')}${b.texts.map(t=>`<text x="${t.x}" y="${t.y}" stroke="none" font-family="Arial, sans-serif" font-size="${t.size}" text-anchor="${{left:'start',right:'end',center:'middle'}[t.align]}" transform="rotate(${t.rotation} ${t.x} ${t.y})">${esc(t.text)}</text>`).join('')}</g>`;
+  return `<defs><linearGradient id="mifito-map" gradientUnits="userSpaceOnUse" ${vector}>${b.stops.map(s=>`<stop offset="${s.position}" stop-color="${s.color}"/>`).join('')}</linearGradient></defs><g fill="${b.textColor}" stroke="${b.textColor}" stroke-width="${b.lineWidth}"><rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="url(#mifito-map)" stroke="none"/>${b.lines.map(l=>`<line x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('')}${b.texts.map(t=>`<text x="${t.x}" y="${t.y}" stroke="none" font-family="Arial, sans-serif" font-size="${t.size}" text-anchor="${{left:'start',right:'end',center:'middle'}[t.align]}" transform="rotate(${t.rotation} ${t.x} ${t.y})">${esc(t.text)}</text>`).join('')}</g>`;
 }
