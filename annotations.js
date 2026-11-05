@@ -43,7 +43,8 @@ export function measurementLayout(settings,plan,context){
   const scale=plan.coordinateScale??1,c=settings.crop,axis=settings.output.sizeAxis==='width'?plan.width:plan.height;
   const pt=axis/(settings.output.sizeCm/2.54*72);
   return (settings.annotations??[]).filter(a=>a.visible).map(a=>{
-    const points=a.points.map(p=>({x:(p.x-c.x)*scale,y:(p.y-c.y)*scale+plan.top})),[p,q]=points,mid={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+    const left=plan.left??0,right=left+(plan.imageWidth??plan.width);
+    const points=a.points.map(p=>({x:(p.x-c.x)*scale+left,y:(p.y-c.y)*scale+plan.top})),[p,q]=points,mid={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
     const fontSize=a.fontPt*pt,font=`${a.italic?'italic ':''}${a.bold?'bold ':''}${fontSize}px ${a.fontFamily}`;
     context.font=font;const text=annotationValue(a,settings.calibration),lines=text.replace(/\r\n?/g,'\n').split('\n'),lineHeight=fontSize*1.2,tw=Math.max(...lines.map(line=>context.measureText(line).width)),th=lineHeight*lines.length;
     let anchor={...p};
@@ -59,11 +60,11 @@ export function measurementLayout(settings,plan,context){
       const baseline=fontSize*.35-(th-lineHeight)/2;
       anchor={x:mid.x+nx*clearance,y:mid.y+ny*clearance+baseline};
       const left=anchor.x-(a.align==='center'?tw/2:a.align==='right'?tw:0);
-      if(left<0||left+tw>plan.width||anchor.y-fontSize<plan.top||anchor.y-fontSize+th>plan.top+plan.imageHeight)anchor={x:mid.x-nx*clearance,y:mid.y-ny*clearance+baseline};
+      if(left<(plan.left??0)||left+tw>right||anchor.y-fontSize<plan.top||anchor.y-fontSize+th>plan.top+plan.imageHeight)anchor={x:mid.x-nx*clearance,y:mid.y-ny*clearance+baseline};
     }
     if(a.type!=='text'){
       const inset=a.align==='center'?tw/2:a.align==='right'?tw:0;
-      anchor.x=Math.max(inset,Math.min(plan.width-tw+inset,anchor.x));
+      anchor.x=Math.max(left+inset,Math.min(right-tw+inset,anchor.x));
       anchor.y=Math.max(plan.top+fontSize,Math.min(plan.top+plan.imageHeight-th+fontSize,anchor.y));
     }
     const label={x:anchor.x+a.labelOffset.x*scale,y:anchor.y+a.labelOffset.y*scale};

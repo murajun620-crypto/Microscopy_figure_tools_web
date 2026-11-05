@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=34b21578f25f">
-  <script type="module" src="./app.js?v=edb3843caaf0"></script>
+  <link rel="stylesheet" href="./styles.css?v=2e1c5dc28b4c">
+  <script type="module" src="./app.js?v=06264a844636"></script>
 </head>
 <body>
   <header class="app-header">
@@ -151,8 +151,36 @@
             <p class="hint">図上で選択・ドラッグ、ダブルクリックで設定。端点の丸を動かして範囲を調整します。Shiftで複数選択、Deleteで削除、Ctrl/Cmd＋C・Vでコピー・貼り付け。画像ごとに保存します。</p>
           </div>
         </details>
+        <details id="mapColorbarSection">
+          <summary><span class="step">6</span> マップのカラーバー</summary>
+          <div class="detail-body">
+            <label class="check"><input id="mapVisible" type="checkbox" data-setting="mapColorbar.visible">カラーバーを追加</label>
+            <label>配置<select id="mapSide" data-setting="mapColorbar.side"><option value="right">画像の右</option><option value="bottom">画像の下</option><option value="top">画像の上</option><option value="left">画像の左</option></select></label>
+            <label>配色<select id="mapPalette" data-setting="mapColorbar.palette"></select></label><div id="mapPalettePreview" class="map-palette-preview" aria-label="選択中の配色"></div>
+            <button id="uploadMapPalette" class="button full">配色を読み込む…</button><input id="mapPaletteInput" type="file" hidden aria-label="配色ファイル">
+            <p class="hint" data-help-for="#uploadMapPalette">横長・縦長のバー画像（PNG/JPEG/WebP）、Gwyddionのgradientファイル、位置・RGBのCSV、配色JSONを読み込めます。文字や目盛りは含めず、色の部分だけを選んでください。</p>
+            <label class="check"><input id="mapReverse" type="checkbox" data-setting="mapColorbar.reverse">配色を反転</label>
+            <fieldset class="map-style-choices"><legend>表示スタイル</legend>
+              <button type="button" data-map-style="bar-only"><span class="map-style-bar"></span><span>バーのみ</span></button>
+              <button type="button" data-map-style="full"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span>Height (nm)</span></button>
+              <button type="button" data-map-style="unit"><span class="map-style-bar"></span><span class="map-style-range">0<span>1</span></span><span>nm</span></button>
+            </fieldset>
+            <div id="mapRangeFields" class="field-row"><label>最小値<input id="mapMin" type="number" step="any" value="0" data-setting="mapColorbar.min"></label><label>最大値<input id="mapMax" type="number" step="any" value="1" data-setting="mapColorbar.max"></label></div>
+            <label id="mapTitleField">マップ名<input id="mapTitle" type="text" list="mapTitleOptions" maxlength="100" value="Height" data-setting="mapColorbar.title"></label>
+            <datalist id="mapTitleOptions"><option>Height</option><option>Phase</option><option>Amplitude</option><option>Potential</option><option>Intensity</option><option>Temperature</option></datalist>
+            <label id="mapUnitField">単位<input id="mapUnit" type="text" list="mapUnitOptions" maxlength="30" value="nm" data-setting="mapColorbar.unit"></label>
+            <datalist id="mapUnitOptions"><option>nm</option><option>µm</option><option>mm</option><option>V</option><option>mV</option><option>°</option><option>nA</option><option>pA</option><option>a.u.</option><option>°C</option></datalist>
+            <div id="mapTicksFields" class="field-row"><label>目盛りの数<input id="mapTicks" type="number" min="2" max="9" step="1" value="2" data-setting="mapColorbar.ticks"></label><label>小数桁数<input id="mapDigits" type="number" min="0" max="8" step="1" value="3" data-setting="mapColorbar.digits"></label></div>
+            <p class="map-help">値・単位・配色は元のマップに合わせて設定してください。元画像の色や測定値は変更しません。</p>
+            <div class="field-row"><label>長さ（画像の辺の%）<input id="mapLength" type="number" min="10" max="100" step="any" value="100" data-setting="mapColorbar.lengthPercent"></label><label>幅（バーの長さの%）<input id="mapWidth" type="number" min="0.1" max="30" step="any" value="5.555555555555555" data-setting="mapColorbar.widthPercent"></label></div>
+            <div class="field-row"><label>画像との間隔（%）<input id="mapGap" type="number" min="0" max="20" step="any" value="2" data-setting="mapColorbar.gapPercent"></label><label>文字サイズ（短辺の%）<input id="mapFont" type="number" min="0.5" max="15" step="any" value="5" data-setting="mapColorbar.fontPercent"></label></div>
+            <div class="field-row"><label class="color-field">文字・枠線色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
+            <label class="check"><input id="mapTransparent" type="checkbox" data-setting="mapColorbar.transparent">背景を透明にする</label>
+            <button id="applyMapToAll" class="button full">このカラーバーを全画像に適用</button>
+          </div>
+        </details>
         <details>
-          <summary><span class="step">6</span> 出力</summary>
+          <summary><span class="step">7</span> 出力</summary>
           <div class="detail-body">
             <div class="field-row"><label>出力倍率<select id="outputScale" data-setting="output.scale" data-number><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label><label>画像補間<select id="resampling" data-setting="output.resampling"><option value="nearest">最近傍</option><option value="smooth">滑らか</option></select></label></div>
             <div class="field-row"><label>印刷時のサイズ<input id="sizeCm" type="number" min="0.1" max="100" step="0.1" value="4" data-setting="output.sizeCm"></label><label>指定する辺<select id="sizeAxis" data-setting="output.sizeAxis"><option value="width">幅（cm）</option><option value="height">高さ（cm）</option></select></label></div>
@@ -238,7 +266,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><p>マップのカラーバーは「6 マップのカラーバー」で追加します。表示はバーのみ・マップ名と単位・単位のみから選べます。マップ名、単位、値の範囲は自由に変更できます。目盛りは線形です。元画像の色・測定値は変更しないため、元のマップに合わせて設定してください。配色は標準6種類のほか、文字や目盛りを除いたバー画像（PNG・JPEG・WebP）、Gwyddionのgradient、CSV・JSONを読み込めます。読み込んだ配色も画像ごとにプロジェクトへ保存します。</p><p><a href="./COLORBAR_PALETTES.md" target="_blank" rel="noopener">カラーバー配色の出典と利用条件</a></p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <noscript>このアプリにはJavaScriptが必要です。</noscript>
 </body>
 </html>

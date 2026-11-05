@@ -1,7 +1,8 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=9637cfe3a98d';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=ada81c393075';
 import { inlineRuns } from './inline-text.js';
-import { measurementLayout } from './annotations.js?v=637a8fa91f67';
-import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=e51ec5833009';
+import { measurementLayout } from './annotations.js?v=f0f0548434a2';
+import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=32064deaf5ae';
+import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=1d290218c75b';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;
@@ -92,7 +93,7 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
     if(box.style.position) { box.x=clamp(box.style.position.x*scale,box.area.x,Math.max(box.area.x,width-box.width)); box.y=clamp(box.style.position.y*scale+shift,box.area.y,Math.max(box.area.y,box.area.y+box.area.height-box.height)); }
     if(box.band && !box.style.outsideTransparent) fills.push({...box.area,color:box.style.outsideColor});
   }
-  const plan={width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,barFontSize,annotations:boxes,fills,warnings};
+  const plan=extendMapPlan({width,height:imageHeight+top+bottom,top,bottom,crop:{...crop},imageHeight,coordinateScale:scale,barFontSize,annotations:boxes,fills,warnings},settings.mapColorbar,context);
   plan.measurements=measurementLayout(settings,plan,context);return plan;
 }
 
@@ -100,7 +101,7 @@ export function paint(context, source, plan, settings, {scale=1,annotations=true
   context.save();context.scale(scale,scale);context.clearRect(0,0,plan.width,plan.height);
   if(image) for(const fill of plan.fills||[]) {context.fillStyle=fill.color;context.fillRect(fill.x,fill.y,fill.width,fill.height);}
   context.imageSmoothingEnabled=settings.output.resampling==='smooth';context.imageSmoothingQuality='high';
-  const c=plan.crop;if(image) context.drawImage(source,c.x,c.y,c.width,c.height,0,plan.top,plan.width,plan.imageHeight??c.height);
+  const c=plan.crop;if(image) context.drawImage(source,c.x,c.y,c.width,c.height,plan.left??0,plan.top,plan.imageWidth??plan.width,plan.imageHeight??c.height);
   if(annotations) for(const box of plan.annotations) {
     if(onlyAnnotationKind&&box.kind!==onlyAnnotationKind)continue;
     const s=box.style,bg=box.backgroundRect;
@@ -114,6 +115,7 @@ export function paint(context, source, plan, settings, {scale=1,annotations=true
     context.restore();
   }
   if(annotations&&(!onlyAnnotationKind||onlyAnnotationKind==='measurement'))paintMeasurements(context,plan);
+  if(annotations&&(!onlyAnnotationKind||onlyAnnotationKind==='mapColorbar'))paintMapColorbar(context,plan);
   context.restore();
 }
 export function renderCanvas(source,settings,options={}) {
@@ -144,5 +146,6 @@ export function renderSvg(source,settings,options={}) {
     elements.push(`<g transform="translate(${pyRound(box.x)} ${pyRound(box.y)})" font-family="Arial, sans-serif" font-weight="400">${shapes.join('')}</g>`);
   }
   elements.push(measurementsSvg(plan));
+  elements.push(mapColorbarSvg(plan));
   return {markup:`<svg xmlns="http://www.w3.org/2000/svg" width="${metrics.widthCm}cm" height="${metrics.heightCm}cm" viewBox="0 0 ${metrics.width} ${metrics.height}">${elements.join('')}</svg>`,metrics};
 }

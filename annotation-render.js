@@ -1,7 +1,7 @@
 const dash=(style,width)=>style==='--'?[6*width,3*width]:style==='-.'?[6*width,3*width,width,3*width]:style===':'?[width,2*width]:[];
 export function paintMeasurements(context,plan){
   if(!plan.measurements?.length)return;
-  context.save();context.beginPath();context.rect(0,plan.top,plan.width,plan.imageHeight);context.clip();
+  context.save();context.beginPath();context.rect(plan.left??0,plan.top,plan.imageWidth??plan.width,plan.imageHeight);context.clip();
   for(const box of plan.measurements??[])for(const s of box.primitives){
     context.save();context.globalAlpha=s.opacity;context.strokeStyle=context.fillStyle=s.color;
     if(s.type==='line'||s.type==='circle'){context.lineWidth=s.width;context.setLineDash(dash(s.dash,s.width));context.beginPath();if(s.type==='line'){context.moveTo(s.from.x,s.from.y);context.lineTo(s.to.x,s.to.y);}else context.arc(s.center.x,s.center.y,s.radius,0,Math.PI*2);context.stroke();}
@@ -24,5 +24,5 @@ export function measurementsSvg(plan){
     else if(s.type==='rect')shapes.push(`<rect x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}" fill="${s.color}" ${common} transform="rotate(${s.rotation} ${s.origin.x} ${s.origin.y})"/>`);
     else shapes.push(`<text x="${s.x}" y="${s.y}" font-family="${esc(s.fontFamily)}" font-size="${s.fontSize}" font-weight="${s.bold?'700':'400'}" font-style="${s.italic?'italic':'normal'}" text-anchor="${{left:'start',center:'middle',right:'end'}[s.align]}" fill="${s.color}" ${common} xml:space="preserve" transform="rotate(${s.rotation} ${s.x} ${s.y})">${s.lines.map((line,i)=>`<tspan x="${s.x}" y="${s.y+i*s.lineHeight}">${esc(line)}</tspan>`).join('')}</text>`);
   }
-  return `<defs><clipPath id="mifito-measurements"><rect x="0" y="${plan.top}" width="${plan.width}" height="${plan.imageHeight}"/></clipPath></defs><g clip-path="url(#mifito-measurements)">${shapes.join('')}</g>`;
+  return `<defs><clipPath id="mifito-measurements"><rect x="${plan.left??0}" y="${plan.top}" width="${plan.imageWidth??plan.width}" height="${plan.imageHeight}"/></clipPath></defs><g clip-path="url(#mifito-measurements)">${shapes.join('')}</g>`;
 }

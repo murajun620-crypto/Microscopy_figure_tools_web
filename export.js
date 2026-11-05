@@ -1,11 +1,11 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=9637cfe3a98d';
-import { numberedLabel } from './label-numbering.js?v=e84107d34445';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=51ccfc314f98';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=e2472d291c7f';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=ada81c393075';
+import { numberedLabel } from './label-numbering.js?v=4a33a3e5a3b5';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=1392f20b8267';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=3526ee833746';
 import { inlinePlain } from './inline-text.js';
 import { pngWithDpi } from './png.js';
 import { jpegWithDpi } from './jpeg.js';
-import { outputBase, extensionFor } from './save-files.js?v=72f2ee7b8ce5';
+import { outputBase, extensionFor } from './save-files.js?v=bea4a8c239ae';
 
 export async function exportImage(source, settings, format) {
   if (format === 'svg') {
@@ -40,6 +40,11 @@ export async function exportImage(source, settings, format) {
       }
       if(plan.measurements.length){
         const layer=renderRaster(source,settings,{image:false,onlyAnnotationKind:'measurement'});
+        try{const picture=await doc.embedPng(await(await canvasBlob(layer.canvas)).arrayBuffer());page.drawImage(picture,{x:0,y:0,width,height});}
+        finally{layer.canvas.width=layer.canvas.height=0;}
+      }
+      if(plan.mapColorbar){
+        const layer=renderRaster(source,settings,{image:false,onlyAnnotationKind:'mapColorbar'});
         try{const picture=await doc.embedPng(await(await canvasBlob(layer.canvas)).arrayBuffer());page.drawImage(picture,{x:0,y:0,width,height});}
         finally{layer.canvas.width=layer.canvas.height=0;}
       }

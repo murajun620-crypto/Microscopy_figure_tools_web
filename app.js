@@ -1,19 +1,20 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=9637cfe3a98d';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=51ccfc314f98';
-import { buildPlan, paint } from './render.js?v=e2472d291c7f';
-import { batchExport, exportImage } from './export.js?v=8ddfde2ed976';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ada81c393075';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=1392f20b8267';
+import { buildPlan, paint } from './render.js?v=3526ee833746';
+import { batchExport, exportImage } from './export.js?v=bf23fe2d479b';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=72f2ee7b8ce5';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=e84107d34445';
-import { createProject, readProject } from './project.js?v=a08a6e5ee86f';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3097a17351f6';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=9e226fb1081e';
-import { prepareScaleBar } from './bar-workflow.js?v=d07ae3642a81';
-import { prepareCalibration } from './calibration-workflow.js?v=a9bca7c1eda8';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=bea4a8c239ae';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=4a33a3e5a3b5';
+import { createProject, readProject } from './project.js?v=6ff513b6e845';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=01a61b6d2bca';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=0919e18c34d2';
+import { prepareScaleBar } from './bar-workflow.js?v=825aedae41b4';
+import { prepareCalibration } from './calibration-workflow.js?v=2fb513259a09';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
-import { AnnotationUI } from './annotation-ui.js?v=50bec83d7b9a';
+import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=1d290218c75b';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -101,7 +102,7 @@ let colorTarget = null;
 for (const input of document.querySelectorAll('input[type="color"][data-setting],input[type="color"][data-ann-field]')) {
   const title = input.parentElement.firstChild.textContent.trim();
   const section = input.dataset.setting?.split('.')[0];
-  const name = `${section === 'scaleBar' ? 'スケールバー' : section==='panelLabel'?'パネルラベル':'注釈'}の${title}`;
+  const name = `${section === 'scaleBar' ? 'スケールバー' : section==='panelLabel'?'パネルラベル':section==='mapColorbar'?'カラーバー':'注釈'}の${title}`;
   input.setAttribute('aria-label',name);
   const wrapper = document.createElement('span'); wrapper.className = 'color-control';
   input.before(wrapper); wrapper.append(input); input.hidden=true;
@@ -150,6 +151,29 @@ $('color-code').addEventListener('keydown',event=>{if(event.key==='Enter'){event
 syncColorFields();
 compactHelp();
 setupMovableDialogs();
+for(const p of MAP_PALETTES)$('mapPalette').add(new Option(p.name,p.id));
+$('mapPalette').add(new Option('アップロード配色','custom'));
+function syncMapColorbar(){
+  const s=current?.settings.mapColorbar??defaultMapColorbar(),option=$('mapPalette').querySelector('[value="custom"]');
+  option.disabled=!s.customPalette;option.textContent=s.customPalette?`アップロード：${s.customPalette.name}`:'アップロード配色';
+  const gradient=`linear-gradient(to right,${mapStops(s).map(p=>`${p.color} ${p.position*100}%`).join(',')})`;
+  $('mapPalettePreview').style.background=gradient;
+  for(const button of document.querySelectorAll('[data-map-style]')){button.disabled=busy||!current;button.setAttribute('aria-pressed',String(button.dataset.mapStyle===s.style));button.querySelector('.map-style-bar').style.background=gradient;}
+  $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeFields').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
+  $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;
+}
+for(const button of document.querySelectorAll('[data-map-style]'))button.addEventListener('click',()=>{if(busy||!current)return;const s=copy(current.settings);s.mapColorbar.style=button.dataset.mapStyle;commit(s);});
+$('uploadMapPalette').addEventListener('click',()=>{if(!busy&&current)$('mapPaletteInput').click();});
+$('mapPaletteInput').addEventListener('change',()=>{
+  const file=$('mapPaletteInput').files[0];$('mapPaletteInput').value='';if(!file||!current||busy)return;
+  action(async()=>{const palette=await paletteFromFile(file),s=copy(current.settings);s.mapColorbar.customPalette=palette;s.mapColorbar.palette='custom';commit(s);notify(`配色「${palette.name}」を読み込みました。`);});
+});
+$('applyMapToAll').addEventListener('click',()=>{
+  if(busy||!current)return;
+  try{const updates=items.map(item=>{const s=copy(item.settings);s.mapColorbar=copy(current.settings.mapColorbar);const settings=validateSettings(s,item.width,item.height);buildPlan(settings,context);return {item,settings};});
+    settingsTransactions.apply(updates,{clearCropError:false,origin:current});syncInputs();render();notify(`${items.length}枚にカラーバーを適用しました。`);
+  }catch(error){notify(error.message,true);}
+});
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
 
 function notify(message, error = false) {
@@ -209,6 +233,7 @@ function setBusy(value) {
   syncColorFields();
   for(const input of document.querySelectorAll('[data-opacity-for]'))input.disabled=$(input.dataset.opacityFor).disabled;
   annotationUI?.sync();
+  syncMapColorbar();
   syncImageNavigation();
   scheduleWorkState();
 }
@@ -445,11 +470,12 @@ function schedulePreview() {
 $('previewArea').addEventListener('scroll',schedulePreview,{passive:true});
 
 function sourcePoint(event) {
-  return viewToImage({ x: event.clientX, y: event.clientY }, $('canvasFrame').getBoundingClientRect(), plan.width, plan.height, plan.crop, plan.top);
+  const p=viewToImage({ x: event.clientX, y: event.clientY }, $('canvasFrame').getBoundingClientRect(), plan.width, plan.height, plan.crop, plan.top);
+  return {...p,x:p.x-(plan.left??0)};
 }
 function canvasPoint(event) {
   const p = sourcePoint(event);
-  return { x: p.x - current.settings.crop.x, y: p.y - current.settings.crop.y + plan.top };
+  return { x: p.x - current.settings.crop.x+(plan.left??0), y: p.y - current.settings.crop.y + plan.top };
 }
 function insideImage(p) {
   const c = current.settings.crop;
@@ -463,7 +489,7 @@ function drawGuides() {
   if (!plan||previewRaw) return;
   context.save(); context.lineWidth = 1.5 / previewScale; context.font = `${12 / previewScale}px sans-serif`;
   if (measurement && tool !== 'crop') {
-    const c = current.settings.crop, a = { x: measurement[0].x - c.x, y: measurement[0].y - c.y + plan.top }, b = { x: measurement[1].x - c.x, y: measurement[1].y - c.y + plan.top };
+    const c = current.settings.crop, a = { x: measurement[0].x - c.x+(plan.left??0), y: measurement[0].y - c.y + plan.top }, b = { x: measurement[1].x - c.x+(plan.left??0), y: measurement[1].y - c.y + plan.top };
     context.strokeStyle = '#70e5d0'; context.fillStyle = '#70e5d0'; context.beginPath(); context.moveTo(a.x, a.y); context.lineTo(b.x, b.y); context.stroke();
     for (const p of [a, b]) { context.beginPath(); context.arc(p.x, p.y, 4 / previewScale, 0, Math.PI * 2); context.fill(); }
   }
@@ -577,7 +603,7 @@ $('previewArea').addEventListener('pointermove', event => {
     drag.moved ||= Math.hypot(event.clientX-drag.downView.x,event.clientY-drag.downView.y)>3;updateCropInputs(pendingCrop);
   } else {
     const q = canvasPoint(event), box = plan.annotations.find(annotation => annotation.kind === drag.kind), c = current.settings.crop;
-    current.settings[drag.kind].position = { x: clamp(q.x - drag.offset.x, 0, Math.max(0,c.width - box.width)), y: clamp(q.y - drag.offset.y, box.area.y, Math.max(box.area.y,box.area.y+box.area.height-box.height))-(box.band==='top'?0:plan.top) };
+    current.settings[drag.kind].position = { x: clamp(q.x - drag.offset.x-(plan.left??0), 0, Math.max(0,c.width - box.width)), y: clamp(q.y - drag.offset.y, box.area.y, Math.max(box.area.y,box.area.y+box.area.height-box.height))-(box.band==='top'?(plan.offsetY??0):plan.top) };
   }
   render();
 });
@@ -660,7 +686,7 @@ $('zoomToCrop').addEventListener('click',()=>{
   if(!current||!plan||busy)return;
   const c=pendingCrop||current.settings.crop, area=$('previewArea'), viewport=area.getBoundingClientRect();
   const zoom=clamp(Math.min((area.clientWidth-80)/c.width,(area.clientHeight-80)/c.height),MIN_ZOOM,MAX_ZOOM);
-  queuePreviewZoom(zoom,{x:viewport.left+area.clientLeft+area.clientWidth/2,y:viewport.top+area.clientTop+area.clientHeight/2,u:(c.x-plan.crop.x+c.width/2)/plan.width,v:(c.y-plan.crop.y+c.height/2+plan.top)/plan.height});
+  queuePreviewZoom(zoom,{x:viewport.left+area.clientLeft+area.clientWidth/2,y:viewport.top+area.clientTop+area.clientHeight/2,u:(c.x-plan.crop.x+c.width/2+(plan.left??0))/plan.width,v:(c.y-plan.crop.y+c.height/2+plan.top)/plan.height});
 });
 
 for (const input of document.querySelectorAll('[data-setting]')) {
@@ -1123,7 +1149,7 @@ refreshSaveUI();
 $('downloadAllButton').addEventListener('click',()=>action(async()=>{const count=await downloadAll();$('batchProgress').textContent=`${count}ファイルのダウンロードを開始しました。`;}));
 $('copyButton').addEventListener('click',()=>action(async()=>{
   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('このブラウザでは画像コピーを利用できません。PNGを保存してください。');
-  const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=false;settings.output.scale=1;}
+  const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=settings.mapColorbar.visible=false;settings.output.scale=1;}
   const image=source,png=document.fonts.ready.then(()=>exportImage(image,settings,'png'));
   // Start the clipboard write in the click event; Safari requires user activation.
   // Encode with the same resolution and native annotation rendering as PNG save.

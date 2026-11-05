@@ -1,5 +1,5 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=637a8fa91f67';
-import { paintMeasurements } from './annotation-render.js?v=e51ec5833009';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=f0f0548434a2';
+import { paintMeasurements } from './annotation-render.js?v=32064deaf5ae';
 import { showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
 export class AnnotationUI {
@@ -64,7 +64,7 @@ export class AnnotationUI {
   cancelDrawing(){this.mode=null;this.draft=null;this.gesture=null;$('preview').style.cursor='default';}
   stop(event){event.preventDefault();event.stopImmediatePropagation();}
   point(event){const p=this.api.sourcePoint(event),c=this.current.settings.crop;return {x:Math.max(c.x,Math.min(c.x+c.width,Math.round(p.x*1000)/1000)),y:Math.max(c.y,Math.min(c.y+c.height,Math.round(p.y*1000)/1000))};}
-  planPoint(p){const plan=this.api.plan(),s=plan.coordinateScale??1;return {x:(p.x-plan.crop.x)*s,y:(p.y-plan.crop.y)*s+plan.top};}
+  planPoint(p){const plan=this.api.plan(),s=plan.coordinateScale??1;return {x:(p.x-plan.crop.x)*s+(plan.left??0),y:(p.y-plan.crop.y)*s+plan.top};}
   down(event){
     if(!this.api.active()||event.button!==0||event.pointerType==='touch'||event.target!==$('preview')||event.altKey||this.api.panning())return;
     const raw=this.api.sourcePoint(event),crop=this.current.settings.crop;

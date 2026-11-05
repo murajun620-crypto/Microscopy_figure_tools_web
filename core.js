@@ -1,5 +1,6 @@
 // Coordinate and settings logic is independent of the DOM and image renderer.
-import { validateAnnotations } from './annotations.js?v=637a8fa91f67';
+import { validateAnnotations } from './annotations.js?v=f0f0548434a2';
+import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=1d290218c75b';
 export const UNITS = { nm: 0.001, 'µm': 1, mm: 1000 };
 export const LIMITS = { sourcePixels: 64_000_000, outputPixels: 64_000_000, edge: 16384, fileBytes: 128 * 1024 * 1024, batchBytes: 256 * 1024 * 1024, files: 100 };
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
@@ -107,7 +108,7 @@ export function relativeCrop(crop, oldWidth, oldHeight, newWidth, newHeight) {
 export function defaultSettings(width, height) {
   validateSize(width, height);
   return {
-    crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [],
+    crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [],mapColorbar:defaultMapColorbar(),
     cropOptions: { aspect: 'free', application: 'selection', width: 5, height: 4, pending: null },
     scaleBar: { visible: true, length: null, unit: 'µm', anchor: 'bottom-right', position: null, fontPercent: 9, thicknessPercent: 0.8, gapPercent: 1, verticalPaddingPercent: 3, color: '#ffffff', textColor: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.5, showText: true, outsideTransparent: true, outsideColor: '#ffffff' },
     panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
@@ -176,6 +177,7 @@ export function validateSettings(value, width, height) {
   if (![300,600,1200].includes(output.dpi ?? 600)) throw new Error('保存解像度が不正です。');
   result.output = { scale: output.scale, resampling: output.resampling, sizeCm: numberRange(output.sizeCm, 0.01, 100, '出力サイズ'), sizeAxis: output.sizeAxis, dpi:output.dpi ?? 600, outsideTransparent: boolean(output.outsideTransparent), outsideColor: color(output.outsideColor), pptEditable: boolean(output.pptEditable), pptIncludeLabel: boolean(output.pptIncludeLabel ?? true) };
   result.annotations=validateAnnotations(value.annotations??[],width,height);
+  result.mapColorbar=validateMapColorbar(value.mapColorbar);
   return result;
 }
 
