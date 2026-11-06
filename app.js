@@ -7,13 +7,14 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
 import { createProject, readProject } from './project.js?v=d405fbd2a7a4';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=16bbd1aebdbd';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3bef6858d29e';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=6b23c0cae0ad';
+import { AppUpdater } from './app-update.js?v=b3c25df493e6';
 import { ImageOverview } from './overview.js?v=63850d438675';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
@@ -36,7 +37,7 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
-let annotationUI=null,mapEstimate=null,appUpdater=null,imageOverview=null,previewMode='single';
+let annotationUI=null,mapEstimate=null,appUpdater=null,imageOverview=null,imageTable=null,previewMode='single';
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -46,7 +47,7 @@ function projectUI() {
 }
 function pendingInputEdit() {
   if(!current)return false;
-  if(annotationUI?.pending)return true;
+  if(annotationUI?.pending||imageTable?.pending)return true;
   for(const input of document.querySelectorAll('[data-setting],[data-opacity-for],#imageList [data-item-key]')) {
     let expected;
     if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=current.settings[section][key];}
@@ -264,6 +265,7 @@ function setBusy(value) {
   if(previewMode==='all')$('singleSaveButton').disabled=true;
   appUpdater?.sync();
   imageOverview?.update(previewMode==='all'&&!!current);
+  imageTable?.sync();
   scheduleWorkState();
 }
 async function action(fn) {
@@ -410,6 +412,7 @@ function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
   refreshSaveUI();
   imageOverview?.update(previewMode==='all'&&!!current);
+  imageTable?.sync();
   scheduleWorkState();
 }
 
@@ -456,6 +459,20 @@ async function addFiles(files) {
   return added;
 }
 
+async function editImageTable(item,path,value){
+  if(busy||!items.includes(item))return;
+  if(path==='enabled'){item.enabled=value;renderList();render();return;}
+  const settings=prepareImageTableEdit(item,path,value);buildPlan(settings,context);
+  await action(async()=>{
+    const mode=previewMode;
+    if(item!==current)await selectItem(item);
+    settingsTransactions.apply([{item,settings}],{clearCropError:path.startsWith('crop.'),origin:item});
+    item.barVisible=item.settings.scaleBar.visible;item.labelVisible=item.settings.panelLabel.visible;item.labelText=item.settings.panelLabel.text;item.subtext=item.settings.panelLabel.subtext;
+    measurement=measurementStart=drag=cropStart=null;pendingCrop=item.settings.cropOptions.pending??null;
+    previewMode=mode;syncInputs();renderList();render();
+  });
+}
+
 function setPreviewMode(mode){
   if(busy||!current)return;
   cancelWheelZoom();annotationUI?.cancelDrawing();drag=null;measurementStart=cropStart=null;
@@ -465,7 +482,7 @@ $('singlePreviewButton').addEventListener('click',()=>setPreviewMode('single'));
 $('allPreviewButton').addEventListener('click',()=>setPreviewMode('all'));
 
 function render() {
-  scheduleWorkState();
+  scheduleWorkState();imageTable?.sync();
   const overview=previewMode==='all'&&!!current;
   $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current||overview;
   $('previewArea').classList.toggle('overview-mode',overview);
@@ -963,7 +980,7 @@ function newProject(){
     else input.value=input.type==='file'?'':input.defaultValue;
   }
   $('saveDestination').value=folderSupported?'source':'download';
-  $('zoomSelect').value='fit';setTool('move');
+  imageTable?.setCollapsed(false);$('zoomSelect').value='fit';setTool('move');
   $('previewArea').scrollLeft=$('previewArea').scrollTop=0;
   $('measurementInfo').textContent='2点をクリック、またはドラッグ';
   $('cropStatus').textContent='選択範囲なし';$('cropBadge').textContent='全体';
@@ -1033,6 +1050,7 @@ async function captureUpdateSession(){
     inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:input.checked})),
     details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
     dialogs:[...document.querySelectorAll('dialog[open]')].filter(node=>node.id!=='updateDialog').map(node=>({id:node.id,left:node.style.left,top:node.style.top})),
+    imageTableCollapsed:$('imageTableContent').hidden,
     view:{sidebar:$('settingsPanel').scrollTop,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop}});
   // Make independent bytes, including when the originals came from an open file.
   for(const item of snapshot.items)item.file=new File([await item.file.arrayBuffer()],item.file.name,{type:item.file.type,lastModified:item.file.lastModified});
@@ -1077,6 +1095,7 @@ async function restoreUpdateSession(saved){
   // Keep uncommitted input text as well as the committed image settings.
   return ()=>{
     restoreInputs();annotationUI.formState=saved.annotation.formState;
+    imageTable?.setCollapsed(saved.imageTableCollapsed===true);
     syncColorFields();syncMapColorbar();$('settingsPanel').scrollTop=saved.view.sidebar;
     $('previewArea').scrollLeft=saved.view.left;$('previewArea').scrollTop=saved.view.top;scheduleWorkState();
   };
@@ -1322,6 +1341,7 @@ async function demo(count = 1) {
 for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
 for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
 annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
+imageTable=new ImageSettingsTable({items:()=>items,current:()=>current,busy:()=>busy,edit:editImageTable,select:item=>action(()=>selectItem(item)),notify});
 imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,select:item=>action(()=>selectItem(item))});
 appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
 setBusy(false);

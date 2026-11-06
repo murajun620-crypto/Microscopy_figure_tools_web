@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=7915f50a6aa0">
-  <script type="module" src="./app.js?v=57fac5f7008b"></script>
+  <link rel="stylesheet" href="./styles.css?v=2666e25b1f92">
+  <script type="module" src="./app.js?v=a7a8a74b6b94"></script>
 </head>
 <body>
   <header class="app-header">
@@ -221,7 +221,12 @@
       <div id="instruction" class="instruction" hidden></div>
       </div>
       <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span><span id="pointerCoordinates" aria-live="off"></span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
-
+      <section id="imageTablePanel" class="image-table-panel" aria-labelledby="imageTableTitle" hidden>
+        <div class="image-table-heading"><h2 id="imageTableTitle">画像設定表</h2><output id="imageTableSummary" aria-live="polite"></output><button id="toggleImageTable" class="button quiet" aria-label="画像設定表を閉じる" aria-expanded="true" aria-controls="imageTableContent">−</button></div>
+        <div id="imageTableContent"><div class="image-table-toolbar"><label class="check"><input id="imageTableDetails" type="checkbox">詳細列を表示</label><span>変更はその行の画像だけに適用します。</span></div>
+          <div class="image-table-scroll" tabindex="0" role="region" aria-label="画像の設定表（横・縦にスクロールできます）"><table id="imageSettingsTable" data-details="false" aria-label="各画像の設定一覧"><thead id="imageTableHead"></thead><tbody id="imageTableBody"></tbody></table></div>
+        </div>
+      </section>
     </section>
   </main>
   <dialog id="newProjectDialog" class="new-project-dialog" aria-labelledby="newProjectTitle" aria-describedby="newProjectMessage">
