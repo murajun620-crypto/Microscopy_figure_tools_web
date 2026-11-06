@@ -7,12 +7,12 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
 import { createProject, readProject } from './project.js?v=d405fbd2a7a4';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3bef6858d29e';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b364809563da';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=b3c25df493e6';
+import { AppUpdater } from './app-update.js?v=4568a61ba267';
 import { ImageOverview } from './overview.js?v=63850d438675';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
