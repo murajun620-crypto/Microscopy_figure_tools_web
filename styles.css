@@ -253,6 +253,18 @@ body.busy .sidebar input,body.busy .sidebar button,body.busy .sidebar select,bod
 .preview-options{display:flex;align-items:center;justify-content:flex-end;margin:-4px 0 10px;flex-shrink:0}
 .preview-options label{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}
 .preview-options select{height:27px;background:transparent;width:86px;font-size:10px;padding:3px 7px}
+.preview-modes{display:flex;gap:4px;margin-right:auto}
+.preview-options .preview-modes .tool{font-size:11px;padding:5px 10px}
+.preview-area.overview-mode{padding:16px}
+.image-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));align-items:start;gap:14px;width:100%;margin:auto 0}
+.overview-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;background:#ffffffee;border:2px solid transparent;border-radius:8px;text-align:left;color:inherit;box-shadow:0 2px 8px #203d3017}
+.overview-card:hover{border-color:#9abaae}
+.overview-card.selected{border-color:var(--green)}
+.overview-card.failed{border-color:#b96655}
+.overview-image{height:240px;width:100%;display:flex;align-items:center;justify-content:center;background:#edf1ec}
+.overview-image canvas{max-width:100%;max-height:240px;width:auto;height:auto;pointer-events:none}
+.overview-name{font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.overview-status{font-size:10px;color:var(--muted);overflow-wrap:anywhere}
 
 /* Common file/save controls shared with MiFiTo. Keep brand colors independent. */
 .header-actions{gap:6px;white-space:nowrap}

@@ -1,23 +1,24 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=d67bb1a9f0b4';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=60537916efe0';
-import { buildPlan, paint } from './render.js?v=81c1d17cbde3';
-import { batchExport, exportImage } from './export.js?v=6857f78e2994';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2eface900efb';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=61fc78090acc';
+import { buildPlan, paint } from './render.js?v=7adb68ee7f24';
+import { batchExport, exportImage } from './export.js?v=feced3d4df50';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=ed0b229a56c8';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=c91206c74fea';
-import { createProject, readProject } from './project.js?v=0e1a4c83af81';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=75022c12c4ba';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=451c8a3ccca2';
-import { prepareScaleBar } from './bar-workflow.js?v=ad0e85503a1c';
-import { prepareCalibration } from './calibration-workflow.js?v=881b434816e5';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=1bd05ab1e37f';
-import { AppUpdater } from './app-update.js?v=d0bfaac26881';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
+import { createProject, readProject } from './project.js?v=d405fbd2a7a4';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=16bbd1aebdbd';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
+import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
+import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
+import { AppUpdater } from './app-update.js?v=6b23c0cae0ad';
+import { ImageOverview } from './overview.js?v=63850d438675';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
-import { estimateSourcePalette } from './palette-estimation.js?v=0af890c19ac0';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=3747ad9b9fe8';
+import { estimateSourcePalette } from './palette-estimation.js?v=653a8e5f0eb1';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=483d3519e0c1';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -35,7 +36,7 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
-let annotationUI=null,mapEstimate=null,appUpdater=null;
+let annotationUI=null,mapEstimate=null,appUpdater=null,imageOverview=null,previewMode='single';
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -166,6 +167,7 @@ function syncMapColorbar(){
     if(range){range.firstChild.textContent=number(s.min);range.lastElementChild.textContent=number(s.max);}
     button.querySelector('.map-style-label').textContent=button.dataset.mapStyle==='full'?[s.title,s.unit?`(${s.unit})`:''].filter(Boolean).join(' '):button.dataset.mapStyle==='unit'?s.unit:'バーのみ';
   }
+  $('mapTextGapField').hidden=s.style==='bar-only';
   $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeControls').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
   $('mapRangeInfo').textContent=$('mapRangeScope').value==='individual'?'表示中の画像だけの最小・最大値を変更します。右上の◀▶で画像を切り替えて設定してください。':'値を変更すると、全画像の最小・最大値に適用します。';
   $('estimateMapPalette').disabled=busy||!current;
@@ -204,7 +206,7 @@ function notify(message, error = false) {
 }
 function syncImageNavigation() {
   const index = items.indexOf(current);
-  $('previewNavigator').hidden = !current || items.length < 2;
+  $('previewNavigator').hidden = previewMode==='all' || !current || items.length < 2;
   const counter = current ? `${index + 1} / ${items.length}` : '';
   if ($('previewImageCounter').textContent !== counter) $('previewImageCounter').textContent = counter;
   $('previousImage').disabled = busy || index <= 0;
@@ -257,7 +259,11 @@ function setBusy(value) {
   annotationUI?.sync();
   syncMapColorbar();
   syncImageNavigation();
+  for(const id of ['singlePreviewButton','allPreviewButton'])$(id).disabled=value||!items.length;
+  for(const id of ['zoomIn','zoomOut','zoomSelect','zoomToCrop','copyButton'])if(previewMode==='all')$(id).disabled=true;
+  if(previewMode==='all')$('singleSaveButton').disabled=true;
   appUpdater?.sync();
+  imageOverview?.update(previewMode==='all'&&!!current);
   scheduleWorkState();
 }
 async function action(fn) {
@@ -403,6 +409,7 @@ function renderList() {
 function updateBatch() {
   const count = items.filter(item => item.enabled).length; $('batchCount').textContent = `${count}枚`;
   refreshSaveUI();
+  imageOverview?.update(previewMode==='all'&&!!current);
   scheduleWorkState();
 }
 
@@ -449,9 +456,25 @@ async function addFiles(files) {
   return added;
 }
 
+function setPreviewMode(mode){
+  if(busy||!current)return;
+  cancelWheelZoom();annotationUI?.cancelDrawing();drag=null;measurementStart=cropStart=null;
+  previewMode=mode;setBusy(busy);render();
+}
+$('singlePreviewButton').addEventListener('click',()=>setPreviewMode('single'));
+$('allPreviewButton').addEventListener('click',()=>setPreviewMode('all'));
+
 function render() {
   scheduleWorkState();
-  $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current;
+  const overview=previewMode==='all'&&!!current;
+  $('emptyState').hidden = !!current; $('canvasFrame').hidden = !current||overview;
+  $('previewArea').classList.toggle('overview-mode',overview);
+  $('previewNavigator').hidden=overview||!current||items.length<2;
+  for(const [id,mode] of [['singlePreviewButton','single'],['allPreviewButton','all']]){$(id).classList.toggle('active',previewMode===mode);$(id).setAttribute('aria-pressed',String(previewMode===mode));}
+  imageOverview?.update(overview);
+  if(overview){plan=null;$('imageName').textContent=`全画像（${items.length}枚）`;$('imageDimensions').textContent='画像をクリックして個別表示・編集';$('outputInfo').textContent='';$('viewInfo').textContent='各画像の処理後プレビュー';$('instruction').hidden=true;return;}
+  if(current){$('imageName').textContent=current.name;$('imageDimensions').textContent=`元画像 ${current.width.toLocaleString()} × ${current.height.toLocaleString()} px`;}
+
   if (!current || !source) { plan = null; canvas.width = canvas.height = 1; return; }
   const settings = current.settings, raw = tool === 'crop'||previewRaw;
   try {
@@ -539,12 +562,13 @@ function drawGuides() {
   context.restore();annotationUI?.guides(context);
 }
 function setTool(value) {
+  previewMode='single';
   annotationUI?.cancelDrawing();
   tool = value; measurementStart = cropStart = drag = null;
   hoverPixel=null;$('pointerCoordinates').textContent='';
   previewRaw=false;$('rawPreviewButton').classList.remove('active');$('processedPreviewButton').classList.add('active');
   for (const mode of ['move', 'measure', 'crop']) { $(`${mode}Tool`).classList.toggle('active', mode === value); $(`${mode}Tool`).setAttribute('aria-pressed', String(mode === value)); }
-  canvas.style.cursor = value === 'move' ? 'default' : 'crosshair'; render();
+  canvas.style.cursor = value === 'move' ? 'default' : 'crosshair'; setBusy(busy);render();
 }
 function aspect() {
   const value = $('aspectRatio').value;
@@ -929,7 +953,7 @@ function newProject(){
   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
   if(source)releaseImage(source);
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
-  items.length=0;source=current=plan=null;
+  items.length=0;source=current=plan=null;previewMode='single';
   projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
   colorTarget=null;recentColors.length=0;clearDownloads();
@@ -1004,7 +1028,7 @@ function saveProject(saveAs){return action(async()=>{
 // records and file handles. Temporary updates never mark a project as saved.
 async function captureUpdateSession(){
   const snapshot=structuredClone({ui:projectUI(),items:[...items],activeIndex:items.indexOf(current),transactions:settingsTransactions.snapshot(items),checkpoint:workSaveState.checkpoint,
-    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,mapEstimate,recentColors:[...recentColors],
+    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,recentColors:[...recentColors],
     annotation:{selected:[...annotationUI.selected],clipboard:annotationUI.clipboard,formState:annotationUI.formState},
     inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:input.checked})),
     details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
@@ -1045,7 +1069,7 @@ async function restoreUpdateSession(saved){
   restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;recentColors.splice(0,recentColors.length,...saved.recentColors);
   if(items.length)activateItem(items[saved.activeIndex],activeDecoded);
   else{if(source)releaseImage(source);source=current=null;renderList();}
-  pendingCrop=saved.pendingCrop;measurement=saved.measurement;measurementStart=saved.measurementStart;setTool(saved.tool);
+  pendingCrop=saved.pendingCrop;measurement=saved.measurement;measurementStart=saved.measurementStart;setTool(saved.tool);previewMode=saved.previewMode==='all'?'all':'single';
   annotationUI.itemId=current?.id;annotationUI.selected=new Set(saved.annotation.selected);annotationUI.clipboard=saved.annotation.clipboard;
   annotationUI.sync();render();
   for(const entry of saved.details){const node=entry.id?$(entry.id):document.querySelectorAll('details')[entry.index];if(node)node.open=entry.open;}
@@ -1163,7 +1187,7 @@ async function openSettingsFile(file){
 function exportFormats(){const formats=[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat);if(!formats.length)throw new Error('保存形式を1つ以上選択してください。');return formats;}
 function refreshSaveUI() {
   const count=items.filter(item=>item.enabled).length;
-  $('singleSaveButton').disabled=busy||!current;
+  $('singleSaveButton').disabled=busy||!current||previewMode==='all';
   $('batchSaveButton').textContent=`一括保存（${count}枚）`;
   $('batchSaveButton').disabled=busy||!current||!count;
   $('saveDialogTitle').textContent=saveBatch?'一括保存':'この画像を保存';
@@ -1297,7 +1321,8 @@ async function demo(count = 1) {
 }
 for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
 for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
-annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
+annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
+imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,select:item=>action(()=>selectItem(item))});
 appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);

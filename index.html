@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=3e2c098be823">
-  <script type="module" src="./app.js?v=a96fb87d2851"></script>
+  <link rel="stylesheet" href="./styles.css?v=7915f50a6aa0">
+  <script type="module" src="./app.js?v=57fac5f7008b"></script>
 </head>
 <body>
   <header class="app-header">
@@ -179,7 +179,8 @@
             <div id="mapTicksFields" class="field-row"><label>目盛りの数<input id="mapTicks" type="number" min="2" max="9" step="1" value="2" data-setting="mapColorbar.ticks"></label><label>小数桁数<input id="mapDigits" type="number" min="0" max="8" step="1" value="3" data-setting="mapColorbar.digits"></label></div>
             <p class="map-help">値・単位・配色は元のマップに合わせて設定してください。元画像の色や測定値は変更しません。</p>
             <div class="field-row"><label>長さ（画像の辺の%）<input id="mapLength" type="number" min="10" max="100" step="any" value="100" data-setting="mapColorbar.lengthPercent"></label><label>幅（バーの長さの%）<input id="mapWidth" type="number" min="0.1" max="30" step="any" value="5.555555555555555" data-setting="mapColorbar.widthPercent"></label></div>
-            <label>画像との間隔（%）<input id="mapGap" type="number" min="0" max="20" step="any" value="2" data-setting="mapColorbar.gapPercent"></label><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
+            <label>画像との間隔（%）<input id="mapGap" type="number" min="0" max="20" step="any" value="2" data-setting="mapColorbar.gapPercent"></label>
+            <label id="mapTextGapField">バーと文字の間隔（短辺の%）<input id="mapTextGap" type="number" min="0" max="20" step="0.1" value="3" data-setting="mapColorbar.labelGapPercent"></label><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
             <div class="field-row"><label class="color-field">文字・目盛り色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
             <label class="check"><input id="mapTransparent" type="checkbox" data-setting="mapColorbar.transparent">背景を透明にする</label>
             <button id="applyMapToAll" class="button full">このデザインを全画像に適用</button>
@@ -207,12 +208,13 @@
         <div class="zoom-controls" role="group" aria-label="画像の拡大縮小"><button id="zoomOut" class="tool zoom-step" aria-label="画像を縮小" disabled>−</button><label class="zoom-label"><select id="zoomSelect" aria-label="表示倍率"><option value="fit">画面に合わせる</option><option value="0.5">50%</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option><option value="8">800%</option><option value="16">1600%</option><option value="32">3200%</option></select></label><button id="zoomIn" class="tool zoom-step" aria-label="画像を拡大" disabled>＋</button></div>
       </div>
       <div class="save-launchers preview-file-actions" role="group" aria-label="保存とコピー"><button id="singleSaveButton" class="button primary" disabled>この画像を保存</button><button id="batchSaveButton" class="button" title="一覧でチェックした画像を、現在のデザインで保存します。画像ごとの校正・表示・文字列は保持します。" disabled>一括保存（0枚）</button><button id="copyButton" class="button" disabled title="表示中の画像を選択した解像度でコピー">画像をコピー</button></div>
-      <div class="preview-options"><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
+      <div class="preview-options"><div class="preview-modes" role="group" aria-label="プレビューの表示範囲"><button id="singlePreviewButton" class="tool active" aria-pressed="true">個別画像</button><button id="allPreviewButton" class="tool" aria-pressed="false">全画像</button></div><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
       <div class="preview-surface">
       <div id="previewShell" class="preview-shell">
       <div id="previewArea" class="preview-area">
         <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
+        <div id="imageOverview" class="image-overview" role="group" aria-label="全画像の処理後プレビュー" hidden></div>
       </div>
       <div id="previewNavigator" class="preview-navigator" role="group" aria-label="プレビューの画像切り替え" hidden><button id="previousImage" class="button image-nav" aria-label="前の画像" title="前の画像" disabled>◀</button><span id="previewImageCounter" aria-live="polite"></span><button id="nextImage" class="button image-nav" aria-label="次の画像" title="次の画像" disabled>▶</button></div>
       </div>
