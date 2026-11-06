@@ -1,4 +1,4 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=56b2d6add68f';
+import { copy, validateCrop, validateSettings } from './core.js?v=d67bb1a9f0b4';
 
 export function cropTargets(items,current,scope) {
   if(!['batch','individual'].includes(scope)||!items.includes(current))throw new Error('トリミングの設定対象が不正です。');

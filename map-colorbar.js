@@ -104,9 +104,9 @@ export function extendMapPlan(plan,s,context){
   const add=(text,x,y,align='center',rotation=0)=>texts.push({text,x,y,align,rotation,size:fontSize,ascent,descent});
   for(const p of labels){
     if(vertical){const yy=y+length*(1-p.t),xx=s.side==='right'?x+thickness:x,sign=s.side==='right'?1:-1;
-      lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*(tick+pad),Math.max(y+ascent,Math.min(y+length-descent,yy+(ascent-descent)/2)),sign===1?'left':'right');
+      if(p.t>0&&p.t<1)lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*(tick+pad),Math.max(y+ascent,Math.min(y+length-descent,yy+(ascent-descent)/2)),sign===1?'left':'right');
     }else{const xx=x+length*p.t,yy=s.side==='bottom'?y+thickness:y,sign=s.side==='bottom'?1:-1;
-      lines.push({x1:xx,y1:yy,x2:xx,y2:yy+sign*tick});add(p.text,xx,sign===1?yy+tick+pad+ascent:yy-tick-pad-descent,p.t===0?'left':p.t===1?'right':'center');}
+      if(p.t>0&&p.t<1)lines.push({x1:xx,y1:yy,x2:xx,y2:yy+sign*tick});add(p.text,xx,sign===1?yy+tick+pad+ascent:yy-tick-pad-descent,p.t===0?'left':p.t===1?'right':'center');}
   }
   titleLines.forEach((text,i)=>{
     if(vertical){const xx=s.side==='right'?x+thickness+tick+pad+labelWidth+textGap+descent+i*lineHeight:pad+descent+(titleLines.length-1-i)*lineHeight;add(text,xx,y+length/2,'center',-90);}

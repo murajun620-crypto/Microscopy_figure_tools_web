@@ -1,4 +1,4 @@
-import { LIMITS, validateSettings, validateSize } from './core.js?v=56b2d6add68f';
+import { LIMITS, validateSettings, validateSize } from './core.js?v=d67bb1a9f0b4';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
 // raster conversion, compression or external resources are needed to reopen it.
@@ -28,6 +28,7 @@ function validateManifest(data) {
   if(ui.cropScope!==undefined&&!['batch','individual'].includes(ui.cropScope))fail();
   if(ui.barScope!==undefined&&!['batch','individual'].includes(ui.barScope))fail();
   if(ui.calibrationScope!==undefined&&!['batch','individual'].includes(ui.calibrationScope))fail();
+  if(ui.mapRangeScope!==undefined&&!['batch','individual'].includes(ui.mapRangeScope))fail();
   return total;
 }
 

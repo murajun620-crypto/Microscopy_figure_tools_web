@@ -1,21 +1,22 @@
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=56b2d6add68f';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=097fb50f632c';
-import { buildPlan, paint } from './render.js?v=ab278d3c6460';
-import { batchExport, exportImage } from './export.js?v=37e916b1918d';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=d67bb1a9f0b4';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=60537916efe0';
+import { buildPlan, paint } from './render.js?v=81c1d17cbde3';
+import { batchExport, exportImage } from './export.js?v=6857f78e2994';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=433da8207ef4';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0b0e1111ff0b';
-import { createProject, readProject } from './project.js?v=547da1e82f3c';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=99adde89338a';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5042b2273e57';
-import { prepareScaleBar } from './bar-workflow.js?v=88189688f15d';
-import { prepareCalibration } from './calibration-workflow.js?v=78dac105b34c';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=ed0b229a56c8';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=c91206c74fea';
+import { createProject, readProject } from './project.js?v=0e1a4c83af81';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=6f3beeb9bb7f';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=c9aeab68dcd0';
+import { prepareScaleBar } from './bar-workflow.js?v=ad0e85503a1c';
+import { prepareCalibration } from './calibration-workflow.js?v=881b434816e5';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=1bd05ab1e37f';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
-import { estimateSourcePalette } from './palette-estimation.js?v=d649dfb7299e';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=18433e64133b';
+import { estimateSourcePalette } from './palette-estimation.js?v=0af890c19ac0';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=3747ad9b9fe8';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -39,7 +40,7 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,mapRangeScope:$('mapRangeScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
@@ -164,12 +165,14 @@ function syncMapColorbar(){
     if(range){range.firstChild.textContent=number(s.min);range.lastElementChild.textContent=number(s.max);}
     button.querySelector('.map-style-label').textContent=button.dataset.mapStyle==='full'?[s.title,s.unit?`(${s.unit})`:''].filter(Boolean).join(' '):button.dataset.mapStyle==='unit'?s.unit:'バーのみ';
   }
-  $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeFields').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
+  $('mapTitleField').hidden=s.style!=='full';$('mapUnitField').hidden=s.style==='bar-only';$('mapRangeControls').hidden=$('mapTicksFields').hidden=s.style==='bar-only';
+  $('mapRangeInfo').textContent=$('mapRangeScope').value==='individual'?'表示中の画像だけの最小・最大値を変更します。右上の◀▶で画像を切り替えて設定してください。':'値を変更すると、全画像の最小・最大値に適用します。';
   $('estimateMapPalette').disabled=busy||!current;
   $('mapEstimateResult').hidden=!mapEstimate||mapEstimate.imageId!==current?.id||mapEstimate.signature!==JSON.stringify([current?.settings.crop,s.palette,s.customPalette]);
   if(mapEstimate)$('mapEstimateResult').textContent=mapEstimate.text;
   $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;
 }
+$('mapRangeScope').addEventListener('change',syncMapColorbar);
 for(const button of document.querySelectorAll('[data-map-style]'))button.addEventListener('click',()=>{if(busy||!current)return;const s=copy(current.settings);s.mapColorbar.style=button.dataset.mapStyle;commit(s);});
 $('estimateMapPalette').addEventListener('click',()=>{
   if(!current||busy)return;
@@ -188,8 +191,8 @@ $('mapPaletteInput').addEventListener('change',()=>{
 });
 $('applyMapToAll').addEventListener('click',()=>{
   if(busy||!current)return;
-  try{const updates=items.map(item=>{const s=copy(item.settings);s.mapColorbar=copy(current.settings.mapColorbar);const settings=validateSettings(s,item.width,item.height);buildPlan(settings,context);return {item,settings};});
-    settingsTransactions.apply(updates,{clearCropError:false,origin:current});syncInputs();render();notify(`${items.length}枚にカラーバーを適用しました。`);
+  try{const updates=prepareMapDesign(items,current);for(const update of updates)buildPlan(update.settings,context);
+    settingsTransactions.apply(updates,{clearCropError:false,origin:current});syncInputs();render();notify(`${items.length}枚にデザインを適用しました。各画像の最小・最大値は保持しています。`);
   }catch(error){notify(error.message,true);}
 });
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
@@ -307,6 +310,11 @@ for(const input of document.querySelectorAll('[data-opacity-for]')){
 function commit(settings,shared=null) {
   if (!current) return;
   if(shared==='scaleBar'){applyScaleBar(settings);return;}
+  if(shared==='mapRange'){
+    const updates=prepareMapRange(items,current,settings.mapColorbar,$('mapRangeScope').value);
+    for(const update of updates)buildPlan(update.settings,context);
+    settingsTransactions.apply(updates,{clearCropError:false,origin:current});syncInputs();render();return;
+  }
   const next = validateSettings(settings, current.width, current.height);
   // Reject impossible geometry before adding it to history.
   buildPlan(next, context);
@@ -715,7 +723,7 @@ for (const input of document.querySelectorAll('[data-setting]')) {
   if (key === 'anchor') {
     settings[section].position = null;
   }
-  try { if (!input.checkValidity()) throw new Error('入力値が範囲外です。'); commit(settings,['scaleBar','panelLabel','output'].includes(section)&&!['visible','text','subtext'].includes(key)?section:null); if(section==='cropOptions') updateAspectPreview(); } catch (error) { notify(error.message, true); syncInputs(); }
+  try { if (!input.checkValidity()) throw new Error('入力値が範囲外です。'); commit(settings,section==='mapColorbar'&&['min','max'].includes(key)?'mapRange':['scaleBar','panelLabel','output'].includes(section)&&!['visible','text','subtext'].includes(key)?section:null); if(section==='cropOptions') updateAspectPreview(); } catch (error) { notify(error.message, true); syncInputs(); }
   });
 }
 for (const id of ['imageInput', 'folderInput']) $(id).addEventListener('change', () => { const files = [...$(id).files]; $(id).value = ''; action(async()=>{const added=await addFiles(files);if(added.length&&folderSupported){$('saveDestination').value='source';refreshSaveUI();}}); });
@@ -1043,6 +1051,7 @@ async function openProject(file){
   $('cropScope').value=project.ui.cropScope??'batch';
   $('barScope').value=project.ui.barScope??'batch';
   $('calibrationScope').value=project.ui.calibrationScope??'individual';
+  $('mapRangeScope').value=project.ui.mapRangeScope??'individual';
   activateItem(items[project.activeIndex],activeDecoded);
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
