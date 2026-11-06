@@ -7,11 +7,12 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=ed0b229a56c8';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=c91206c74fea';
 import { createProject, readProject } from './project.js?v=0e1a4c83af81';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=6f3beeb9bb7f';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=c9aeab68dcd0';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=75022c12c4ba';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=451c8a3ccca2';
 import { prepareScaleBar } from './bar-workflow.js?v=ad0e85503a1c';
 import { prepareCalibration } from './calibration-workflow.js?v=881b434816e5';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=1bd05ab1e37f';
+import { AppUpdater } from './app-update.js?v=d0bfaac26881';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
@@ -34,7 +35,7 @@ let current = null, source = null, plan = null, previewScale = 1, tool = 'move',
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
-let annotationUI=null,mapEstimate=null;
+let annotationUI=null,mapEstimate=null,appUpdater=null;
 const workSaveState=new WorkSaveState();
 let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
@@ -65,7 +66,7 @@ function hasUnsavedWork() {
   return !!items.length&&(projectSaving||pendingInputEdit()||workSaveState.isDirty(workspaceSnapshot(items,projectUI()),true));
 }
 function confirmUnsavedLeave(event) {
-  if(!hasUnsavedWork())return;
+  if(appUpdater?.reloading||!hasUnsavedWork())return;
   event.preventDefault();event.returnValue='';
 }
 function refreshWorkState() {
@@ -256,6 +257,7 @@ function setBusy(value) {
   annotationUI?.sync();
   syncMapColorbar();
   syncImageNavigation();
+  appUpdater?.sync();
   scheduleWorkState();
 }
 async function action(fn) {
@@ -998,6 +1000,68 @@ function saveProject(saveAs){return action(async()=>{
     workSaveState.markSaved(savedSnapshot);
   }finally{projectSaving=false;scheduleWorkState();}
 });}
+// IndexedDB preserves one shared object graph, including histories, grouped undo
+// records and file handles. Temporary updates never mark a project as saved.
+async function captureUpdateSession(){
+  const snapshot=structuredClone({ui:projectUI(),items:[...items],activeIndex:items.indexOf(current),transactions:settingsTransactions.snapshot(items),checkpoint:workSaveState.checkpoint,
+    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,mapEstimate,recentColors:[...recentColors],
+    annotation:{selected:[...annotationUI.selected],clipboard:annotationUI.clipboard,formState:annotationUI.formState},
+    inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:input.checked})),
+    details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
+    dialogs:[...document.querySelectorAll('dialog[open]')].filter(node=>node.id!=='updateDialog').map(node=>({id:node.id,left:node.style.left,top:node.style.top})),
+    view:{sidebar:$('settingsPanel').scrollTop,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop}});
+  // Make independent bytes, including when the originals came from an open file.
+  for(const item of snapshot.items)item.file=new File([await item.file.arrayBuffer()],item.file.name,{type:item.file.type,lastModified:item.file.lastModified});
+  return snapshot;
+}
+async function restoreUpdateSession(saved){
+  if(saved.items.length>LIMITS.files||saved.items.reduce((n,item)=>n+item.file.size,0)>LIMITS.batchBytes||
+    (saved.items.length&&(!Number.isInteger(saved.activeIndex)||!saved.items[saved.activeIndex])))throw new Error('一時保存した画像一覧が不正です。');
+  let activeDecoded=null;const restored=[];
+  try{
+    for(const [index,item] of saved.items.entries()){
+      validateSettings(item.settings,item.width,item.height);buildPlan(item.settings,context);
+      if(!item.history||!Array.isArray(item.history.entries)||!item.history.entries.length||!Number.isInteger(item.history.index)||!item.history.entries[item.history.index])throw new Error('編集履歴を復元できませんでした。');
+      for(const entry of item.history.entries)validateSettings(entry,item.width,item.height);
+      item.history=Object.assign(new History(item.settings),item.history);
+      const decoded=await decodeImage(item.file,item);
+      try{
+        if(decoded.width!==item.width||decoded.height!==item.height)throw new Error('元画像のサイズが一致しません。');
+        item.thumbnail=await thumbnail(decoded.source);restored.push(item);
+        if(index===saved.activeIndex)activeDecoded=decoded;
+      }finally{if(decoded!==activeDecoded)releaseImage(decoded.source);}
+    }
+    // Validate transaction structure before replacing the visible workspace.
+    const restoredTransactions=new SettingsTransactions();restoredTransactions.restore(saved.transactions);
+  }catch(error){for(const item of restored)URL.revokeObjectURL(item.thumbnail);if(activeDecoded)releaseImage(activeDecoded.source);throw error;}
+  annotationUI.reset();for(const item of items)URL.revokeObjectURL(item.thumbnail);
+  items.splice(0,items.length,...restored);settingsTransactions.restore(saved.transactions);
+  ({projectHandle,projectName,saveDirectory}=saved);workSaveState.restoreCheckpoint(saved.checkpoint);
+  const restoreInputs=()=>{for(const entry of saved.inputs){const input=$(entry.id);if(!input||input.type==='file')continue;
+    if(input.id==='zoomSelect'&&![...input.options].some(option=>option.value===entry.value))input.add(new Option(zoomText(Number(entry.value)),entry.value));
+    input.value=entry.value;if(input.type==='checkbox'||input.type==='radio')input.checked=entry.checked;
+  }};
+  for(const input of document.querySelectorAll('[data-export-format]'))input.checked=saved.ui.formats.includes(input.dataset.exportFormat);
+  restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;recentColors.splice(0,recentColors.length,...saved.recentColors);
+  if(items.length)activateItem(items[saved.activeIndex],activeDecoded);
+  else{if(source)releaseImage(source);source=current=null;renderList();}
+  pendingCrop=saved.pendingCrop;measurement=saved.measurement;measurementStart=saved.measurementStart;setTool(saved.tool);
+  annotationUI.itemId=current?.id;annotationUI.selected=new Set(saved.annotation.selected);annotationUI.clipboard=saved.annotation.clipboard;
+  annotationUI.sync();render();
+  for(const entry of saved.details){const node=entry.id?$(entry.id):document.querySelectorAll('details')[entry.index];if(node)node.open=entry.open;}
+  for(const entry of saved.dialogs){const node=$(entry.id);if(node){showDialog(node);if(entry.left&&entry.top)Object.assign(node.style,{position:'fixed',inset:'auto',margin:'0',left:entry.left,top:entry.top});}}
+  // Keep uncommitted input text as well as the committed image settings.
+  return ()=>{
+    restoreInputs();annotationUI.formState=saved.annotation.formState;
+    syncColorFields();syncMapColorbar();$('settingsPanel').scrollTop=saved.view.sidebar;
+    $('previewArea').scrollLeft=saved.view.left;$('previewArea').scrollTop=saved.view.top;scheduleWorkState();
+  };
+}
+async function downloadUpdateBackup(saved){
+  if(!saved.items.length)return;
+  const blob=await createProject(saved.items,saved.activeIndex,saved.ui);download(blob,saved.projectName||'mifito_recovered.mifito');
+}
+
 async function prepareDocumentSaver(name, description, extension) {
   return documentSaver({name,id:'mifito-images',description,accept:{'application/octet-stream':[extension]},startIn:saveDirectory||current?.sourceDirectory||current?.sourceHandle||projectHandle,fallback:()=>async(blob,filename)=>{download(blob,filename);return filename;}});
 }
@@ -1234,11 +1298,12 @@ async function demo(count = 1) {
 for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
 for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
 annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
+appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();
 const galleryProject = new URLSearchParams(location.search).get('gallery');
-if (galleryProject && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(galleryProject)) {
+if (!await appUpdater.restore() && galleryProject && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(galleryProject)) {
   await action(async () => {
     const response = await fetch(new URL(`gallery/projects/${galleryProject}.mifito`, import.meta.url));
     if (!response.ok) throw new Error('ギャラリーのプロジェクトを開けませんでした。');

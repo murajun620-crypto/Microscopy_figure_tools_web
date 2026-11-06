@@ -28,6 +28,14 @@ export function prepareCrop(items,current,crop,scope,reset=false) {
 // scope later. Images with newer edits are left alone instead of rewinding them.
 export class SettingsTransactions {
   #undo=new WeakMap();#redo=new WeakMap();
+  snapshot(items) {
+    const entries=items.flatMap(item=>item.history.entries);
+    const records=history=>entries.filter(entry=>history.has(entry)).map(entry=>[entry,history.get(entry).filter(record=>items.includes(record.item))]);
+    return {undo:records(this.#undo),redo:records(this.#redo)};
+  }
+  restore(snapshot) {
+    this.#undo=new WeakMap(snapshot.undo);this.#redo=new WeakMap(snapshot.redo);
+  }
   apply(updates,{clearCropError=true,origin=null}={}) {
     // A batch copy can change other images while the source stays identical.
     // Keep an undo checkpoint on that source so its Undo button still works.

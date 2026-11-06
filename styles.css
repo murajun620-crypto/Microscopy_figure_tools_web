@@ -48,6 +48,9 @@ input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .app-version{font-size:10px;font-weight:400;letter-spacing:0;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 5px;white-space:nowrap}
 #projectSaveStatus[data-dirty=true]{color:#986325}
 .header-actions{display:flex;align-items:center;gap:12px;white-space:nowrap}
+.update-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#updateMessage{font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+#updateMessage.error{color:#a43227}
 .header-actions .button{font-weight:500;gap:7px}
 .header-actions .button.quiet{background:transparent;border-color:transparent;padding:7px 9px;color:#526e63}
 .header-actions .button.quiet:hover{background:var(--soft);border-color:transparent}
