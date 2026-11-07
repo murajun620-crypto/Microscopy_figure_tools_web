@@ -1,5 +1,5 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=420fdae1db08';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=420fdae1db08';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=7cd70e7bb054';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=7cd70e7bb054';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2eface900efb';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=61fc78090acc';
@@ -14,7 +14,7 @@ import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflo
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=420fdae1db08';
+import { AppUpdater } from './app-update.js?v=7cd70e7bb054';
 import { ImageOverview } from './overview.js?v=63850d438675';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
 import { SamplePicker } from './sample-picker.js?v=bdb0ae3b0b21';
@@ -1342,28 +1342,39 @@ if (!await appUpdater.restore() && !getFigureBridgeContext() && galleryProject &
 
 // Figure Studio bridge: included in the source application's module scope.
 var figureStudioDirectSender;
+let figureBridgeBaseline=null,figureBridgePreservedOnReconnect=false;
+function figureBridgeEditState(){return {content:workspaceSnapshot(items,projectUI()),activeId:current?.id,files:items.map(item=>item.file)};}
+function figureBridgeIsDirty(){
+  if(busy||projectSaving||drag||cropStart||measurementStart||pendingInputEdit())return true;
+  const state=figureBridgeEditState(),baseline=figureBridgeBaseline;
+  return !baseline||state.content!==baseline.content||state.activeId!==baseline.activeId||state.files.length!==baseline.files.length||state.files.some((file,index)=>file!==baseline.files[index]);
+}
 async function captureFigureStudioResult() {
   if (busy || !current || !source) throw new Error('画像の処理が完了してから反映してください。');
   if (pendingInputEdit()) throw new Error('入力中の設定を確定してから反映してください。');
   setBusy(true);
   try {
     await document.fonts.ready;
-    const ui = projectUI(), settings = copy(current.settings), image = source;
+    const ui = projectUI(), settings = copy(current.settings), image = source,bridgeState=figureBridgeEditState();
     const project = await createProject(items,items.indexOf(current),ui);
     const preview = await exportImage(image,settings,'svg');
-    return {project,preview,sourceName:projectName || 'figure.mifito'};
+    return {project,preview,sourceName:projectName || 'figure.mifito',bridgeState};
   } finally {setBusy(false);}
 }
 setupFigureBridge({
   app:'mifito',
   async loadProject(file,{reconnect}={}) {
     if (busy) throw new Error('画像の処理中です。少し待ってから開き直してください。');
-    if (reconnect && current && source) return;
+    figureBridgePreservedOnReconnect=!!(reconnect&&current&&source);
+    if (figureBridgePreservedOnReconnect) return;
     setBusy(true);
     try {await openProject(file);}
     finally {setBusy(false);}
   },
-  captureResult:captureFigureStudioResult
+  captureResult:captureFigureStudioResult,
+  isDirty:figureBridgeIsDirty,
+  onProjectLoaded(){figureBridgeBaseline=figureBridgePreservedOnReconnect?null:figureBridgeEditState();},
+  onAccepted(result){if(result?.bridgeState)figureBridgeBaseline=result.bridgeState;}
 });
 figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:captureFigureStudioResult,container:'.header-actions',isReady:()=>!busy&&!!current&&!!source});
 
