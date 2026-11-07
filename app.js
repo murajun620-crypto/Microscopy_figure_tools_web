@@ -1,5 +1,6 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=7cd70e7bb054';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=7cd70e7bb054';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b7fea45e7420';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=b7fea45e7420';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=batch-v034-1';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2eface900efb';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=61fc78090acc';
@@ -8,13 +9,13 @@ import { batchExport, exportImage } from './export.js?v=feced3d4df50';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
-import { createProject, readProject } from './project.js?v=d405fbd2a7a4';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e7b5a611c9ef';
+import { createProject, readProject } from './project.js?v=batch-v034-1';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b7fea45e7420';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=7cd70e7bb054';
+import { AppUpdater } from './app-update.js?v=b7fea45e7420';
 import { ImageOverview } from './overview.js?v=63850d438675';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
 import { SamplePicker } from './sample-picker.js?v=bdb0ae3b0b21';
@@ -35,6 +36,9 @@ const sourceHandles=new WeakMap();
 let saveDirectory=null;
 let projectHandle=null;
 let projectName='';
+let figureStudioProjectId=crypto.randomUUID(),figurePreviewProjectId='';
+const figurePreviewCache=new Map(),FIGURE_PREVIEW_LIMIT=96*1024*1024;
+const figureAcknowledgements=createMifitoAcknowledgements();
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
@@ -47,7 +51,7 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,mapRangeScope:$('mapRangeScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {figureStudioProjectId,formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,mapRangeScope:$('mapRangeScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
@@ -451,7 +455,8 @@ async function addFiles(files) {
         settings.panelLabel={...copy(current.settings.panelLabel),visible:true,text:'',subtext:'',position:null};
         settings.output=copy(current.settings.output);
       }
-      const item = { id: crypto.randomUUID(), name: file.name, file, sourceDirectory:sourceFolders.get(file)||null, sourceHandle:sourceHandles.get(file)||null, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
+      const imageId=crypto.randomUUID();
+      const item = { id:imageId,figureStudioImageId:imageId, name: file.name, file, sourceDirectory:sourceFolders.get(file)||null, sourceHandle:sourceHandles.get(file)||null, width: decoded.width, height: decoded.height, thumbnail: await thumbnail(decoded.source), settings, history: new History(settings), enabled: true,barVisible:true,labelVisible:true,labelText:'',subtext:'' };
       items.push(item); added.push(item); total += file.size;
     } catch (error) { errors.push(`${file.name}：${error.message}`); }
     finally { if (decoded) releaseImage(decoded.source); }
@@ -977,6 +982,7 @@ function newProject(){
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.length=0;source=current=plan=null;previewMode='single';
   projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
+  figureStudioProjectId=crypto.randomUUID();figurePreviewCache.clear();figurePreviewProjectId='';
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
   colorTarget=null;recentColors.length=0;clearDownloads();
   for(const input of document.querySelectorAll('input,select,textarea')){
@@ -1083,7 +1089,12 @@ async function restoreUpdateSession(saved){
   }catch(error){for(const item of restored)URL.revokeObjectURL(item.thumbnail);if(activeDecoded)releaseImage(activeDecoded.source);throw error;}
   annotationUI.reset();for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...restored);settingsTransactions.restore(saved.transactions);
-  ({projectHandle,projectName,saveDirectory}=saved);workSaveState.restoreCheckpoint(saved.checkpoint);
+  figureStudioProjectId=saved.ui.figureStudioProjectId||crypto.randomUUID();figurePreviewCache.clear();figurePreviewProjectId='';
+  for(const item of items)item.figureStudioImageId??=item.id;
+  ({projectHandle,projectName,saveDirectory}=saved);
+  let checkpoint=saved.checkpoint;
+  if(!saved.ui.figureStudioProjectId&&typeof checkpoint==='string')try{const value=JSON.parse(checkpoint);value.ui={figureStudioProjectId,...value.ui};checkpoint=JSON.stringify(value);}catch{}
+  workSaveState.restoreCheckpoint(checkpoint);
   const restoreInputs=()=>{for(const entry of saved.inputs){const input=$(entry.id);if(!input||input.type==='file')continue;
     if(input.id==='zoomSelect'&&![...input.options].some(option=>option.value===entry.value))input.add(new Option(zoomText(Number(entry.value)),entry.value));
     input.value=entry.value;if(input.type==='checkbox'||input.type==='radio')input.checked=entry.checked;
@@ -1137,7 +1148,7 @@ async function openProject(file){
       try{
         if(decoded.width!==record.width||decoded.height!==record.height)throw new Error(`${record.name} の画像サイズが設定と一致しません。`);
         buildPlan(record.settings,context);
-        const item={id:crypto.randomUUID(),name:record.name,file:original,width:record.width,height:record.height,thumbnail:await thumbnail(decoded.source),settings:record.settings,history:new History(record.settings),enabled:record.enabled,barVisible:record.settings.scaleBar.visible,labelVisible:record.settings.panelLabel.visible,labelText:record.settings.panelLabel.text,subtext:record.settings.panelLabel.subtext,sourceDirectory:null,sourceHandle:null};
+        const item={id:record.figureStudioImageId,figureStudioImageId:record.figureStudioImageId,name:record.name,file:original,width:record.width,height:record.height,thumbnail:await thumbnail(decoded.source),settings:record.settings,history:new History(record.settings),enabled:record.enabled,barVisible:record.settings.scaleBar.visible,labelVisible:record.settings.panelLabel.visible,labelText:record.settings.panelLabel.text,subtext:record.settings.panelLabel.subtext,sourceDirectory:null,sourceHandle:null};
         restored.push(item);
         if(restored.length-1===project.activeIndex)activeDecoded=decoded;
       }finally{if(decoded!==activeDecoded)releaseImage(decoded.source);}
@@ -1147,6 +1158,7 @@ async function openProject(file){
   // Replace the current work only after every embedded image/settings pair is valid.
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...restored);
+  figureStudioProjectId=project.ui.figureStudioProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   clearDownloads();saveDirectory=null;previewRaw=false;$('zoomSelect').value='fit';
   projectHandle=sourceHandles.get(file)||null;
   projectName=file.name;
@@ -1313,7 +1325,7 @@ async function loadSample(id,count){
       await new Promise(resolve=>setTimeout(resolve,0));
     }
     const labelControls=Object.fromEntries(projectLabelControls.map(id=>{const input=$(id);return [id,input.type==='checkbox'?input.defaultChecked:input.tagName==='SELECT'?([...input.options].find(o=>o.defaultSelected)||input.options[0]).value:input.defaultValue];}));
-    const ui={...projectUI(),formats:['png'],dpi:600,includeSettings:true,cropScope:'batch',barScope:'batch',calibrationScope:'individual',mapRangeScope:'individual',labelApplySelected:false,labelControls};
+    const ui={...projectUI(),figureStudioProjectId:crypto.randomUUID(),formats:['png'],dpi:600,includeSettings:true,cropScope:'batch',barScope:'batch',calibrationScope:'individual',mapRangeScope:'individual',labelApplySelected:false,labelControls};
     const blob=await createProject(records,0,ui);
     await openProject(new File([blob],`sample_${id}.mifito`,{type:'application/octet-stream'}));
     projectName='';projectHandle=null;workSaveState.restoreCheckpoint(null);
@@ -1347,34 +1359,81 @@ function figureBridgeEditState(){return {content:workspaceSnapshot(items,project
 function figureBridgeIsDirty(){
   if(busy||projectSaving||drag||cropStart||measurementStart||pendingInputEdit())return true;
   const state=figureBridgeEditState(),baseline=figureBridgeBaseline;
-  return !baseline||state.content!==baseline.content||state.activeId!==baseline.activeId||state.files.length!==baseline.files.length||state.files.some((file,index)=>file!==baseline.files[index]);
+  return !baseline||state.content!==baseline.content||state.files.length!==baseline.files.length||state.files.some((file,index)=>file!==baseline.files[index]);
 }
-async function captureFigureStudioResult() {
-  if (busy || !current || !source) throw new Error('画像の処理が完了してから反映してください。');
+function syncFigurePreviewCache(identity){
+  if(figurePreviewProjectId!==identity.projectId){figurePreviewCache.clear();figurePreviewProjectId=identity.projectId;}
+  const ids=new Set(identity.images.map(image=>image.imageId));
+  for(const id of figurePreviewCache.keys())if(!ids.has(id))figurePreviewCache.delete(id);
+}
+function cacheFigurePreview(image,preview){
+  if(preview.size>FIGURE_PREVIEW_LIMIT)throw new Error('Figure Studioへ送る画像は合計96 MB以内にしてください。');
+  figurePreviewCache.delete(image.imageId);figurePreviewCache.set(image.imageId,{fingerprint:image.fingerprint,preview});
+  let size=[...figurePreviewCache.values()].reduce((sum,value)=>sum+value.preview.size,0);
+  for(const [id,value]of figurePreviewCache){if(size<=FIGURE_PREVIEW_LIMIT)break;figurePreviewCache.delete(id);size-=value.preview.size;}
+}
+async function captureFigureStudioImages(batch=false) {
+  if (busy || projectSaving || drag || cropStart || measurementStart || !current || !source) throw new Error('画像の処理が完了してから反映してください。');
   if (pendingInputEdit()) throw new Error('入力中の設定を確定してから反映してください。');
   setBusy(true);
   try {
     await document.fonts.ready;
-    const ui = projectUI(), settings = copy(current.settings), image = source,bridgeState=figureBridgeEditState();
-    const project = await createProject(items,items.indexOf(current),ui);
-    const preview = await exportImage(image,settings,'svg');
-    return {project,preview,sourceName:projectName || 'figure.mifito',bridgeState};
+    const activeIndex=items.indexOf(current),ui=projectUI(),bridgeState=figureBridgeEditState();
+    const records=items.map(item=>({...item,settings:copy(item.settings)}));
+    const project=await createProject(records,activeIndex,ui),identity=await readMifitoIdentity(project);
+    syncFigurePreviewCache(identity);
+    const targets=batch?records.map((_,index)=>index):[activeIndex],images=[];let total=0;
+    for(const index of targets){
+      const descriptor=identity.images[index],item=records[index],cached=figurePreviewCache.get(descriptor.imageId);
+      let preview=cached?.fingerprint===descriptor.fingerprint?cached.preview:null;
+      if(!preview){
+        if(item.cropError)throw new Error(`${item.name}：${item.cropError}`);
+        let decoded;
+        try{decoded=await decodeImage(item.file,item);preview=await exportImage(decoded.source,item.settings,'svg');}
+        finally{if(decoded)releaseImage(decoded.source);}
+        cacheFigurePreview(descriptor,preview);
+      }
+      total+=preview.size;if(total>FIGURE_PREVIEW_LIMIT)throw new Error('Figure Studioへ送る画像は合計96 MB以内にしてください。');
+      images.push({...descriptor,preview,...(batch&&figureAcknowledgements.isUnchanged(identity.projectId,descriptor)?{unchanged:true}:{})});
+      if(batch)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    const result={project,sourceName:projectName||'figure.mifito',bridgeState};
+    if(batch)return {...result,batch:{projectId:identity.projectId,images}};
+    const {preview,...image}=images[0];return {...result,preview,image:{projectId:identity.projectId,...image}};
   } finally {setBusy(false);}
+}
+const captureFigureStudioResult=()=>captureFigureStudioImages(false);
+const captureFigureStudioBatch=()=>captureFigureStudioImages(true);
+async function chooseFigureStudioImage(imageId){
+  const item=items.find(item=>item.figureStudioImageId===imageId);
+  if(!item)throw new Error('対象の画像がMiFiTo内にありません。Figure Studioから元プロジェクトを開き直してください。');
+  if(item!==current)await selectItem(item);
+  previewMode='single';render();
 }
 setupFigureBridge({
   app:'mifito',
-  async loadProject(file,{reconnect}={}) {
+  async loadProject(file,{reconnect,imageId}={}) {
     if (busy) throw new Error('画像の処理中です。少し待ってから開き直してください。');
     figureBridgePreservedOnReconnect=!!(reconnect&&current&&source);
-    if (figureBridgePreservedOnReconnect) return;
     setBusy(true);
-    try {await openProject(file);}
+    try {
+      if(!figureBridgePreservedOnReconnect){
+        if(imageId&&!(await readMifitoIdentity(file)).images.some(image=>image.imageId===imageId))throw new Error('元プロジェクトに対象の画像が見つかりません。');
+        await openProject(file);
+      }
+      if(imageId)await chooseFigureStudioImage(imageId);
+    }
     finally {setBusy(false);}
   },
+  async selectImage(imageId){
+    if(busy||projectSaving||drag||cropStart||measurementStart||pendingInputEdit())throw new Error('入力中の編集を確定してから、対象の画像を開き直してください。');
+    setBusy(true);try{await chooseFigureStudioImage(imageId);}finally{setBusy(false);}
+  },
   captureResult:captureFigureStudioResult,
+  captureBatchResult:captureFigureStudioBatch,
   isDirty:figureBridgeIsDirty,
   onProjectLoaded(){figureBridgeBaseline=figureBridgePreservedOnReconnect?null:figureBridgeEditState();},
-  onAccepted(result){if(result?.bridgeState)figureBridgeBaseline=result.bridgeState;}
+  onAccepted(result){figureAcknowledgements.accept(result);figureBridgeBaseline=mergeMifitoBaseline(figureBridgeBaseline,result?.bridgeState,!!result?.batch);}
 });
-figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:captureFigureStudioResult,container:'.header-actions',isReady:()=>!busy&&!!current&&!!source});
+figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:captureFigureStudioResult,captureBatchResult:captureFigureStudioBatch,onAccepted:result=>figureAcknowledgements.accept(result),container:'.header-actions',isReady:()=>!busy&&!projectSaving&&!!current&&!!source});
 

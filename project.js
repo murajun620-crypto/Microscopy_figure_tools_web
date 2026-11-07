@@ -1,4 +1,5 @@
 import { LIMITS, validateSettings, validateSize } from './core.js?v=2eface900efb';
+import {identifyManifest} from './mifito-sync.mjs?v=batch-v034-1';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
 // raster conversion, compression or external resources are needed to reopen it.
@@ -38,10 +39,11 @@ export async function createProject(items, activeIndex, ui) {
   const images = [];
   for (const item of items) {
     if (item.cropError) throw new Error(`${item.name}：${item.cropError}`);
-    images.push({name:item.name,type:item.file.type,bytes:item.file.size,lastModified:item.file.lastModified ?? 0,width:item.width,height:item.height,enabled:item.enabled,settings:structuredClone(item.settings),sha256:await digest(item.file)});
+    images.push({figureStudioImageId:item.figureStudioImageId||item.id||crypto.randomUUID(),name:item.name,type:item.file.type,bytes:item.file.size,lastModified:item.file.lastModified ?? 0,width:item.width,height:item.height,enabled:item.enabled,settings:structuredClone(item.settings),sha256:await digest(item.file)});
   }
-  const data = {application:'MiFiTo',version:1,activeIndex,ui:structuredClone(ui),images};
+  const data = {application:'MiFiTo',version:1,activeIndex,ui:{...structuredClone(ui),figureStudioProjectId:ui.figureStudioProjectId||crypto.randomUUID()},images};
   validateManifest(data);
+  await identifyManifest(data);
   const manifest = new TextEncoder().encode(JSON.stringify(data));
   if (manifest.length > MANIFEST_LIMIT) throw new Error('プロジェクトの設定が大きすぎます。');
   const header = new Uint8Array(HEADER_BYTES); header.set(MAGIC);
@@ -58,6 +60,9 @@ export async function readProject(blob) {
   let data;
   try { data = JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await blob.slice(HEADER_BYTES,HEADER_BYTES+length).arrayBuffer())); } catch { fail(); }
   if (HEADER_BYTES + length + validateManifest(data) !== blob.size) fail();
+  const identity=await identifyManifest(data);
+  data.ui.figureStudioProjectId=identity.projectId;
+  data.images.forEach((image,index)=>image.figureStudioImageId=identity.images[index].imageId);
   let offset = HEADER_BYTES + length;
   const images = [];
   for (const image of data.images) {
