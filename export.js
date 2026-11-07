@@ -1,15 +1,15 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=2eface900efb';
-import { numberedLabel } from './label-numbering.js?v=0f77e4ec1a4c';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=61fc78090acc';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=7adb68ee7f24';
-import { inlinePlain } from './inline-text.js';
-import { pngWithDpi } from './png.js';
-import { jpegWithDpi } from './jpeg.js';
-import { outputBase, extensionFor } from './save-files.js?v=c742417965da';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=79b671978f24';
+import { numberedLabel } from './label-numbering.js?v=79b671978f24';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=79b671978f24';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=79b671978f24';
+import { inlinePlain } from './inline-text.js?v=79b671978f24';
+import { pngWithDpi } from './png.js?v=79b671978f24';
+import { jpegWithDpi } from './jpeg.js?v=79b671978f24';
+import { outputBase, extensionFor } from './save-files.js?v=79b671978f24';
 
-export async function exportImage(source, settings, format) {
+export async function exportImage(source, settings, format,options={}) {
   if (format === 'svg') {
-    const { markup } = renderSvg(source, settings);
+    const { markup } = renderSvg(source, settings,options);
     return new Blob([markup], { type: 'image/svg+xml' });
   }
   const { canvas, plan, metrics } = format === 'pdf' ? renderCanvas(source, settings,{annotations:false}) : renderRaster(source, settings);
@@ -19,7 +19,7 @@ export async function exportImage(source, settings, format) {
     if (format === 'jpeg' || format === 'bmp') {
       const context=canvas.getContext('2d');context.globalCompositeOperation='destination-over';context.fillStyle=settings.scaleBar.outsideColor;context.fillRect(0,0,canvas.width,canvas.height);context.globalCompositeOperation='source-over';
       if(format==='jpeg') {const blob=await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('JPEGを生成できませんでした。')),'image/jpeg',1));return new Blob([jpegWithDpi(new Uint8Array(await blob.arrayBuffer()),metrics.dpi)],{type:'image/jpeg'});}
-      const {encodeBmp}=await import('./bmp.js');return new Blob([encodeBmp(context.getImageData(0,0,canvas.width,canvas.height),metrics.dpi)],{type:'image/bmp'});
+      const {encodeBmp}=await import('./bmp.js?v=79b671978f24');return new Blob([encodeBmp(context.getImageData(0,0,canvas.width,canvas.height),metrics.dpi)],{type:'image/bmp'});
     }
     if (format === 'pdf') {
       await loadScript('pdf-lib.min.js');

@@ -1,4 +1,4 @@
-import { filePickerOptions } from './ui-common.js?v=a2289c8d0436';
+import { filePickerOptions } from './ui-common.js?v=79b671978f24';
 
 export async function prepareProjectSave({handle=null,saveAs=false,name,startIn,fallback},host=window) {
   let target=saveAs?null:handle;

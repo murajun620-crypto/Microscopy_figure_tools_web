@@ -1,6 +1,6 @@
-import { defaultSettings, validateSettings } from './core.js?v=2eface900efb';
-import { MAP_PALETTES } from './map-colorbar.js?v=483d3519e0c1';
-import { newAnnotation } from './annotations.js?v=f0f0548434a2';
+import { defaultSettings, validateSettings } from './core.js?v=79b671978f24';
+import { MAP_PALETTES } from './map-colorbar.js?v=79b671978f24';
+import { newAnnotation } from './annotations.js?v=79b671978f24';
 
 // Original, deterministic synthetic images. These illustrate editing, not measurements of real specimens.
 export const SAMPLE_GROUPS=[{id:'all',title:'すべて'},{id:'microscopy',title:'顕微鏡画像'},{id:'maps',title:'表面・マップ'},{id:'measure',title:'計測・注釈'}];

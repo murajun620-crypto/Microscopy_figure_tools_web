@@ -1,6 +1,6 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=f0f0548434a2';
-import { paintMeasurements } from './annotation-render.js?v=32064deaf5ae';
-import { showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=79b671978f24';
+import { paintMeasurements } from './annotation-render.js?v=79b671978f24';
+import { showDialog } from './movable-dialog.js?v=79b671978f24';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
 export class AnnotationUI {
   constructor(api){

@@ -1,5 +1,5 @@
-import { LIMITS, validateSettings, validateSize } from './core.js?v=2eface900efb';
-import {identifyManifest} from './mifito-sync.mjs?v=batch-v034-1';
+import { LIMITS, validateSettings, validateSize } from './core.js?v=79b671978f24';
+import {identifyManifest} from './mifito-sync.mjs?v=79b671978f24';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
 // raster conversion, compression or external resources are needed to reopen it.

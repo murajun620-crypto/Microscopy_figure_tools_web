@@ -1,5 +1,5 @@
-import { SAMPLES, SAMPLE_GROUPS, sampleRaster } from './samples.js?v=6fd1472c81d2';
-import { showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
+import { SAMPLES, SAMPLE_GROUPS, sampleRaster } from './samples.js?v=79b671978f24';
+import { showDialog } from './movable-dialog.js?v=79b671978f24';
 
 const $=id=>document.getElementById(id);
 export class SamplePicker{

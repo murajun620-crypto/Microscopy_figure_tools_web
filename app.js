@@ -1,30 +1,30 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b7fea45e7420';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=b7fea45e7420';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=batch-v034-1';
-import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2eface900efb';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=61fc78090acc';
-import { buildPlan, paint } from './render.js?v=7adb68ee7f24';
-import { batchExport, exportImage } from './export.js?v=feced3d4df50';
-import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2392df780d4a';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
-import { createProject, readProject } from './project.js?v=batch-v034-1';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b7fea45e7420';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
-import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
-import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=b7fea45e7420';
-import { ImageOverview } from './overview.js?v=63850d438675';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
-import { SamplePicker } from './sample-picker.js?v=bdb0ae3b0b21';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=6fd1472c81d2';
-import { prepareProjectSave } from './project-save.js?v=c99699605d41';
-import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
-import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
-import { estimateSourcePalette } from './palette-estimation.js?v=653a8e5f0eb1';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=483d3519e0c1';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=79b671978f24';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=79b671978f24';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=79b671978f24';
+import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=79b671978f24';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=79b671978f24';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=79b671978f24';
+import { buildPlan, paint } from './render.js?v=79b671978f24';
+import { batchExport, exportImage } from './export.js?v=79b671978f24';
+import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=79b671978f24';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=79b671978f24';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=79b671978f24';
+import { createProject, readProject } from './project.js?v=79b671978f24';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=79b671978f24';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=79b671978f24';
+import { prepareScaleBar } from './bar-workflow.js?v=79b671978f24';
+import { prepareCalibration } from './calibration-workflow.js?v=79b671978f24';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=79b671978f24';
+import { AppUpdater } from './app-update.js?v=79b671978f24';
+import { ImageOverview } from './overview.js?v=79b671978f24';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=79b671978f24';
+import { SamplePicker } from './sample-picker.js?v=79b671978f24';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=79b671978f24';
+import { prepareProjectSave } from './project-save.js?v=79b671978f24';
+import { AnnotationUI } from './annotation-ui.js?v=79b671978f24';
+import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=79b671978f24';
+import { estimateSourcePalette } from './palette-estimation.js?v=79b671978f24';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=79b671978f24';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -70,6 +70,9 @@ function pendingInputEdit() {
     const expected=crop[key]-(key==='x'?current.settings.crop.x:key==='y'?current.settings.crop.y:0);
     if($(id).value===''||Number($(id).value)!==expected)return true;
   }
+  const studioSize=current.settings.output.studioSize??null;
+  if($('studioSizeEnabled').checked!==!!studioSize)return true;
+  if(studioSize&&($('studioSizeAxis').value!==studioSize.axis||$('studioSizeMm').value===''||Number($('studioSizeMm').value)!==studioSize.mm))return true;
   return false;
 }
 function hasUnsavedWork() {
@@ -243,6 +246,7 @@ function setBusy(value) {
   for(const id of ['settingsInput','openSettingsButton','settingsSaveMenuButton','saveSettingsButton','saveSessionButton'])$(id).disabled=value||!current;
   if(value||!current)closeSettingsSaveMenu();
   $('saveDpi').disabled=value||!current;
+  syncStudioSizeControls();
   for (const id of ['imageInput', 'folderInput', 'demoButton', 'multiDemoButton', 'emptyDemoButton', 'emptySingleDemoButton', 'emptyOpenButton','removeAllButton','openSourceFolder','moveImageUp','moveImageDown','labelApplySelected']) $(id).disabled = value || (['moveImageUp','moveImageDown'].includes(id) && !current);
   $('editingControls').disabled = value || !current;
   for (const input of $('imageList').querySelectorAll('input, button')) input.disabled = value;
@@ -291,6 +295,7 @@ function syncInputs() {
     if (input.type === 'checkbox') input.checked = value; else input.value = value ?? '';
   }
   syncOpacityFields();
+  syncStudioSizeControls(true);
   $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = current.settings.panelLabel.anchor;
   const c = current.settings.crop;
   const imageCrop=current.imageCrop;
@@ -308,6 +313,35 @@ function syncInputs() {
   for(const row of $('imageList').children) {const item=items.find(item=>item.id===row.dataset.imageId);if(item)for(const input of row.querySelectorAll('[data-item-key]')){const value=item[input.dataset.itemKey];if(input.type==='checkbox')input.checked=value;else input.value=value??'';}}
   updateLabelFormat();setBusy(busy);
 }
+
+function syncStudioSizeControls(reset=false){
+  const size=current?.settings.output.studioSize??null;
+  if(reset||!current){$('studioSizeEnabled').checked=!!size;$('studioSizeAxis').value=size?.axis??'width';$('studioSizeMm').value=size?.mm??40;}
+  $('studioSizeEnabled').disabled=busy||!current;
+  $('studioSizeAxis').disabled=$('studioSizeMm').disabled=busy||!current||!$('studioSizeEnabled').checked;
+  $('applyStudioSizeToAllButton').disabled=busy||!current||items.length<2;
+  $('studioSizeScope').textContent=current?`設定対象：${current.name}`:'画像なし';
+  $('studioSizeScope').title=current?.name??'';
+}
+function applyStudioSize(all=false){
+  if(busy||!current)return;
+  try{
+    let size=null;
+    if($('studioSizeEnabled').checked){
+      const axis=$('studioSizeAxis').value,mm=$('studioSizeMm').valueAsNumber;
+      if(!['width','height'].includes(axis)||!$('studioSizeMm').checkValidity()||!Number.isFinite(mm)||mm<0.1||mm>1000)throw new Error('Studioに貼る画像本体のサイズは0.1〜1000 mmで入力してください。');
+      size={axis,mm};
+    }
+    const updates=(all?items:[current]).map(item=>{const settings=copy(item.settings);settings.output.studioSize=copy(size);return {item,settings:validateSettings(settings,item.width,item.height)};});
+    for(const update of updates)buildPlan(update.settings,context);
+    settingsTransactions.apply(updates,{clearCropError:false,origin:current});
+    syncInputs();render();
+    if(all)notify(`全${items.length}枚にStudioへ貼るサイズ設定を適用しました。`);
+  }catch(error){notify(error.message,true);syncStudioSizeControls(true);scheduleWorkState();}
+}
+for(const id of ['studioSizeEnabled','studioSizeAxis','studioSizeMm'])$(id).addEventListener('change',()=>applyStudioSize());
+$('studioSizeMm').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();event.currentTarget.blur();}});
+$('applyStudioSizeToAllButton').addEventListener('click',()=>applyStudioSize(true));
 
 function syncOpacityFields(){
   for(const input of document.querySelectorAll('[data-opacity-for]'))input.value=Math.round(Number($(input.dataset.opacityFor).value)*100);
@@ -345,7 +379,7 @@ function shareSettings(section){
   const template=current.settings;
   for(const item of items)if(item!==current){
     if(section==='panelLabel'){const p=item.settings.panelLabel;item.settings.panelLabel={...copy(template.panelLabel),visible:p.visible,text:p.text,subtext:p.subtext,position:p.position};}
-    else if(section==='output')item.settings.output=copy(template.output);
+    else if(section==='output')item.settings.output={...copy(template.output),studioSize:copy(item.settings.output.studioSize??null)};
     item.history.push(item.settings);
   }
   scheduleWorkState();
@@ -863,6 +897,7 @@ function undo(redo = false) {
     for(const section of ['panelLabel','output']){
       const old=copy(before[section]),next=copy(current.settings[section]);
       if(section==='panelLabel')for(const key of ['visible','text','subtext','position']){delete old[key];delete next[key];}
+      if(section==='output'){delete old.studioSize;delete next.studioSize;}
       if(JSON.stringify(old)!==JSON.stringify(next))shareSettings(section);
     }
   }
@@ -1389,7 +1424,7 @@ async function captureFigureStudioImages(batch=false) {
       if(!preview){
         if(item.cropError)throw new Error(`${item.name}：${item.cropError}`);
         let decoded;
-        try{decoded=await decodeImage(item.file,item);preview=await exportImage(decoded.source,item.settings,'svg');}
+        try{decoded=await decodeImage(item.file,item);preview=await exportImage(decoded.source,item.settings,'svg',{forStudio:true});}
         finally{if(decoded)releaseImage(decoded.source);}
         cacheFigurePreview(descriptor,preview);
       }

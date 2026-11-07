@@ -1,8 +1,9 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=2eface900efb';
-import { inlineRuns } from './inline-text.js';
-import { measurementLayout } from './annotations.js?v=f0f0548434a2';
-import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=32064deaf5ae';
-import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=483d3519e0c1';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=79b671978f24';
+import { inlineRuns } from './inline-text.js?v=79b671978f24';
+import { measurementLayout } from './annotations.js?v=79b671978f24';
+import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=79b671978f24';
+import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=79b671978f24';
+import {studioSvgSize} from './studio-size.mjs?v=79b671978f24';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;
@@ -137,6 +138,7 @@ const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 export function renderSvg(source,settings,options={}) {
   const {canvas,plan,metrics}=renderCanvas(source,settings,{annotations:false,...options});
   const base=canvas.toDataURL('image/png');canvas.width=canvas.height=0;
+  const studio=options.forStudio===true?studioSvgSize(plan,settings.output.studioSize):null;
   const elements=[`<image width="${metrics.width}" height="${metrics.height}" href="${base}"/>`];
   for(const box of plan.annotations) {
     const s=box.style,shapes=[],r=box.backgroundRect,b=box.barRect;
@@ -147,5 +149,7 @@ export function renderSvg(source,settings,options={}) {
   }
   elements.push(measurementsSvg(plan));
   elements.push(mapColorbarSvg(plan));
-  return {markup:`<svg xmlns="http://www.w3.org/2000/svg" width="${metrics.widthCm}cm" height="${metrics.heightCm}cm" viewBox="0 0 ${metrics.width} ${metrics.height}">${elements.join('')}</svg>`,metrics};
+  const dimensions=studio?`width="${studio.widthMm}mm" height="${studio.heightMm}mm" data-mifito-body-width-mm="${studio.bodyWidthMm}" data-mifito-body-height-mm="${studio.bodyHeightMm}"`:`width="${metrics.widthCm}cm" height="${metrics.heightCm}cm"`;
+  const physicalMetrics=studio?{...metrics,widthCm:studio.widthMm/10,heightCm:studio.heightMm/10,dpi:metrics.width/studio.widthMm*25.4}:metrics;
+  return {markup:`<svg xmlns="http://www.w3.org/2000/svg" ${dimensions} viewBox="0 0 ${metrics.width} ${metrics.height}">${elements.join('')}</svg>`,metrics:physicalMetrics};
 }

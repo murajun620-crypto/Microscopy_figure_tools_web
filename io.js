@@ -1,6 +1,6 @@
-import { LIMITS, validateSize } from './core.js?v=2eface900efb';
-import { rasterSize } from './image-header.js';
-import { identity, multiply, svgCoordinate, svgLength, svgRasterPlan, svgTransform, transformedImage } from './svg-geometry.js?v=8bc86bf5a285';
+import { LIMITS, validateSize } from './core.js?v=79b671978f24';
+import { rasterSize } from './image-header.js?v=79b671978f24';
+import { identity, multiply, svgCoordinate, svgLength, svgRasterPlan, svgTransform, transformedImage } from './svg-geometry.js?v=79b671978f24';
 
 export const SUPPORTED = /\.(png|jpe?g|bmp|svg|tiff?)$/i;
 const scripts = new Map();
@@ -116,7 +116,7 @@ let worker = null, nextRequest = 0;
 const requests = new Map();
 function tiffRequest(action, payload, transfer = []) {
   if (!worker) {
-    worker = new Worker(new URL('./tiff-worker.js', import.meta.url));
+    worker = new Worker(new URL('./tiff-worker.js?v=79b671978f24', import.meta.url));
     worker.onmessage = ({ data }) => {
       const request = requests.get(data.id); if (!request) return;
       requests.delete(data.id); clearTimeout(request.timer);
