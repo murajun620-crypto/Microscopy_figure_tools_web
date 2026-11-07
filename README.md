@@ -1,3 +1,5 @@
+更新 1.9.11: Studioから開くたびに対象のプロジェクトと画像を確認します。同一プロジェクトの別画像へは未反映の編集を保持して切り替え、保存済みの別プロジェクトからは元のプロジェクトを読み込みます。
+
 # MiFiTo Web v1.9.10
 
 [Webアプリを開く](https://murajun620-crypto.github.io/Microscopy_figure_tools_web/)

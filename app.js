@@ -1,5 +1,5 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b307f808f67c';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=b307f808f67c';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=253e6d7a3612';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=253e6d7a3612';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=5f27e729adf3';
@@ -10,12 +10,12 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=5f27e729adf3';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5f27e729adf3';
 import { createProject, readProject } from './project.js?v=5f27e729adf3';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=5f27e729adf3';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=253e6d7a3612';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5f27e729adf3';
 import { prepareScaleBar } from './bar-workflow.js?v=5f27e729adf3';
 import { prepareCalibration } from './calibration-workflow.js?v=5f27e729adf3';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5f27e729adf3';
-import { AppUpdater } from './app-update.js?v=5f27e729adf3';
+import { AppUpdater } from './app-update.js?v=253e6d7a3612';
 import { ImageOverview } from './overview.js?v=5f27e729adf3';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5f27e729adf3';
 import { SamplePicker } from './sample-picker.js?v=5f27e729adf3';
@@ -1478,7 +1478,12 @@ function figureStudioProjectLoaded(){if(!figureBridgePreservedOnReconnect)figure
 figureStudioBridge=setupFigureBridge({
   app:'mifito',
   startDetached:items.length>0,
-  hasContent:()=>items.length>0,
+  hasContent:()=>items.length>0&&(pendingInputEdit()||!!drag||!!cropStart||!!measurementStart||workSaveState.isDirty(workspaceSnapshot(items,projectUI()),true)),
+  async canReuseProject({project,imageId}){
+    if(!current||!source||busy||projectSaving||pendingInputEdit()||drag||cropStart||measurementStart)return false;
+    const identity=await readMifitoIdentity(project);
+    return identity.projectId===figureStudioProjectId&&(!imageId||identity.images.some(image=>image.imageId===imageId)&&items.some(item=>item.id===imageId));
+  },
   canAdoptAccepted(result){
     if((result?.batch?.projectId??result?.image?.projectId)!==figureStudioProjectId||!Array.isArray(result?.bridgeState?.files)||items.length!==result.bridgeState.files.length)return false;
     const files=[...result.bridgeState.files];
@@ -1487,11 +1492,12 @@ figureStudioBridge=setupFigureBridge({
   onConnectionChange(connected){figureStudioDirectSender?.setBridgeConnected(connected);},
   async loadProject(file,{reconnect,imageId}={}) {
     if (busy) throw new Error('画像の処理中です。少し待ってから開き直してください。');
-    figureBridgePreservedOnReconnect=!!(reconnect&&current&&source);
     setBusy(true);
     try {
+      const requested=await readMifitoIdentity(file);
+      if(imageId&&!requested.images.some(image=>image.imageId===imageId))throw new Error('元プロジェクトに対象の画像が見つかりません。');
+      figureBridgePreservedOnReconnect=!!(reconnect&&current&&source&&requested.projectId===figureStudioProjectId&&(!imageId||items.some(item=>item.id===imageId)));
       if(!figureBridgePreservedOnReconnect){
-        if(imageId&&!(await readMifitoIdentity(file)).images.some(image=>image.imageId===imageId))throw new Error('元プロジェクトに対象の画像が見つかりません。');
         await openProject(file,{fromBridge:true});
       }
       if(imageId)await chooseFigureStudioImage(imageId);
