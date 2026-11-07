@@ -33,20 +33,20 @@ test('without a colorbar the cropped width is used rather than outside bands',()
  const size=studioSvgSize(noBar,{axis:'height',mm:40});
  assert.deepEqual(size,{widthMm:60,heightMm:48,bodyWidthMm:60,bodyHeightMm:40});
 });
-test('absent Studio settings leave legacy geometry unchanged',()=>{
- assert.equal(studioSvgSize(null,null),null);assert.equal(studioSvgSize({},undefined),null);
+test('absent Studio settings adopt the always-on 40 mm body height',()=>{
+ assert.throws(()=>studioSvgSize(null,null));assert.throws(()=>studioSvgSize({},undefined));assert.equal(studioSvgSize(plan,null).bodyHeightMm,40);
  const settings=defaultSettings(300,200);delete settings.output.studioSize;
- assert.equal(validateSettings(settings,300,200).output.studioSize,null);
+ assert.deepEqual(validateSettings(settings,300,200).output.studioSize,{axis:'height',mm:40});
  const original=outputMetrics(plan,settings.output);settings.output.studioSize={axis:'width',mm:60};
  assert.deepEqual(outputMetrics(plan,settings.output),original);
 });
 
-test('older Web and desktop settings retain legacy fit instead of adopting the new default',()=>{
+test('older Web and desktop settings also adopt the always-on default',()=>{
  const image={name:'legacy.png',width:300,height:200},saved=serializeProject(defaultSettings(300,200),image);
  delete saved.settings.output.studioSize;
- assert.equal(parseProject(saved,image).output.studioSize,null);
+ assert.deepEqual(parseProject(saved,image).output.studioSize,{axis:'height',mm:40});
  delete saved.application;delete saved.settings;
- assert.equal(parseProject(saved,image).output.studioSize,null);
+ assert.deepEqual(parseProject(saved,image).output.studioSize,{axis:'height',mm:40});
 });
 test('invalid requests and body geometry cannot produce misleading physical dimensions',()=>{
  for(const size of [{axis:'both',mm:40},{axis:'width',mm:0},{axis:'height',mm:1001},{axis:'height',mm:Infinity},{axis:'height',mm:NaN},{axis:'width',mm:'40'},[],false])assert.throws(()=>validateStudioSize(size));
@@ -58,16 +58,16 @@ test('Studio size survives image settings JSON and per-image session serializati
  a.settings.output.studioSize={axis:'width',mm:60};b.settings.output.studioSize={axis:'height',mm:25};
  c.settings.output.studioSize=null;
  assert.deepEqual(parseProject(serializeProject(a.settings,a),a).output.studioSize,a.settings.output.studioSize);
- assert.equal(parseProject(serializeProject(c.settings,c),c).output.studioSize,null);
+ assert.deepEqual(parseProject(serializeProject(c.settings,c),c).output.studioSize,{axis:'height',mm:40});
  const restored=parseSession(sessionProject([a,b,c],a.settings.output),[a,b,c]);
- assert.deepEqual(restored.map(row=>row.settings.output.studioSize),[a.settings.output.studioSize,b.settings.output.studioSize,null]);
+ assert.deepEqual(restored.map(row=>row.settings.output.studioSize),[a.settings.output.studioSize,b.settings.output.studioSize,{axis:'height',mm:40}]);
 });
 
 test('MiFiTo project roundtrip preserves default height, explicit width, disabled and legacy missing sizes',async()=>{
  const items=['default','custom','disabled','legacy'].map(name=>({id:crypto.randomUUID(),name:`${name}.png`,file:new File(['source bytes'],`${name}.png`,{type:'image/png',lastModified:1}),width:300,height:200,enabled:true,settings:defaultSettings(300,200)}));
  items[1].settings.output.studioSize={axis:'width',mm:65};items[2].settings.output.studioSize=null;delete items[3].settings.output.studioSize;
  const saved=await createProject(items,0,{formats:['png'],dpi:600,includeSettings:true,colorMode:'simple'}),restored=await readProject(saved);
- assert.deepEqual(restored.images.map(image=>image.settings.output.studioSize),[{axis:'height',mm:40},{axis:'width',mm:65},null,null]);
+ assert.deepEqual(restored.images.map(image=>image.settings.output.studioSize),[{axis:'height',mm:40},{axis:'width',mm:65},{axis:'height',mm:40},{axis:'height',mm:40}]);
 });
 
 test('extreme image aspect ratios and outer bands cannot exceed Studio physical limits',()=>{
@@ -89,7 +89,7 @@ test('only explicit Studio SVG export emits body dimensions and ordinary SVG sta
   const studio=renderSvg({},settings,{forStudio:true});
   assert.match(studio.markup,/width="60mm" height="40mm"/);assert.match(studio.markup,/data-mifito-body-width-mm="60" data-mifito-body-height-mm="40"/);assert.equal(studio.metrics.widthCm,6);
   const exported=await exportImage({},settings,'svg',{forStudio:true});assert.equal(await exported.text(),studio.markup);
-  settings.output.studioSize=null;const legacy=renderSvg({},settings,{forStudio:true}).markup;assert.match(legacy,/width="4cm"/);assert.doesNotMatch(legacy,/data-mifito-body/);
+  settings.output.studioSize=null;const legacy=renderSvg({},settings,{forStudio:true}).markup;assert.match(legacy,/data-mifito-body-height-mm="40"/);
  }finally{if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;}
 });
 

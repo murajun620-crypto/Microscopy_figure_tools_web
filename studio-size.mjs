@@ -1,6 +1,6 @@
 /** Physical size of the cropped image body when inserting into Figure Studio. */
 export function validateStudioSize(size){
- if(size==null)return null;
+ if(size==null)return {axis:'height',mm:40};
  if(typeof size!=='object'||Array.isArray(size)||!['width','height'].includes(size.axis)||!Number.isFinite(size.mm)||size.mm<.1||size.mm>1000)throw new Error('Studioの画像サイズは幅または高さを0.1〜1000 mmで指定してください。');
  return {axis:size.axis,mm:size.mm};
 }

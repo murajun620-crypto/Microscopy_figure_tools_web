@@ -2,24 +2,24 @@ import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b307
 import {setupDirectSendButton} from './direct-transfer.mjs?v=b307f808f67c';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=b307f808f67c';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=b307f808f67c';
-import { buildPlan, paint } from './render.js?v=67344ecb39f9';
-import { batchExport, exportImage } from './export.js?v=67344ecb39f9';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=5f27e729adf3';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=5f27e729adf3';
+import { buildPlan, paint } from './render.js?v=5f27e729adf3';
+import { batchExport, exportImage } from './export.js?v=5f27e729adf3';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=b307f808f67c';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=b307f808f67c';
-import { createProject, readProject } from './project.js?v=b307f808f67c';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=67344ecb39f9';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=b307f808f67c';
-import { prepareScaleBar } from './bar-workflow.js?v=b307f808f67c';
-import { prepareCalibration } from './calibration-workflow.js?v=b307f808f67c';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=b307f808f67c';
-import { AppUpdater } from './app-update.js?v=67344ecb39f9';
-import { ImageOverview } from './overview.js?v=67344ecb39f9';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=b307f808f67c';
-import { SamplePicker } from './sample-picker.js?v=b307f808f67c';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=b307f808f67c';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=5f27e729adf3';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5f27e729adf3';
+import { createProject, readProject } from './project.js?v=5f27e729adf3';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=5f27e729adf3';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5f27e729adf3';
+import { prepareScaleBar } from './bar-workflow.js?v=5f27e729adf3';
+import { prepareCalibration } from './calibration-workflow.js?v=5f27e729adf3';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5f27e729adf3';
+import { AppUpdater } from './app-update.js?v=5f27e729adf3';
+import { ImageOverview } from './overview.js?v=5f27e729adf3';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5f27e729adf3';
+import { SamplePicker } from './sample-picker.js?v=5f27e729adf3';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=5f27e729adf3';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
 import { AnnotationUI } from './annotation-ui.js?v=b307f808f67c';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
@@ -72,9 +72,8 @@ function pendingInputEdit() {
     const expected=crop[key]-(key==='x'?current.settings.crop.x:key==='y'?current.settings.crop.y:0);
     if($(id).value===''||Number($(id).value)!==expected)return true;
   }
-  const studioSize=current.settings.output.studioSize??null;
-  if($('studioSizeEnabled').checked!==!!studioSize)return true;
-  if(studioSize&&($('studioSizeAxis').value!==studioSize.axis||$('studioSizeMm').value===''||Number($('studioSizeMm').value)!==studioSize.mm))return true;
+  const studioSize=current.settings.output.studioSize??{axis:'height',mm:40};
+  if($('studioSizeAxis').value!==studioSize.axis||$('studioSizeMm').value===''||Number($('studioSizeMm').value)!==studioSize.mm)return true;
   return false;
 }
 function hasUnsavedWork() {
@@ -318,10 +317,9 @@ function syncInputs() {
 }
 
 function syncStudioSizeControls(reset=false){
-  const size=current?current.settings.output.studioSize??null:{axis:'height',mm:40};
-  if(reset||!current){$('studioSizeEnabled').checked=!!size;$('studioSizeAxis').value=size?.axis??'height';$('studioSizeMm').value=size?.mm??40;}
-  $('studioSizeEnabled').disabled=busy||!current;
-  $('studioSizeAxis').disabled=$('studioSizeMm').disabled=busy||!current||!$('studioSizeEnabled').checked;
+  const size=current?.settings.output.studioSize??{axis:'height',mm:40};
+  if(reset||!current){$('studioSizeAxis').value=size.axis;$('studioSizeMm').value=size.mm;}
+  $('studioSizeAxis').disabled=$('studioSizeMm').disabled=busy||!current;
   $('studioSizeAll').disabled=busy||!current;
   $('studioSizeScope').textContent=current?($('studioSizeAll').checked?`設定対象：全${items.length}枚`:`設定対象：${current.name}`):'画像なし';
   $('studioSizeScope').title=current?($('studioSizeAll').checked?'サイズを変更すると全画像に適用します。':current.name):'';
@@ -329,12 +327,9 @@ function syncStudioSizeControls(reset=false){
 function applyStudioSize(all=$('studioSizeAll').checked){
   if(busy||!current)return;
   try{
-    let size=null;
-    if($('studioSizeEnabled').checked){
-      const axis=$('studioSizeAxis').value,mm=$('studioSizeMm').valueAsNumber;
-      if(!['width','height'].includes(axis)||!$('studioSizeMm').checkValidity()||!Number.isFinite(mm)||mm<0.1||mm>1000)throw new Error('Studioに貼る画像本体のサイズは0.1〜1000 mmで入力してください。');
-      size={axis,mm};
-    }
+    const axis=$('studioSizeAxis').value,mm=$('studioSizeMm').valueAsNumber;
+    if(!['width','height'].includes(axis)||!$('studioSizeMm').checkValidity()||!Number.isFinite(mm)||mm<0.1||mm>1000)throw new Error('Studioに貼る画像本体のサイズは0.1〜1000 mmで入力してください。');
+    const size={axis,mm};
     const updates=(all?items:[current]).map(item=>{const settings=copy(item.settings);settings.output.studioSize=copy(size);return {item,settings:validateSettings(settings,item.width,item.height)};});
     for(const update of updates)buildPlan(update.settings,context);
     settingsTransactions.apply(updates,{clearCropError:false,origin:current});
@@ -342,11 +337,11 @@ function applyStudioSize(all=$('studioSizeAll').checked){
     if(all)notify(`全${items.length}枚にStudioへ貼るサイズ設定を適用しました。`);
   }catch(error){notify(error.message,true);syncStudioSizeControls(true);scheduleWorkState();}
 }
-for(const id of ['studioSizeEnabled','studioSizeAxis','studioSizeMm'])$(id).addEventListener('change',()=>applyStudioSize());
+for(const id of ['studioSizeAxis','studioSizeMm'])$(id).addEventListener('change',()=>applyStudioSize());
 $('studioSizeMm').addEventListener('keydown',event=>{
  if(event.key!=='Enter')return;event.preventDefault();event.currentTarget.blur();
  if(!current||busy)return;
- const size=$('studioSizeEnabled').checked?{axis:$('studioSizeAxis').value,mm:$('studioSizeMm').valueAsNumber}:null;
+ const size={axis:$('studioSizeAxis').value,mm:$('studioSizeMm').valueAsNumber};
  if(($('studioSizeAll').checked?items:[current]).some(item=>JSON.stringify(item.settings.output.studioSize??null)!==JSON.stringify(size)))applyStudioSize();
 });
 $('studioSizeAll').addEventListener('change',()=>{if($('studioSizeAll').checked)applyStudioSize(true);syncStudioSizeControls();scheduleWorkState();});

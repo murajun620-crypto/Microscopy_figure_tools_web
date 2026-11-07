@@ -13,7 +13,7 @@ const implementation=source.slice(begin,end);
 
 function environment({plan=buildPlan}={}){
  const controls=new Map(),messages=[];
- for(const id of ['studioSizeEnabled','studioSizeAxis','studioSizeMm','studioSizeAll','studioSizeScope']){
+ for(const id of ['studioSizeAxis','studioSizeMm','studioSizeAll','studioSizeScope']){
   const markup=html.match(new RegExp(`<[^>]+id="${id}"[^>]*>`))?.[0]||'',listeners=new Map();
   controls.set(id,{checked:/\bchecked\b/.test(markup),value:id==='studioSizeAxis'?'height':id==='studioSizeMm'?'40':'',disabled:true,valid:true,
    get valueAsNumber(){return Number(this.value);},checkValidity(){return this.valid&&this.value!==''&&Number.isFinite(this.valueAsNumber)&&this.valueAsNumber>=.1&&this.valueAsNumber<=1000;},
@@ -29,7 +29,7 @@ function environment({plan=buildPlan}={}){
 }
 
 test('checked default scope applies a size edit to every image without sharing mutable settings',()=>{
- const e=environment();assert.equal(e.$('studioSizeAll').checked,true);assert.equal(e.$('studioSizeEnabled').checked,true);assert.equal(e.$('studioSizeAxis').value,'height');assert.equal(Number(e.$('studioSizeMm').value),40);
+ const e=environment();assert.equal(e.$('studioSizeAll').checked,true);assert.equal(e.$('studioSizeAxis').value,'height');assert.equal(Number(e.$('studioSizeMm').value),40);
  e.$('studioSizeMm').value='55';e.$('studioSizeMm').change();
  assert.deepEqual(e.sizes(),Array.from({length:3},()=>({axis:'height',mm:55})));
  assert.match(e.$('studioSizeScope').textContent,/全3枚/);
@@ -54,10 +54,8 @@ test('one Undo and Redo covers the whole batch, including an unchanged current i
  assert.ok(e.items.every(item=>item.cropError==='existing crop warning'));
 });
 
-test('disabling size with all-images selected clears every size in one undoable action',()=>{
- const e=environment();e.$('studioSizeEnabled').checked=false;e.$('studioSizeEnabled').change();
- assert.deepEqual(e.sizes(),[null,null,null]);assert.equal(e.$('studioSizeAxis').disabled,true);assert.equal(e.$('studioSizeMm').disabled,true);
- assert.equal(e.transactions.step(e.current(),false,e.items),true);assert.deepEqual(e.sizes(),Array.from({length:3},()=>({axis:'height',mm:40})));
+test('size controls are always active and the removed checkbox is not part of the UI',()=>{
+ const e=environment();assert.doesNotMatch(html,/id="studioSizeEnabled"/);assert.equal(e.$('studioSizeAxis').disabled,false);assert.equal(e.$('studioSizeMm').disabled,false);e.setCurrent(null);e.sync();assert.equal(e.$('studioSizeAxis').disabled,true);assert.equal(e.$('studioSizeMm').disabled,true);
 });
 
 test('invalid input and a later image validation failure never partially update the batch',()=>{
@@ -71,7 +69,7 @@ test('invalid input and a later image validation failure never partially update 
 
 test('busy or empty editors cannot edit sizes and retain the default controls for the next image',()=>{
  const e=environment();e.setBusy(true);e.sync();e.$('studioSizeMm').value='75';e.apply();assert.equal(e.$('studioSizeAll').disabled,true);assert.deepEqual(e.items.map(item=>item.history.index),[0,0,0]);
- e.setBusy(false);e.setCurrent(null);e.sync();assert.equal(e.$('studioSizeEnabled').checked,true);assert.equal(e.$('studioSizeAxis').value,'height');assert.equal(Number(e.$('studioSizeMm').value),40);assert.equal(e.$('studioSizeAll').disabled,true);e.apply();assert.deepEqual(e.items.map(item=>item.history.index),[0,0,0]);
+ e.setBusy(false);e.setCurrent(null);e.sync();assert.equal(e.$('studioSizeAxis').value,'height');assert.equal(Number(e.$('studioSizeMm').value),40);assert.equal(e.$('studioSizeAll').disabled,true);e.apply();assert.deepEqual(e.items.map(item=>item.history.index),[0,0,0]);
 });
 
 test('Enter commits restored numeric text even when blur emits no native change',()=>{

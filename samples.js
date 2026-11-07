@@ -1,4 +1,4 @@
-import { defaultSettings, validateSettings } from './core.js?v=18508bd5a16c';
+import { defaultSettings, validateSettings } from './core.js?v=5f27e729adf3';
 import { MAP_PALETTES } from './map-colorbar.js?v=79b671978f24';
 import { newAnnotation } from './annotations.js?v=79b671978f24';
 
