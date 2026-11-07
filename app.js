@@ -1,30 +1,30 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=18508bd5a16c';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=18508bd5a16c';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=18508bd5a16c';
-import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=18508bd5a16c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=18508bd5a16c';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=18508bd5a16c';
-import { buildPlan, paint } from './render.js?v=18508bd5a16c';
-import { batchExport, exportImage } from './export.js?v=18508bd5a16c';
-import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=18508bd5a16c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=18508bd5a16c';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=18508bd5a16c';
-import { createProject, readProject } from './project.js?v=18508bd5a16c';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=18508bd5a16c';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=18508bd5a16c';
-import { prepareScaleBar } from './bar-workflow.js?v=18508bd5a16c';
-import { prepareCalibration } from './calibration-workflow.js?v=18508bd5a16c';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=18508bd5a16c';
-import { AppUpdater } from './app-update.js?v=18508bd5a16c';
-import { ImageOverview } from './overview.js?v=18508bd5a16c';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=18508bd5a16c';
-import { SamplePicker } from './sample-picker.js?v=18508bd5a16c';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=18508bd5a16c';
-import { prepareProjectSave } from './project-save.js?v=18508bd5a16c';
-import { AnnotationUI } from './annotation-ui.js?v=18508bd5a16c';
-import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=18508bd5a16c';
-import { estimateSourcePalette } from './palette-estimation.js?v=18508bd5a16c';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=18508bd5a16c';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=8f5e9e467f58';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=8f5e9e467f58';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=8f5e9e467f58';
+import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=8f5e9e467f58';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=8f5e9e467f58';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=8f5e9e467f58';
+import { buildPlan, paint } from './render.js?v=8f5e9e467f58';
+import { batchExport, exportImage } from './export.js?v=8f5e9e467f58';
+import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=8f5e9e467f58';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=8f5e9e467f58';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=8f5e9e467f58';
+import { createProject, readProject } from './project.js?v=8f5e9e467f58';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=8f5e9e467f58';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=8f5e9e467f58';
+import { prepareScaleBar } from './bar-workflow.js?v=8f5e9e467f58';
+import { prepareCalibration } from './calibration-workflow.js?v=8f5e9e467f58';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=8f5e9e467f58';
+import { AppUpdater } from './app-update.js?v=8f5e9e467f58';
+import { ImageOverview } from './overview.js?v=8f5e9e467f58';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=8f5e9e467f58';
+import { SamplePicker } from './sample-picker.js?v=8f5e9e467f58';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=8f5e9e467f58';
+import { prepareProjectSave } from './project-save.js?v=8f5e9e467f58';
+import { AnnotationUI } from './annotation-ui.js?v=8f5e9e467f58';
+import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=8f5e9e467f58';
+import { estimateSourcePalette } from './palette-estimation.js?v=8f5e9e467f58';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=8f5e9e467f58';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -39,6 +39,8 @@ let projectName='';
 let figureStudioProjectId=crypto.randomUUID(),figurePreviewProjectId='';
 const figurePreviewCache=new Map(),FIGURE_PREVIEW_LIMIT=96*1024*1024;
 let figureAcknowledgements=createMifitoAcknowledgements(),figureWorkspaceSavedSignature=null,figureWorkspaceFinishRestore=null,figureWorkspaceEditSerial=0;
+let figureBridgeBaseline=null,figureBridgePreservedOnReconnect=false;
+var figureStudioBridge,figureStudioDirectSender;
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
@@ -1014,8 +1016,21 @@ function applyPanelLabels(onlyEnabled) {
 }
 $('applyPanelLabels').addEventListener('click',()=>applyPanelLabels($('labelApplySelected').checked));
 const projectLabelControls=['panelFormat','panelBranchParent','batchSequence','batchStart','batchStartLetter','batchPrefix','batchSeparator','batchUppercase'];
-function newProject(){
+function prepareFigureStudioProjectReplacement(nextProjectId,{fromBridge=false,fromWorkspace=false}={}){
+  if(fromWorkspace){figureStudioDirectSender?.sender.resetPending?.();return;}
+  if(fromBridge||nextProjectId===figureStudioProjectId)return;
+  if(figureStudioDirectSender?.sender.busy)throw new Error('Studioへの送信が完了してから、別のプロジェクトを開いてください。');
+  // A user-selected project starts a new send destination. Bridge loads retain
+  // the binding that requested them; failed imports never reach this point.
+  figureStudioBridge?.resetWorkspaceBinding();
+  figureStudioDirectSender?.sender.resetPending?.();
+  figureBridgeBaseline=null;figureBridgePreservedOnReconnect=false;
+  figureAcknowledgements=createMifitoAcknowledgements();figureWorkspaceSavedSignature=null;figureWorkspaceFinishRestore=null;
+}
+function newProject(options={}){
   if(busy||projectSaving)return;
+  const nextProjectId=crypto.randomUUID();
+  try{prepareFigureStudioProjectReplacement(nextProjectId,options);}catch(error){notify(error.message,true);return;}
   cancelWheelZoom();cancelAnimationFrame(previewFrame);previewFrame=0;
   annotationUI?.reset();
   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
@@ -1023,7 +1038,7 @@ function newProject(){
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.length=0;source=current=plan=null;previewMode='single';
   projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
-  figureStudioProjectId=crypto.randomUUID();figurePreviewCache.clear();figurePreviewProjectId='';
+  figureStudioProjectId=nextProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
   colorTarget=null;recentColors.length=0;clearDownloads();
   for(const input of document.querySelectorAll('input,select,textarea')){
@@ -1181,7 +1196,7 @@ $('projectInput').addEventListener('change',()=>{
   const file=$('projectInput').files[0];$('projectInput').value='';
   if(file)action(()=>openProject(file));
 });
-async function openProject(file){
+async function openProject(file,options={}){
   notify('プロジェクトを読み込んでいます…');
   const project=await readProject(file),restored=[];
   let activeDecoded=null;
@@ -1198,6 +1213,7 @@ async function openProject(file){
       }finally{if(decoded!==activeDecoded)releaseImage(decoded.source);}
       await new Promise(resolve=>requestAnimationFrame(resolve));
     }
+    prepareFigureStudioProjectReplacement(project.ui.figureStudioProjectId,options);
   }catch(error){for(const item of restored)URL.revokeObjectURL(item.thumbnail);if(activeDecoded)releaseImage(activeDecoded.source);throw error;}
   // Replace the current work only after every embedded image/settings pair is valid.
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
@@ -1398,8 +1414,6 @@ if (!await appUpdater.restore() && !getFigureBridgeContext() && galleryProject &
 }
 
 // Figure Studio bridge: included in the source application's module scope.
-var figureStudioDirectSender;
-let figureBridgeBaseline=null,figureBridgePreservedOnReconnect=false;
 function figureBridgeEditState(){return {content:workspaceSnapshot(items,projectUI()),activeId:current?.id,files:items.map(item=>item.file)};}
 function figureBridgeIsDirty(){
   if(busy||projectSaving||drag||cropStart||measurementStart||pendingInputEdit())return true;
@@ -1455,8 +1469,20 @@ async function chooseFigureStudioImage(imageId){
   if(item!==current)await selectItem(item);
   previewMode='single';render();
 }
-const figureStudioBridge=setupFigureBridge({
+function figureStudioResultMatchesCurrentProject(result){return (result?.batch?.projectId??result?.image?.projectId)===figureStudioProjectId;}
+function acceptFigureStudioResult(result){
+  if(!figureStudioResultMatchesCurrentProject(result))return false;
+  figureAcknowledgements.accept(result);figureBridgeBaseline=mergeMifitoBaseline(figureBridgeBaseline,result?.bridgeState,!!result?.batch);return true;
+}
+async function acceptDirectFigureStudioResult(result){
+  if(!figureStudioResultMatchesCurrentProject(result))return;
+  await figureStudioBridge?.rememberAccepted(result);
+  acceptFigureStudioResult(result);
+}
+function figureStudioProjectLoaded(){if(!figureBridgePreservedOnReconnect)figureBridgeBaseline=figureBridgeEditState();}
+figureStudioBridge=setupFigureBridge({
   app:'mifito',
+  startDetached:items.length>0,
   hasContent:()=>items.length>0,
   canAdoptAccepted(result){
     if((result?.batch?.projectId??result?.image?.projectId)!==figureStudioProjectId||!Array.isArray(result?.bridgeState?.files)||items.length!==result.bridgeState.files.length)return false;
@@ -1471,7 +1497,7 @@ const figureStudioBridge=setupFigureBridge({
     try {
       if(!figureBridgePreservedOnReconnect){
         if(imageId&&!(await readMifitoIdentity(file)).images.some(image=>image.imageId===imageId))throw new Error('元プロジェクトに対象の画像が見つかりません。');
-        await openProject(file);
+        await openProject(file,{fromBridge:true});
       }
       if(imageId)await chooseFigureStudioImage(imageId);
     }
@@ -1484,11 +1510,11 @@ const figureStudioBridge=setupFigureBridge({
   captureResult:captureFigureStudioResult,
   captureBatchResult:captureFigureStudioBatch,
   isDirty:figureBridgeIsDirty,
-  onProjectLoaded(){figureBridgeBaseline=figureBridgePreservedOnReconnect?null:figureBridgeEditState();},
-  onAccepted(result){figureAcknowledgements.accept(result);figureBridgeBaseline=mergeMifitoBaseline(figureBridgeBaseline,result?.bridgeState,!!result?.batch);}
+  onProjectLoaded:figureStudioProjectLoaded,
+  onAccepted:acceptFigureStudioResult
 });
 figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:captureFigureStudioResult,captureBatchResult:captureFigureStudioBatch,
-  async onAccepted(result){await figureStudioBridge?.rememberAccepted(result);figureAcknowledgements.accept(result);figureBridgeBaseline=mergeMifitoBaseline(figureBridgeBaseline,result?.bridgeState,!!result?.batch);},
+  onAccepted:acceptDirectFigureStudioResult,
   container:'.header-actions',isReady:()=>!busy&&!projectSaving&&!!current&&!!source});
 figureStudioDirectSender?.setBridgeConnected(figureStudioBridge?.isConnected===true);
 
@@ -1596,8 +1622,8 @@ window.FigureStudioWorkspaceState={
  },
  async validate(snapshot){validateMiFiToWorkspaceState(structuredClone(snapshot));return true;},
  async restore(snapshot){
-  workspaceReady();const saved=validateMiFiToWorkspaceState(structuredClone(snapshot));figureWorkspaceSavedSignature=null;figureWorkspaceFinishRestore=null;
-  if(!saved){newProject();settingsTransactions.restore({undo:[],redo:[]});figureBridgeBaseline=null;figureAcknowledgements=createMifitoAcknowledgements();return;}
+  workspaceReady();const saved=validateMiFiToWorkspaceState(structuredClone(snapshot));prepareFigureStudioProjectReplacement(saved?.ui.figureStudioProjectId,{fromWorkspace:true});figureWorkspaceSavedSignature=null;figureWorkspaceFinishRestore=null;
+  if(!saved){newProject({fromWorkspace:true});settingsTransactions.restore({undo:[],redo:[]});figureBridgeBaseline=null;figureAcknowledgements=createMifitoAcknowledgements();return;}
   let finish=null;setBusy(true);
   try{finish=await restoreUpdateSession(saved);figureBridgeBaseline=saved.figureBridgeBaseline;figureAcknowledgements=createMifitoAcknowledgements();saveBatch=saved.workspaceSaveBatch;for(const dialog of document.querySelectorAll('dialog[open]'))if(!saved.dialogs.some(entry=>entry.id===dialog.id))dialog.close();}
   finally{setBusy(false);}
