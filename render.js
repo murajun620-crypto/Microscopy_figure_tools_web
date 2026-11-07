@@ -75,7 +75,7 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
     const labelWidth = main ? m.tightWidth : 0, subWidth = supplemental ? Math.max(pyRound(sub.width),sub.advance) : 0;
     const gap = main && supplemental ? metrics(context,' ',fontSize).advance : 0;
     const subHeight = supplemental ? pyRound(sub.height) : 0, contentHeight = Math.max(main ? m.tightHeight : 0,subHeight,fontSize);
-    const paddingX = label.background ? Math.max(1,pyRound(fontSize*.2)) : 0, paddingY = label.background ? Math.max(1,pyRound(fontSize*.15)) : 0;
+    const paddingX = label.background ? Math.max(2,pyRound(fontSize*.3)) : 0, paddingY = label.background ? Math.max(2,pyRound(fontSize*.22)) : 0;
     const boxWidth = Math.max(1,labelWidth+gap+subWidth+paddingX*2), boxHeight = Math.max(1,contentHeight+paddingY*2);
     const outsideGap = Math.max(1,pyRound(3*short/1000));
     const band = label.anchor.startsWith('outside-top') ? 'top' : label.anchor.startsWith('outside-bottom') ? 'bottom' : null;

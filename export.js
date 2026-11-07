@@ -1,7 +1,7 @@
 import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=79b671978f24';
 import { numberedLabel } from './label-numbering.js?v=79b671978f24';
 import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=79b671978f24';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=79b671978f24';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=67344ecb39f9';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';

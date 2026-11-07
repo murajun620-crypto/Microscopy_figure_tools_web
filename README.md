@@ -1,6 +1,8 @@
-# MiFiTo Web v1.9.8
+# MiFiTo Web v1.9.9
 
 [Webアプリを開く](https://murajun620-crypto.github.io/Microscopy_figure_tools_web/)
+
+v1.9.9では、パネルラベルの「個別背景を表示」がオンの場合に、文字と背景の間の余白を広げました。左右は文字サイズの約30%、上下は約22%（最低2 px）とし、プレビューとPNG・SVGなどの出力へ共通で反映します。補足文字・上付き／下付き文字と画像外のラベルにも適用します。背景なしの配置は維持します。
 
 [画像ギャラリー](https://murajun620-crypto.github.io/Microscopy_figure_tools_web/gallery/) — SEM・EDX・AFMの模擬画像7種類。画像内の個別背景あり、画像外の個別背景なし、補足文字付きラベルを比較できます。元画像と設定済みプロジェクト、esa用本文を収録しています。
 
