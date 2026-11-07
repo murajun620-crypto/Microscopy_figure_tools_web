@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=d3f052be4d1d">
-  <script type="module" src="./app.js?v=689ae58b05b1"></script>
+  <link rel="stylesheet" href="./styles.css?v=afccb13f0cdb">
+  <script type="module" src="./app.js?v=88c2daacb435"></script>
 </head>
 <body>
   <header class="app-header">
@@ -45,8 +45,8 @@
         <div class="section-heading"><h2>画像</h2><span id="fileCount" class="badge">0</span></div>
         <label class="button primary file-button" title="画像を複数選択できます。プレビューへのドラッグ＆ドロップでも開けます（Ctrl/Cmd＋Alt＋O）">＋ 画像を開く<input id="imageInput" type="file" multiple accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff,.svg" aria-label="画像を開く"></label>
         <div class="file-tools"><button id="openSourceFolder" class="button quiet small" hidden>フォルダから開く</button><label class="button quiet small file-button">フォルダを選ぶ<input id="folderInput" type="file" webkitdirectory multiple aria-label="フォルダを選ぶ"></label></div>
-        <div class="sample-actions"><button id="demoButton" class="button">サンプル1枚</button><button id="multiDemoButton" class="button">サンプル3枚</button></div>
-        <p class="hint">3枚は同じスケール・画像サイズ。一括処理を試せます。</p>
+        <div class="sample-actions"><button id="demoButton" class="button">サンプルを選ぶ</button><button id="multiDemoButton" class="button">3枚セットを試す</button></div>
+        <p class="hint">6種類の模擬画像から選択。1枚／同じスケールの3枚セット。</p>
         <p class="hint">PNG / JPEG / BMP / SVG / TIFF</p>
         <p id="projectSaveStatus" class="hint" role="status" aria-live="polite">画像なし</p>
         <p class="hint" data-help-for="#saveProjectButton">再開用の元画像と編集設定は、ヘッダーの「プロジェクトを保存」で1つの.mifitoファイルに保存できます。終了・更新前の確認はプロジェクト保存が基準です。</p>
@@ -214,7 +214,7 @@
       <div class="preview-surface">
       <div id="previewShell" class="preview-shell">
       <div id="previewArea" class="preview-area">
-        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">1枚で試す</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">サンプルはすべて同じスケール・画像サイズです。</p></div>
+        <div id="emptyState" class="empty-state"><div class="empty-art"><span class="sample-cell one"></span><span class="sample-cell two"></span><span class="sample-cell three"></span><span class="sample-bar"></span></div><h1>画像プレビュー</h1><button id="emptyOpenButton" class="button primary">画像を開いて始める</button><div class="sample-actions"><button id="emptySingleDemoButton" class="button">サンプルを選ぶ</button><button id="emptyDemoButton" class="button">3枚で一括処理を試す</button></div><p class="hint">細胞・SEM・AFM・位相マップ・計測注釈の模擬画像を試せます。</p></div>
         <div id="canvasFrame" class="canvas-frame" hidden><canvas id="preview" role="img" aria-label="処理後画像のプレビュー" tabindex="0"></canvas></div>
         <div id="imageOverview" class="image-overview" role="group" aria-label="全画像の処理後プレビュー" hidden></div>
       </div>
@@ -231,6 +231,14 @@
       </section>
     </section>
   </main>
+  <dialog id="sampleDialog" class="sample-dialog" aria-labelledby="sampleDialogTitle">
+    <div class="dialog-heading"><strong id="sampleDialogTitle">サンプルを選ぶ</strong><button id="closeSampleDialog" class="button quiet">閉じる</button></div>
+    <p class="sample-note">画像と編集設定を読み込みます。すべて説明用の模擬画像で、実測データではありません。</p>
+    <div class="sample-picker-tools"><div id="sampleGroups" role="group" aria-label="サンプルの分類"></div><label>読み込む枚数<select id="sampleCount"><option value="1">1枚</option><option value="3">3枚（一括処理）</option></select></label></div>
+    <p class="sample-note">3枚セット内は画像サイズ・校正・カラーバー範囲が共通です。別の種類を選ぶと現在の画像を置き換えます。</p>
+    <div id="sampleConfirm" class="sample-confirm" role="alert" hidden><p id="sampleConfirmMessage"></p><div><button id="cancelSampleSwitch" class="button">戻る</button><button id="confirmSampleSwitch" class="button primary">保存せずに切り替える</button></div></div>
+    <p id="sampleStatus" role="status" aria-live="polite"></p><div id="sampleList" class="sample-list"></div>
+  </dialog>
   <dialog id="newProjectDialog" class="new-project-dialog" aria-labelledby="newProjectTitle" aria-describedby="newProjectMessage">
     <div class="dialog-heading"><h2 id="newProjectTitle">新規プロジェクト</h2><button id="closeNewProjectDialog" class="button quiet" aria-label="新規作成をキャンセル">閉じる</button></div>
     <p id="newProjectMessage">プロジェクトに未保存の変更があります。保存せずに新規プロジェクトを作成しますか？現在の作業内容は失われます。</p>

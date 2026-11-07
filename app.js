@@ -7,14 +7,16 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=c742417965da';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=0f77e4ec1a4c';
 import { createProject, readProject } from './project.js?v=d405fbd2a7a4';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b364809563da';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e7b5a611c9ef';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=976f0f6826ad';
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=4568a61ba267';
+import { AppUpdater } from './app-update.js?v=6a38a27acbe4';
 import { ImageOverview } from './overview.js?v=63850d438675';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
+import { SamplePicker } from './sample-picker.js?v=bdb0ae3b0b21';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=6fd1472c81d2';
 import { prepareProjectSave } from './project-save.js?v=c99699605d41';
 import { AnnotationUI } from './annotation-ui.js?v=2ab86f4a80cb';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=ef4fdc07b37c';
@@ -1294,52 +1296,31 @@ $('copyButton').addEventListener('click',()=>action(async()=>{
 $('cancelBatchButton').addEventListener('click', () => { batchController?.abort(); $('batchProgress').textContent = '現在の画像の処理後に中止します…'; });
 $('helpButton').addEventListener('click', () => showDialog($('helpDialog'))); $('closeHelpButton').addEventListener('click', () => $('helpDialog').close());
 
-async function demo(count = 1) {
-  // One acquisition scale and image size allow the same calibration and crop.
-  const width = 900, height = 650, pixelSize = 0.02;
-  const examples = [
-    { seed:73452,colors:['#152d29','#a2c296','#548b76','#234e42','#80ac84'] },
-    { seed:21891,colors:['#211d35','#d7b1e5','#8b6dac','#43365f','#b59acc'] },
-    { seed:95127,colors:['#182c3c','#a3d5ec','#538baa','#23455f','#83b5cd'] },
-  ].slice(0,count);
-  const files = [];
-  for (const [index,example] of examples.entries()) {
-    const {colors} = example;
-    const demo = document.createElement('canvas'); demo.width = width; demo.height = height;
-    const c = demo.getContext('2d'); c.fillStyle = colors[0]; c.fillRect(0, 0, width, height);
-    // Deterministic synthetic microscopy image; no remote image requests.
-    let randomState = example.seed;
-    const random = () => { randomState = (randomState * 1664525 + 1013904223) >>> 0; return randomState / 4294967296; };
-    for (let i = 0; i < 38; i++) {
-      const x = 25 + random() * (width-50), y = 35 + random() * (height-75), r = 17 + random() * 37;
-      const gradient = c.createRadialGradient(x - r * 0.2, y - r * 0.2, 2, x, y, r);
-      gradient.addColorStop(0, colors[1]); gradient.addColorStop(0.5, colors[2]); gradient.addColorStop(0.85, colors[3]); gradient.addColorStop(1, colors[4]);
-      c.fillStyle = gradient; c.beginPath(); c.ellipse(x, y, r, r * 0.83, random() * 3, 0, Math.PI * 2); c.fill();
+async function loadSample(id,count){
+  if(busy||![1,3].includes(count))return;
+  setBusy(true);
+  try{
+    const records=[];
+    for(let index=0;index<count;index++){
+      const raster=sampleRaster(id,index),canvas=document.createElement('canvas');canvas.width=SAMPLE_WIDTH;canvas.height=SAMPLE_HEIGHT;
+      let file;
+      try{canvas.getContext('2d').putImageData(new ImageData(raster.data,raster.width,raster.height),0,0);file=new File([await canvasBlob(canvas)],`sample_${id}_${String.fromCharCode(97+index)}.png`,{type:'image/png'});}
+      finally{canvas.width=canvas.height=0;}
+      records.push({name:file.name,file,width:SAMPLE_WIDTH,height:SAMPLE_HEIGHT,settings:sampleSettings(id,index),enabled:true});
+      await new Promise(resolve=>setTimeout(resolve,0));
     }
-    const referencePixels = 5/pixelSize, y = height-70, right = 80+referencePixels;
-    c.strokeStyle = colors[4]; c.lineWidth = 2; c.beginPath(); c.moveTo(80,y); c.lineTo(right,y); c.moveTo(80,y-12); c.lineTo(80,y+12); c.moveTo(right,y-12); c.lineTo(right,y+12); c.stroke();
-    c.font = '16px FigureSans'; c.fillStyle = colors[1]; c.fillText(`5 µm reference · ${referencePixels} px`,80,y-23);
-    const base = count === 1 ? 'sample_cells' : `sample_cells_${String.fromCharCode(97+index)}`;
-    let name = `${base}.png`, suffix = 2;
-    while (items.some(item=>item.name===name)) name = `${base}_${suffix++}.png`;
-    files.push(new File([await canvasBlob(demo)],name,{type:'image/png'}));
-    demo.width = demo.height = 0;
-  }
-  const added = await addFiles(files);
-  for (const item of added) {
-    const index = files.findIndex(file=>file===item.file), settings = copy(item.settings);
-    settings.calibration = {pixelSize,unit:'µm'}; settings.scaleBar.length = 5;
-    settings.panelLabel.text = item.labelText = String.fromCharCode(97+index);
-    item.settings = validateSettings(settings,item.width,item.height); item.history.push(item.settings);
-  }
-  if (added.length) { $('knownLength').value = 5; syncInputs(); renderList(); render(); }
-  if (added.length === files.length) {
-    if (count > 1) { notify('同じスケールのサンプル3枚を追加しました（1 px = 0.02 µm）。上の「一括保存」から保存できます。'); }
-    else notify('サンプルは校正済みです。左下の基準線は250 px = 5 µmです。');
-  }
+    const labelControls=Object.fromEntries(projectLabelControls.map(id=>{const input=$(id);return [id,input.type==='checkbox'?input.defaultChecked:input.tagName==='SELECT'?([...input.options].find(o=>o.defaultSelected)||input.options[0]).value:input.defaultValue];}));
+    const ui={...projectUI(),formats:['png'],dpi:600,includeSettings:true,cropScope:'batch',barScope:'batch',calibrationScope:'individual',mapRangeScope:'individual',labelApplySelected:false,labelControls};
+    const blob=await createProject(records,0,ui);
+    await openProject(new File([blob],`sample_${id}.mifito`,{type:'application/octet-stream'}));
+    projectName='';projectHandle=null;workSaveState.restoreCheckpoint(null);
+    imageTable.setCollapsed(false);previewMode=count===3?'all':'single';render();scheduleWorkState();
+    notify(`${SAMPLES.find(s=>s.id===id).title}を読み込みました（${count}枚）。模擬画像・校正済みです。`);
+  }finally{setBusy(false);}
 }
-for (const id of ['demoButton','emptySingleDemoButton']) $(id).addEventListener('click',()=>action(()=>demo()));
-for (const id of ['multiDemoButton','emptyDemoButton']) $(id).addEventListener('click',()=>action(()=>demo(3)));
+const samplePicker=new SamplePicker({busy:()=>busy,dirty:hasUnsavedWork,load:loadSample});
+for(const id of ['demoButton','emptySingleDemoButton'])$(id).addEventListener('click',()=>samplePicker.open(1));
+for(const id of ['multiDemoButton','emptyDemoButton'])$(id).addEventListener('click',()=>samplePicker.open(3));
 annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
 imageTable=new ImageSettingsTable({items:()=>items,current:()=>current,busy:()=>busy,edit:editImageTable,select:item=>action(()=>selectItem(item)),notify});
 imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,select:item=>action(()=>selectItem(item))});
