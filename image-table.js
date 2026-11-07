@@ -19,6 +19,12 @@ export function prepareImageTableEdit(item,path,value){
 
 const $=id=>document.getElementById(id),units=['nm','µm','mm'];
 const valueOf=(item,path)=>path==='enabled'?item.enabled:item.settings[path.split('.')[0]]?.[path.split('.')[1]];
+const fieldPending=(item,path,input)=>{
+  const value=valueOf(item,path);
+  if(input.type==='checkbox')return input.checked!==value;
+  if(input.type==='number')return input.value===''?value!==null&&value!==undefined:Number(input.value)!==value;
+  return input.value!==String(value??(path==='calibration.unit'?'µm':''));
+};
 export class ImageSettingsTable {
   constructor(api){
     this.api=api;this.rows=new Map();this.editing=false;
@@ -53,7 +59,11 @@ export class ImageSettingsTable {
     input.dataset.imageField=path;input.id=`imageTable_${row.item.id}_${path.replace('.','_')}`;
     input.setAttribute('aria-label',`表の${row.item.name}の${label}`);input.title=label;
     row.fields.set(path,{input,options});
-    input.addEventListener('keydown',event=>{if(event.key==='Enter'&&input.tagName==='INPUT'){event.preventDefault();input.blur();}});
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'&&input.tagName==='INPUT'){
+      event.preventDefault();input.blur();
+      // Restored raw text has no browser dirty flag, so blur may not emit change.
+      if(!this.editing&&!this.api.busy()&&fieldPending(row.item,path,input))input.dispatchEvent(new Event('change',{bubbles:true}));
+    }});
     input.addEventListener('change',async()=>{
       if(this.api.busy()||this.editing)return;
       this.editing=true;
@@ -68,10 +78,7 @@ export class ImageSettingsTable {
   }
   get pending(){
     for(const row of this.rows.values())for(const [path,{input}] of row.fields){
-      const value=valueOf(row.item,path);
-      if(input.type==='checkbox'){if(input.checked!==value)return true;}
-      else if(input.type==='number'){if(input.value===''?value!==null&&value!==undefined:Number(input.value)!==value)return true;}
-      else if(input.value!==String(value??(path==='calibration.unit'?'µm':'')))return true;
+      if(fieldPending(row.item,path,input))return true;
     }
     return false;
   }

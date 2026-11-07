@@ -1,30 +1,30 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=2bbf9315e1bf';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=2bbf9315e1bf';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=2bbf9315e1bf';
-import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=2bbf9315e1bf';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2bbf9315e1bf';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=2bbf9315e1bf';
-import { buildPlan, paint } from './render.js?v=2bbf9315e1bf';
-import { batchExport, exportImage } from './export.js?v=2bbf9315e1bf';
-import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=2bbf9315e1bf';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=2bbf9315e1bf';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=2bbf9315e1bf';
-import { createProject, readProject } from './project.js?v=2bbf9315e1bf';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=2bbf9315e1bf';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=2bbf9315e1bf';
-import { prepareScaleBar } from './bar-workflow.js?v=2bbf9315e1bf';
-import { prepareCalibration } from './calibration-workflow.js?v=2bbf9315e1bf';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2bbf9315e1bf';
-import { AppUpdater } from './app-update.js?v=2bbf9315e1bf';
-import { ImageOverview } from './overview.js?v=2bbf9315e1bf';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=2bbf9315e1bf';
-import { SamplePicker } from './sample-picker.js?v=2bbf9315e1bf';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=2bbf9315e1bf';
-import { prepareProjectSave } from './project-save.js?v=2bbf9315e1bf';
-import { AnnotationUI } from './annotation-ui.js?v=2bbf9315e1bf';
-import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=2bbf9315e1bf';
-import { estimateSourcePalette } from './palette-estimation.js?v=2bbf9315e1bf';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=2bbf9315e1bf';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=bf33a5775367';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=bf33a5775367';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=bf33a5775367';
+import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=bf33a5775367';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=bf33a5775367';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=bf33a5775367';
+import { buildPlan, paint } from './render.js?v=bf33a5775367';
+import { batchExport, exportImage } from './export.js?v=bf33a5775367';
+import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=bf33a5775367';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=bf33a5775367';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=bf33a5775367';
+import { createProject, readProject } from './project.js?v=bf33a5775367';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=bf33a5775367';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=bf33a5775367';
+import { prepareScaleBar } from './bar-workflow.js?v=bf33a5775367';
+import { prepareCalibration } from './calibration-workflow.js?v=bf33a5775367';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=bf33a5775367';
+import { AppUpdater } from './app-update.js?v=bf33a5775367';
+import { ImageOverview } from './overview.js?v=bf33a5775367';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=bf33a5775367';
+import { SamplePicker } from './sample-picker.js?v=bf33a5775367';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=bf33a5775367';
+import { prepareProjectSave } from './project-save.js?v=bf33a5775367';
+import { AnnotationUI } from './annotation-ui.js?v=bf33a5775367';
+import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=bf33a5775367';
+import { estimateSourcePalette } from './palette-estimation.js?v=bf33a5775367';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=bf33a5775367';
 
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
@@ -38,7 +38,7 @@ let projectHandle=null;
 let projectName='';
 let figureStudioProjectId=crypto.randomUUID(),figurePreviewProjectId='';
 const figurePreviewCache=new Map(),FIGURE_PREVIEW_LIMIT=96*1024*1024;
-const figureAcknowledgements=createMifitoAcknowledgements();
+let figureAcknowledgements=createMifitoAcknowledgements(),figureWorkspaceSavedSignature=null,figureWorkspaceFinishRestore=null,figureWorkspaceEditSerial=0;
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
@@ -80,6 +80,7 @@ function hasUnsavedWork() {
 }
 function confirmUnsavedLeave(event) {
   if(appUpdater?.reloading||!hasUnsavedWork())return;
+  if(figureWorkspaceSavedSignature!==null&&figureWorkspaceSavedSignature===figureWorkspaceSignature())return;
   event.preventDefault();event.returnValue='';
 }
 function refreshWorkState() {
@@ -1089,17 +1090,20 @@ function saveProject(saveAs){return action(async()=>{
 });}
 // IndexedDB preserves one shared object graph, including histories, grouped undo
 // records and file handles. Temporary updates never mark a project as saved.
-async function captureUpdateSession(){
+async function captureUpdateSession(extra={}){
   const snapshot=structuredClone({ui:projectUI(),items:[...items],activeIndex:items.indexOf(current),transactions:settingsTransactions.snapshot(items),checkpoint:workSaveState.checkpoint,
     projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,recentColors:[...recentColors],
     annotation:{selected:[...annotationUI.selected],clipboard:annotationUI.clipboard,formState:annotationUI.formState},
-    inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:input.checked})),
+    inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:!!input.checked})),
     details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
     dialogs:[...document.querySelectorAll('dialog[open]')].filter(node=>node.id!=='updateDialog').map(node=>({id:node.id,left:node.style.left,top:node.style.top})),
     imageTableCollapsed:$('imageTableContent').hidden,
-    view:{sidebar:$('settingsPanel').scrollTop,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop}});
+    view:{sidebar:$('settingsPanel').scrollTop,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop},...extra});
   // Make independent bytes, including when the originals came from an open file.
-  for(const item of snapshot.items)item.file=new File([await item.file.arrayBuffer()],item.file.name,{type:item.file.type,lastModified:item.file.lastModified});
+  const copiedFiles=new Map();
+  const copyFile=async file=>{if(!copiedFiles.has(file))copiedFiles.set(file,new File([await file.arrayBuffer()],file.name,{type:file.type,lastModified:file.lastModified}));return copiedFiles.get(file);};
+  for(const item of snapshot.items)item.file=await copyFile(item.file);
+  if(snapshot.figureBridgeBaseline?.files)for(let index=0;index<snapshot.figureBridgeBaseline.files.length;index++)snapshot.figureBridgeBaseline.files[index]=await copyFile(snapshot.figureBridgeBaseline.files[index]);
   return snapshot;
 }
 async function restoreUpdateSession(saved){
@@ -1481,4 +1485,138 @@ figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:cap
   async onAccepted(result){await figureStudioBridge?.rememberAccepted(result);figureAcknowledgements.accept(result);figureBridgeBaseline=mergeMifitoBaseline(figureBridgeBaseline,result?.bridgeState,!!result?.batch);},
   container:'.header-actions',isReady:()=>!busy&&!projectSaving&&!!current&&!!source});
 figureStudioDirectSender?.setBridgeConnected(figureStudioBridge?.isConnected===true);
+
+// Portable workspace state keeps editing history and unfinished form text. It
+// never exports a preview or sends a change back to the Studio canvas.
+const workspaceTableFields=['enabled','calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','crop.x','crop.y','crop.width','crop.height'];
+const workspaceItemFields=['barVisible','labelVisible','labelText','subtext'];
+const workspaceStaticInputs=new Set([...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file'&&!input.dataset.imageField).map(input=>input.id));
+const workspaceDialogs=new Set([...document.querySelectorAll('dialog[id]')].filter(node=>node.id!=='updateDialog').map(node=>node.id));
+for(const event of ['input','change','pointerdown','keydown','wheel'])document.addEventListener(event,()=>{figureWorkspaceEditSerial++;});
+function workspaceFocusReady(){const frame=window.frameElement;return !document.hidden&&(!frame||!frame.inert&&!frame.hidden&&frame.getClientRects().length>0);}
+function workspaceRestoreGuard(){return JSON.stringify({content:workspaceSnapshot(items,projectUI()),activeId:current?.id,tool,previewMode,mode:annotationUI.mode,draft:annotationUI.draft});}
+function workspaceListInputs(){return [...$('imageList').querySelectorAll('[data-item-key]')].map(input=>({imageId:input.closest('[data-image-id]').dataset.imageId,key:input.dataset.itemKey,value:input.value,checked:input.checked}));}
+function workspaceRawInputs(){return [...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:!!input.checked,badInput:!!input.validity?.badInput}));}
+function workspaceFocus(){const input=document.activeElement;if(!input?.matches('input,select,textarea')||input.type==='file')return null;const row=input.closest('#imageList [data-image-id]');if(!input.id&&(!row||!workspaceItemFields.includes(input.dataset.itemKey)))return null;return {id:input.id||'',...(row?{imageId:row.dataset.imageId,key:input.dataset.itemKey}:{}),start:input.selectionStart??null,end:input.selectionEnd??null};}
+function workspaceLogicalState(){
+ if(!items.length)return {empty:true};
+ return {content:workspaceSnapshot(items,projectUI()),activeId:current?.id??null,files:items.map(item=>[item.id,item.file.name,item.file.size,item.file.type,item.file.lastModified,item.width,item.height]),history:items.map(item=>[item.id,item.history.index,item.history.entries.length]),
+  inputs:workspaceRawInputs().sort((a,b)=>a.id.localeCompare(b.id)),listInputs:workspaceListInputs(),pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,saveBatch,
+  annotation:{selected:[...annotationUI.selected].sort(),clipboard:annotationUI.clipboard,formState:annotationUI.formState,mode:annotationUI.mode,draft:annotationUI.draft},
+  details:[...document.querySelectorAll('details')].map((node,index)=>[node.id||index,node.open]),dialogs:[...document.querySelectorAll('dialog[open]')].filter(node=>node.id!=='updateDialog').map(node=>node.id).sort(),imageTableCollapsed:$('imageTableContent').hidden,
+  projectName,baseline:figureBridgeBaseline?{content:figureBridgeBaseline.content,activeId:figureBridgeBaseline.activeId,files:figureBridgeBaseline.files.map(file=>[file.name,file.size,file.type,file.lastModified])}:null};
+}
+function figureWorkspaceSignature(){return JSON.stringify(workspaceLogicalState());}
+function workspaceReady(){if(busy||projectSaving||imageTable?.editing||drag||cropStart||annotationUI?.gesture||figureStudioDirectSender?.sender.busy)throw Error('MiFiToの処理またはドラッグが完了してから保存・復元してください。');}
+function checkWorkspaceRawInputs(){for(const input of document.querySelectorAll('input'))if(input.validity?.badInput)throw Error(`${input.getAttribute('aria-label')||input.closest('label')?.textContent.trim()||'数値入力'}の入力途中の数値を確定するか、空欄にしてから保存してください。`);}
+function stripWorkspaceHandles(state){
+ const seen=new WeakSet(),keys=new Set(['projectHandle','saveDirectory','sourceHandle','sourceDirectory']);
+ const visit=value=>{if(!value||typeof value!=='object'||value instanceof Blob||seen.has(value))return;seen.add(value);for(const key of Object.keys(value)){if(keys.has(key))value[key]=null;else visit(value[key]);}};
+ visit(state);for(const item of state.items)delete item.thumbnail;return state;
+}
+function validateMiFiToWorkspaceState(snapshot){
+ const fail=()=>{throw Error('MiFiToの作業状態が破損しているか、対応範囲を超えています。');};
+ if(snapshot===null)return null;
+ if(!snapshot||snapshot.version!==1||snapshot.app!=='mifito')fail();
+ const state=snapshot.state;if(state===null)return null;
+ const id=value=>typeof value==='string'&&/^[a-zA-Z0-9-]{1,200}$/.test(value);
+ const text=(value,max=65536)=>typeof value==='string'&&value.length<=max;
+ const finite=(value,max=1e9)=>Number.isFinite(value)&&Math.abs(value)<=max;
+ const list=(value,max)=>Array.isArray(value)&&value.length<=max;
+ let nodes=0,characters=0,bytes=0;const seen=new WeakSet(),active=new WeakSet();
+ const walk=(value,depth=0)=>{
+  if(depth>70||++nodes>1500000)fail();
+  if(typeof value==='string'){characters+=value.length;if(value.length>32*1024*1024||characters>64*1024*1024)fail();return;}
+  if(value===null||value===undefined||typeof value==='boolean')return;
+  if(typeof value==='number'){if(!Number.isFinite(value))fail();return;}
+  if(typeof value!=='object'||active.has(value))fail();if(seen.has(value))return;seen.add(value);
+  if(value instanceof File){bytes+=value.size;if(!value.size||value.size>LIMITS.fileBytes||bytes>2*LIMITS.batchBytes||!text(value.name,255)||!text(value.type,100)||!Number.isSafeInteger(value.lastModified)||value.lastModified<0)fail();return;}
+  const prototype=Object.getPrototypeOf(value);if(!Array.isArray(value)&&prototype!==Object.prototype&&prototype!==null)fail();
+  active.add(value);for(const [key,descriptor]of Object.entries(Object.getOwnPropertyDescriptors(value))){if(key==='__proto__'||key==='constructor'||key==='prototype'||descriptor.get||descriptor.set)fail();if(['projectHandle','saveDirectory','sourceHandle','sourceDirectory'].includes(key)&&descriptor.value!=null)fail();walk(descriptor.value,depth+1);}active.delete(value);
+ };
+ walk(state);
+ if(!state||!list(state.items,LIMITS.files)||!Number.isInteger(state.activeIndex)||(state.items.length?!state.items[state.activeIndex]:state.activeIndex!==-1)||state.projectHandle!==null||state.saveDirectory!==null||!text(state.projectName,255)||!(state.checkpoint===null||text(state.checkpoint,32*1024*1024)))fail();
+ const ui=state.ui,formats=['png','jpeg','svg','pdf','bmp','tiff','pptx'];
+ if(!ui||!id(ui.figureStudioProjectId)||!list(ui.formats,formats.length)||ui.formats.some(value=>!formats.includes(value))||![300,600,1200].includes(ui.dpi)||typeof ui.includeSettings!=='boolean'||!['simple','detailed'].includes(ui.colorMode)||typeof ui.labelApplySelected!=='boolean')fail();
+ for(const key of ['cropScope','barScope','calibrationScope','mapRangeScope'])if(!['batch','individual'].includes(ui[key]))fail();
+ if(!ui.labelControls||Object.keys(ui.labelControls).some(key=>!projectLabelControls.includes(key)||!(typeof ui.labelControls[key]==='boolean'||text(ui.labelControls[key]))))fail();
+ const itemIds=new Set(),imageIds=new Set(),entries=new Set(),inputIds=new Set(workspaceStaticInputs);let total=0;
+ for(const item of state.items){
+  if(!item||!id(item.id)||itemIds.has(item.id)||!id(item.figureStudioImageId)||imageIds.has(item.figureStudioImageId)||!text(item.name,255)||!SUPPORTED.test(item.name)||!(item.file instanceof File)||typeof item.enabled!=='boolean'||item.sourceHandle!=null||item.sourceDirectory!=null)fail();
+  itemIds.add(item.id);imageIds.add(item.figureStudioImageId);total+=item.file.size;if(total>LIMITS.batchBytes)fail();
+  validateSettings(item.settings,item.width,item.height);buildPlan(item.settings,context);
+  const history=item.history;if(!history||!list(history.entries,100)||!history.entries.length||!Number.isInteger(history.index)||!history.entries[history.index]||!Number.isInteger(history.limit)||history.limit<1||history.limit>100)fail();
+  for(const entry of history.entries){validateSettings(entry,item.width,item.height);entries.add(entry);}
+  for(const key of workspaceTableFields)inputIds.add(`imageTable_${item.id}_${key.replace('.','_')}`);
+ }
+ for(const kind of ['undo','redo']){
+  if(!state.transactions||!list(state.transactions[kind],10000))fail();
+  for(const pair of state.transactions[kind]){
+   if(!Array.isArray(pair)||pair.length!==2||!entries.has(pair[0])||!list(pair[1],LIMITS.files))fail();
+   for(const record of pair[1]){if(!record||!state.items.includes(record.item))fail();validateSettings(record.before,record.item.width,record.item.height);validateSettings(record.after,record.item.width,record.item.height);for(const key of ['beforeError','afterError'])if(record[key]!=null&&!text(record[key],4096))fail();}
+  }
+ }
+ if(!list(state.inputs,5000)||!list(state.workspaceListInputs,400))fail();const usedInputs=new Set();
+ for(const input of state.inputs){if(!input||!inputIds.has(input.id)||usedInputs.has(input.id)||!text(input.value)||typeof input.checked!=='boolean')fail();usedInputs.add(input.id);if(input.id==='zoomSelect'&&input.value!=='fit'&&(!finite(Number(input.value))||Number(input.value)<MIN_ZOOM||Number(input.value)>MAX_ZOOM))fail();}
+ const usedList=new Set();for(const input of state.workspaceListInputs){const key=`${input?.imageId}/${input?.key}`;if(!input||!itemIds.has(input.imageId)||!workspaceItemFields.includes(input.key)||usedList.has(key)||!text(input.value)||typeof input.checked!=='boolean')fail();usedList.add(key);}
+ if(!list(state.details,1000)||!list(state.dialogs,100)||!list(state.recentColors,12)||state.recentColors.some(color=>!/^#[a-f\d]{6}$/i.test(color))||typeof state.imageTableCollapsed!=='boolean'||typeof state.previewRaw!=='boolean'||typeof state.workspaceSaveBatch!=='boolean'||!['move','measure','crop'].includes(state.tool)||!['single','all'].includes(state.previewMode))fail();
+ const detailsIds=new Set([...document.querySelectorAll('details[id]')].map(node=>node.id));
+ for(const entry of state.details)if(!entry||!text(entry.id,200)||(entry.id&&!detailsIds.has(entry.id))||!Number.isInteger(entry.index)||entry.index<0||entry.index>=1000||typeof entry.open!=='boolean')fail();
+ for(const entry of state.dialogs)if(!entry||!workspaceDialogs.has(entry.id)||![entry.left,entry.top].every(value=>text(value,40)&&(!value||/^-?\d+(?:\.\d+)?px$/.test(value))))fail();
+ if(!state.view||!['sidebar','left','top'].every(key=>finite(state.view[key])&&state.view[key]>=0))fail();
+ const currentItem=state.items[state.activeIndex];if(state.pendingCrop){if(!currentItem)fail();validateCrop(state.pendingCrop,currentItem.width,currentItem.height);}
+ const point=value=>value&&finite(value.x,1e7)&&finite(value.y,1e7);
+ if(state.measurement!==null&&(!Array.isArray(state.measurement)||state.measurement.length!==2||!state.measurement.every(point)))fail();if(state.measurementStart!==null&&!point(state.measurementStart))fail();
+ if(state.mapEstimate!==null&&(!state.mapEstimate||!id(state.mapEstimate.imageId)||!text(state.mapEstimate.text)||!text(state.mapEstimate.signature,4*1024*1024)))fail();
+ const annotation=state.annotation,extra=state.workspaceAnnotation;
+ if(!annotation||!list(annotation.selected,200)||annotation.selected.some(value=>!text(value,128))||!list(annotation.clipboard,200)||!text(annotation.formState)||!extra||![null,'distance','diameter','text','segment','arrow'].includes(extra.mode))fail();
+ if(annotation.clipboard.length){const points=annotation.clipboard.flatMap(a=>a.points??[]),width=Math.max(1,...points.map(p=>Math.ceil(p.x)),...annotation.clipboard.map(a=>Math.ceil(Math.abs(a.labelOffset?.x??0)))),height=Math.max(1,...points.map(p=>Math.ceil(p.y)),...annotation.clipboard.map(a=>Math.ceil(Math.abs(a.labelOffset?.y??0))));validateSettings({...defaultSettings(width,height),annotations:annotation.clipboard},width,height);}
+ if(extra.draft!==null){if(!currentItem)fail();validateSettings({...currentItem.settings,annotations:[extra.draft]},currentItem.width,currentItem.height);}
+ const focus=state.workspaceFocus;if(focus!==null&&(!focus||!(inputIds.has(focus.id)||itemIds.has(focus.imageId)&&workspaceItemFields.includes(focus.key))||![focus.start,focus.end].every(value=>value===null||Number.isInteger(value)&&value>=0&&value<=65536)))fail();
+ const baseline=state.figureBridgeBaseline;
+ if(baseline!==null){if(!baseline||!text(baseline.content,32*1024*1024)||!id(baseline.activeId)||!list(baseline.files,LIMITS.files)||baseline.files.some(file=>!(file instanceof File)))fail();let content;try{content=JSON.parse(baseline.content);}catch{fail();}if(!content||!list(content.images,LIMITS.files)||content.images.length!==baseline.files.length||content.images.some(image=>!id(image.id)))fail();}
+ return state;
+}
+window.FigureStudioWorkspaceState={
+ version:1,app:'mifito',
+ async capture(){
+  workspaceReady();checkWorkspaceRawInputs();const signature=figureWorkspaceSignature();
+  if(!items.length)return {version:1,app:'mifito',state:null,binding:null};
+  const state=stripWorkspaceHandles(await captureUpdateSession({figureBridgeBaseline,workspaceListInputs:workspaceListInputs(),workspaceFocus:workspaceFocus(),workspaceAnnotation:{mode:annotationUI.mode,draft:annotationUI.draft},workspaceSaveBatch:saveBatch}));
+  const binding=await figureStudioBridge.captureWorkspaceBinding();
+  workspaceReady();checkWorkspaceRawInputs();if(signature!==figureWorkspaceSignature())throw Error('MiFiToの保存中に編集がありました。もう一度保存してください。');
+  const snapshot={version:1,app:'mifito',state,binding};validateMiFiToWorkspaceState(snapshot);return snapshot;
+ },
+ async validate(snapshot){validateMiFiToWorkspaceState(structuredClone(snapshot));return true;},
+ async restore(snapshot){
+  workspaceReady();const saved=validateMiFiToWorkspaceState(structuredClone(snapshot));figureWorkspaceSavedSignature=null;figureWorkspaceFinishRestore=null;
+  if(!saved){newProject();settingsTransactions.restore({undo:[],redo:[]});figureBridgeBaseline=null;figureAcknowledgements=createMifitoAcknowledgements();return;}
+  let finish=null;setBusy(true);
+  try{finish=await restoreUpdateSession(saved);figureBridgeBaseline=saved.figureBridgeBaseline;figureAcknowledgements=createMifitoAcknowledgements();saveBatch=saved.workspaceSaveBatch;for(const dialog of document.querySelectorAll('dialog[open]'))if(!saved.dialogs.some(entry=>entry.id===dialog.id))dialog.close();}
+  finally{setBusy(false);}
+  // setTool and busy-state synchronization intentionally precede raw input restore.
+  previewRaw=saved.previewRaw;measurementStart=saved.measurementStart;annotationUI.mode=saved.workspaceAnnotation.mode;annotationUI.draft=saved.workspaceAnnotation.draft;
+  $('rawPreviewButton').classList.toggle('active',previewRaw);$('processedPreviewButton').classList.toggle('active',!previewRaw);canvas.style.cursor=annotationUI.mode?'crosshair':tool==='move'?'default':'crosshair';render();
+  const restoreRaw=(focusInput=true)=>{
+   finish?.();for(const entry of saved.workspaceListInputs){const input=$('imageList').querySelector(`[data-image-id="${entry.imageId}"] [data-item-key="${entry.key}"]`);if(input){input.value=entry.value;input.checked=entry.checked;}}
+   const focus=saved.workspaceFocus,input=focus&&(focus.id?$(focus.id):$('imageList').querySelector(`[data-image-id="${focus.imageId}"] [data-item-key="${focus.key}"]`));if(focusInput&&input&&!input.disabled){input.focus({preventScroll:true});if(focus.start!==null)try{input.setSelectionRange(focus.start,focus.end);}catch{}}scheduleWorkState();
+  };
+  restoreRaw(false);figureWorkspaceFinishRestore={run:restoreRaw,serial:figureWorkspaceEditSerial,guard:workspaceRestoreGuard(),pending:null};
+ },
+ finishRestore(){
+  const record=figureWorkspaceFinishRestore;if(!record||!workspaceFocusReady())return false;if(record.pending)return record.pending;
+  record.pending=new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+   if(figureWorkspaceFinishRestore!==record){resolve(false);return;}
+   if(!workspaceFocusReady()){record.pending=null;resolve(false);return;}
+   figureWorkspaceFinishRestore=null;
+   if(record.serial!==figureWorkspaceEditSerial||record.guard!==workspaceRestoreGuard()){resolve(false);return;}
+   record.run();resolve(true);
+  })));return record.pending;
+ },
+ async restoreBinding(binding){if(binding)await figureStudioBridge.restoreWorkspaceBinding(structuredClone(binding));else figureStudioBridge.resetWorkspaceBinding();},
+ signature:figureWorkspaceSignature,
+ hasWork:()=>!!items.length||!!annotationUI?.pending||!!annotationUI?.draft||!!imageTable?.pending,
+ markSaved(signature){if(typeof signature==='string'&&signature===figureWorkspaceSignature())figureWorkspaceSavedSignature=signature;}
+};
+window.addEventListener('focus',()=>window.FigureStudioWorkspaceState.finishRestore());
 

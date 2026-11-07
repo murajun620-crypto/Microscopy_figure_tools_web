@@ -1,4 +1,4 @@
-# MiFiTo Web v1.9.4
+# MiFiTo Web v1.9.5
 
 [Webアプリを開く](https://murajun620-crypto.github.io/Microscopy_figure_tools_web/)
 
@@ -8,9 +8,11 @@
 
 [Figure Studio統合画面](https://murajun620-crypto.github.io/plot_launcher_web/figure-studio/)のMiFiToタブで画像を編集し、トップバーからStudioへ送ります。受信完了後はStudioタブへ自動で戻ります。Studioの画像をダブルクリックすればMiFiToの対象画像へ戻り、一度開いた画面はタブ切替で再読み込みしません。
 
-MiFiToの単独URLも維持し、単独起動時はStudio送信ボタンを表示しません。統合画面は単独版と同じHTML・JavaScriptを読み込み、編集機能を複製しません。[Studio単独](https://murajun620-crypto.github.io/plot_launcher_web/figure-studio/studio.html)から編集する場合は、同じ配信元の既存編集タブを再利用します。別の内容や未反映の編集を勝手に置き換えません。対応版はFigure Studio v0.4.0・PlotLauncher v2.4.20・MiFiTo v1.9.4です。
+MiFiToの単独URLも維持し、単独起動時はStudio送信ボタンを表示しません。統合画面は単独版と同じHTML・JavaScriptを読み込み、編集機能を複製しません。[Studio単独](https://murajun620-crypto.github.io/plot_launcher_web/figure-studio/studio.html)から編集する場合は、同じ配信元の既存編集タブを再利用します。別の内容や未反映の編集を勝手に置き換えません。統合作業の一括保存はFigure Studio v0.5.0・PlotLauncher v2.4.21・MiFiTo v1.9.5以降に対応します。
 
-Studioのプロジェクト保存もMiFiToと同様に、初回はフォルダーとファイル名を選び、次回から同じファイルへ上書きします。保存ボタン右のメニューに「名前を付けて保存」があります。
+統合画面の保存では、Studioの全Figureと、PlotLauncher・MiFiToで開いている最新の編集状態を一つの `.figurestudio` ファイルに保存します。Studioへ未反映の画像・設定、確定前の入力内容、選択中の画像とUndo履歴も含みます。開き直すと各編集画面へ復元し、未反映の変更はStudioへ自動反映しません。数値欄がブラウザーで解釈できない入力途中の状態なら、確定するか空欄にしてから保存します。
+
+初回はフォルダーとファイル名を選び、次回から同じ統合ファイルへ上書きします。保存ボタン右のメニューに「名前を付けて保存」があります。統合保存によって個別の `.mifito` ファイルは上書きされません。個別ファイルも更新したい場合は、MiFiTo側のプロジェクト保存を使ってください。
 
 ## Figure Studioへまとめて反映
 
