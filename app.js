@@ -1,4 +1,5 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=0afb02c38b20';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=420fdae1db08';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=420fdae1db08';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=a2289c8d0436';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=2eface900efb';
 import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=61fc78090acc';
@@ -13,7 +14,7 @@ import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflo
 import { prepareScaleBar } from './bar-workflow.js?v=f1fbb257981e';
 import { prepareCalibration } from './calibration-workflow.js?v=a4d2b40e7d76';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=2af9fc9db3f4';
-import { AppUpdater } from './app-update.js?v=0afb02c38b20';
+import { AppUpdater } from './app-update.js?v=420fdae1db08';
 import { ImageOverview } from './overview.js?v=63850d438675';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=c235d6566fb8';
 import { SamplePicker } from './sample-picker.js?v=bdb0ae3b0b21';
@@ -228,6 +229,7 @@ for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEvent
 function setBusy(value) {
   if (value) cancelWheelZoom();
   busy = value; document.body.classList.toggle('busy', value);
+  figureStudioDirectSender?.sync();
   $('projectInput').disabled=value;
   $('openProjectButton').disabled=value;
   $('newProjectButton').disabled=value;
@@ -1339,6 +1341,19 @@ if (!await appUpdater.restore() && !getFigureBridgeContext() && galleryProject &
 }
 
 // Figure Studio bridge: included in the source application's module scope.
+var figureStudioDirectSender;
+async function captureFigureStudioResult() {
+  if (busy || !current || !source) throw new Error('画像の処理が完了してから反映してください。');
+  if (pendingInputEdit()) throw new Error('入力中の設定を確定してから反映してください。');
+  setBusy(true);
+  try {
+    await document.fonts.ready;
+    const ui = projectUI(), settings = copy(current.settings), image = source;
+    const project = await createProject(items,items.indexOf(current),ui);
+    const preview = await exportImage(image,settings,'svg');
+    return {project,preview,sourceName:projectName || 'figure.mifito'};
+  } finally {setBusy(false);}
+}
 setupFigureBridge({
   app:'mifito',
   async loadProject(file,{reconnect}={}) {
@@ -1348,17 +1363,7 @@ setupFigureBridge({
     try {await openProject(file);}
     finally {setBusy(false);}
   },
-  async captureResult() {
-    if (busy || !current || !source) throw new Error('画像の処理が完了してから反映してください。');
-    if (pendingInputEdit()) throw new Error('入力中の設定を確定してから反映してください。');
-    setBusy(true);
-    try {
-      await document.fonts.ready;
-      const ui = projectUI(), settings = copy(current.settings), image = source;
-      const project = await createProject(items,items.indexOf(current),ui);
-      const preview = await exportImage(image,settings,'svg');
-      return {project,preview,sourceName:projectName || 'figure.mifito'};
-    } finally {setBusy(false);}
-  }
+  captureResult:captureFigureStudioResult
 });
+figureStudioDirectSender = setupDirectSendButton({app:'mifito',captureResult:captureFigureStudioResult,container:'.header-actions',isReady:()=>!busy&&!!current&&!!source});
 
