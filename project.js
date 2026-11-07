@@ -30,6 +30,7 @@ function validateManifest(data) {
   if(ui.barScope!==undefined&&!['batch','individual'].includes(ui.barScope))fail();
   if(ui.calibrationScope!==undefined&&!['batch','individual'].includes(ui.calibrationScope))fail();
   if(ui.mapRangeScope!==undefined&&!['batch','individual'].includes(ui.mapRangeScope))fail();
+  if(ui.studioSizeScope!==undefined&&!['batch','individual'].includes(ui.studioSizeScope))fail();
   return total;
 }
 

@@ -8,8 +8,8 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=bf33a5775367">
-  <script type="module" src="./app.js?v=bf33a5775367"></script>
+  <link rel="stylesheet" href="./styles.css?v=18508bd5a16c">
+  <script type="module" src="./app.js?v=18508bd5a16c"></script>
 </head>
 <body>
   <header class="app-header">
@@ -213,7 +213,7 @@
       <div class="preview-options"><div class="preview-modes" role="group" aria-label="プレビューの表示範囲"><button id="singlePreviewButton" class="tool active" aria-pressed="true">個別画像</button><button id="allPreviewButton" class="tool" aria-pressed="false">全画像</button></div><label title="保存と画像コピーに共通で使用します">解像度<select id="saveDpi" data-setting="output.dpi" data-number aria-label="保存とコピーの解像度" disabled><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></label></div>
       <div class="studio-size-options" role="group" aria-labelledby="studioSizeTitle" aria-describedby="studioSizeHint">
         <div class="studio-size-heading"><strong id="studioSizeTitle">Studioに貼る画像サイズ</strong><span id="studioSizeScope">画像なし</span></div>
-        <div class="studio-size-fields"><label class="check"><input id="studioSizeEnabled" type="checkbox" disabled>画像本体のサイズを指定</label><label class="studio-size-axis"><select id="studioSizeAxis" aria-label="Studioに貼るサイズを指定する辺" disabled><option value="width">幅</option><option value="height">高さ</option></select></label><label class="studio-size-value"><input id="studioSizeMm" type="number" min="0.1" max="1000" step="any" value="40" aria-label="Studioに貼る画像本体のサイズ" aria-describedby="studioSizeHint" disabled><span>mm</span></label><button id="applyStudioSizeToAllButton" class="button quiet" type="button" title="Studioに貼るサイズ設定だけを全画像に適用します" disabled>全画像に適用</button></div>
+        <div class="studio-size-fields"><label class="check"><input id="studioSizeEnabled" type="checkbox" checked disabled>画像本体のサイズを指定</label><label class="studio-size-axis"><select id="studioSizeAxis" aria-label="Studioに貼るサイズを指定する辺" disabled><option value="width">幅</option><option value="height" selected>高さ</option></select></label><label class="studio-size-value"><input id="studioSizeMm" type="number" min="0.1" max="1000" step="any" value="40" aria-label="Studioに貼る画像本体のサイズ" aria-describedby="studioSizeHint" disabled><span>mm</span></label><label class="check" title="サイズを変更すると全画像に適用します。オフにすると表示中の画像だけを変更します。"><input id="studioSizeAll" type="checkbox" checked disabled>全画像に適用</label></div>
         <p id="studioSizeHint" class="hint">カラーバーや画像外のラベルを含まないサイズ。縦横比を維持します。</p>
       </div>
       <div class="preview-surface">

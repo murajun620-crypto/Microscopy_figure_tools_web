@@ -4,8 +4,17 @@ import {studioSvgSize,validateStudioSize} from '../studio-size.mjs';
 import {defaultSettings,validateSettings,serializeProject,parseProject,sessionProject,parseSession,outputMetrics} from '../core.js';
 import {renderSvg} from '../render.js';
 import {exportImage} from '../export.js';
+import {createProject,readProject} from '../project.js';
 const plan={width:400,height:280,imageWidth:300,imageHeight:200,crop:{width:300,height:200},coordinateScale:1};
 const near=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-9,`${actual} != ${expected}`);
+
+test('fresh images default to an independent 40 mm body height without changing ordinary output',()=>{
+ const a=defaultSettings(300,200),b=defaultSettings(200,300);
+ assert.deepEqual(a.output.studioSize,{axis:'height',mm:40});assert.deepEqual(b.output.studioSize,a.output.studioSize);
+ assert.deepEqual(validateSettings(a,300,200).output.studioSize,{axis:'height',mm:40});
+ a.output.studioSize.mm=55;assert.equal(b.output.studioSize.mm,40);
+ assert.equal(a.output.sizeAxis,'width');assert.equal(a.output.sizeCm,4);
+});
 
 test('width fixes only the image body and adds colorbar/label bands outside it',()=>{
  const size=studioSvgSize(plan,{axis:'width',mm:60});
@@ -31,17 +40,34 @@ test('absent Studio settings leave legacy geometry unchanged',()=>{
  const original=outputMetrics(plan,settings.output);settings.output.studioSize={axis:'width',mm:60};
  assert.deepEqual(outputMetrics(plan,settings.output),original);
 });
+
+test('older Web and desktop settings retain legacy fit instead of adopting the new default',()=>{
+ const image={name:'legacy.png',width:300,height:200},saved=serializeProject(defaultSettings(300,200),image);
+ delete saved.settings.output.studioSize;
+ assert.equal(parseProject(saved,image).output.studioSize,null);
+ delete saved.application;delete saved.settings;
+ assert.equal(parseProject(saved,image).output.studioSize,null);
+});
 test('invalid requests and body geometry cannot produce misleading physical dimensions',()=>{
  for(const size of [{axis:'both',mm:40},{axis:'width',mm:0},{axis:'height',mm:1001},{axis:'height',mm:Infinity},{axis:'height',mm:NaN},{axis:'width',mm:'40'},[],false])assert.throws(()=>validateStudioSize(size));
  for(const invalid of [{...plan,imageWidth:0},{...plan,imageHeight:NaN},{...plan,width:200},{...plan,coordinateScale:0},{}])assert.throws(()=>studioSvgSize(invalid,{axis:'width',mm:40}));
  near(studioSvgSize(plan,{axis:'width',mm:.1}).bodyWidthMm,.1);near(studioSvgSize(plan,{axis:'height',mm:1000}).bodyHeightMm,1000);
 });
 test('Studio size survives image settings JSON and per-image session serialization',()=>{
- const a={id:'a',name:'a.png',width:300,height:200,enabled:true,settings:defaultSettings(300,200)},b={id:'b',name:'b.png',width:300,height:200,enabled:true,settings:defaultSettings(300,200)};
+ const a={id:'a',name:'a.png',width:300,height:200,enabled:true,settings:defaultSettings(300,200)},b={id:'b',name:'b.png',width:300,height:200,enabled:true,settings:defaultSettings(300,200)},c={id:'c',name:'c.png',width:300,height:200,enabled:true,settings:defaultSettings(300,200)};
  a.settings.output.studioSize={axis:'width',mm:60};b.settings.output.studioSize={axis:'height',mm:25};
+ c.settings.output.studioSize=null;
  assert.deepEqual(parseProject(serializeProject(a.settings,a),a).output.studioSize,a.settings.output.studioSize);
- const restored=parseSession(sessionProject([a,b],a.settings.output),[a,b]);
- assert.deepEqual(restored.map(row=>row.settings.output.studioSize),[a.settings.output.studioSize,b.settings.output.studioSize]);
+ assert.equal(parseProject(serializeProject(c.settings,c),c).output.studioSize,null);
+ const restored=parseSession(sessionProject([a,b,c],a.settings.output),[a,b,c]);
+ assert.deepEqual(restored.map(row=>row.settings.output.studioSize),[a.settings.output.studioSize,b.settings.output.studioSize,null]);
+});
+
+test('MiFiTo project roundtrip preserves default height, explicit width, disabled and legacy missing sizes',async()=>{
+ const items=['default','custom','disabled','legacy'].map(name=>({id:crypto.randomUUID(),name:`${name}.png`,file:new File(['source bytes'],`${name}.png`,{type:'image/png',lastModified:1}),width:300,height:200,enabled:true,settings:defaultSettings(300,200)}));
+ items[1].settings.output.studioSize={axis:'width',mm:65};items[2].settings.output.studioSize=null;delete items[3].settings.output.studioSize;
+ const saved=await createProject(items,0,{formats:['png'],dpi:600,includeSettings:true,colorMode:'simple'}),restored=await readProject(saved);
+ assert.deepEqual(restored.images.map(image=>image.settings.output.studioSize),[{axis:'height',mm:40},{axis:'width',mm:65},null,null]);
 });
 
 test('extreme image aspect ratios and outer bands cannot exceed Studio physical limits',()=>{
@@ -65,4 +91,10 @@ test('only explicit Studio SVG export emits body dimensions and ordinary SVG sta
   const exported=await exportImage({},settings,'svg',{forStudio:true});assert.equal(await exported.text(),studio.markup);
   settings.output.studioSize=null;const legacy=renderSvg({},settings,{forStudio:true}).markup;assert.match(legacy,/width="4cm"/);assert.doesNotMatch(legacy,/data-mifito-body/);
  }finally{if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;}
+});
+
+test('image-size scope survives project save and invalid scopes are rejected',async()=>{
+ const image={id:crypto.randomUUID(),name:'scope.png',file:new File(['image'],'scope.png',{type:'image/png'}),width:300,height:200,enabled:true,settings:defaultSettings(300,200)},ui={formats:['png'],dpi:600,includeSettings:true,colorMode:'simple'};
+ for(const studioSizeScope of ['batch','individual']){const saved=await createProject([image],0,{...ui,studioSizeScope});assert.equal((await readProject(saved)).ui.studioSizeScope,studioSizeScope);}
+ await assert.rejects(createProject([image],0,{...ui,studioSizeScope:'selected'}));
 });
