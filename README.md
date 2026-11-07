@@ -1,4 +1,4 @@
-# MiFiTo Web v1.9.7
+# MiFiTo Web v1.9.8
 
 [Webアプリを開く](https://murajun620-crypto.github.io/Microscopy_figure_tools_web/)
 
