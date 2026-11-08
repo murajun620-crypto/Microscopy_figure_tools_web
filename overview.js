@@ -1,5 +1,5 @@
-import { decodeImage, releaseImage } from './io.js?v=5f27e729adf3';
-import { buildPlan, paint } from './render.js?v=5f27e729adf3';
+import { decodeImage, releaseImage } from './io.js?v=57c42d5b1bd8';
+import { buildPlan, paint } from './render.js?v=57c42d5b1bd8';
 
 // Decode one image at a time and draw only cards near the visible viewport.
 export class ImageOverview {

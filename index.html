@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=b307f808f67c">
-  <script type="module" src="./app.js?v=253e6d7a3612"></script>
+  <script type="module" src="./app.js?v=57c42d5b1bd8"></script>
 </head>
 <body>
   <header class="app-header">
@@ -261,8 +261,8 @@
       <div class="field-row"><label>線種<select data-ann-field="lineStyle"><option value="-">実線</option><option value="--">破線</option><option value="-.">一点鎖線</option><option value=":">点線</option></select></label><label>矢印<select data-ann-field="arrowStyle"><option value="->">片矢印</option><option value="<->">両矢印</option><option value="-|>">塗り矢印</option><option value="o-">丸矢印・片端（●──）</option><option value="o-o">丸矢印・両端（●──●）</option></select></label></div>
       <div class="field-row"><label>先端・丸のサイズ（pt）<input data-ann-field="arrowSizePt" type="number" min="1" max="40" step="0.5"></label><label>文字の回転（度）<input data-ann-field="rotation" type="number" min="-360" max="360" step="1"></label></div>
       <label>フォント<select id="annotationFont" data-ann-field="fontFamily"></select></label>
-      <div class="field-row"><label>文字の横揃え<select data-ann-field="align"><option value="left">左</option><option value="center">中央</option><option value="right">右</option></select></label><label class="color-field">色<input id="annotationColor" type="color" data-ann-field="color" value="#ffffff"></label></div>
-      <div class="field-row"><label class="check"><input type="checkbox" data-ann-field="bold">太字</label><label class="check"><input type="checkbox" data-ann-field="italic">斜体</label></div>
+      <div class="field-row"><label>文字の横揃え<select data-ann-field="align"><option value="left">左</option><option value="center">中央</option><option value="right">右</option><option value="justify">両端揃え</option></select></label><label class="color-field">色<input id="annotationColor" type="color" data-ann-field="color" value="#ffffff"></label></div>
+      <div class="field-row"><label class="check"><input type="checkbox" data-ann-field="bold">太字</label><label class="check"><input type="checkbox" data-ann-field="italic">斜体</label><label class="check"><input type="checkbox" data-ann-field="underline">下線</label></div>
       <div class="opacity-field"><label for="annotationOpacity">不透明度</label><div class="opacity-controls"><input id="annotationOpacity" type="range" min="0" max="100" step="1" data-ann-slider="opacity"><div class="opacity-value"><input type="number" min="0" max="100" step="1" data-ann-field="opacity" data-ann-percent aria-label="注釈の不透明度（%）"><span>%</span></div></div></div>
       <label class="check"><input type="checkbox" data-ann-field="background">文字の背景を表示</label><label class="color-field">文字の背景色<input id="annotationBackgroundColor" type="color" data-ann-field="backgroundColor" value="#000000"></label>
       <div class="opacity-field"><label for="annotationBackgroundOpacity">背景の不透明度</label><div class="opacity-controls"><input id="annotationBackgroundOpacity" type="range" min="0" max="100" step="1" data-ann-slider="backgroundOpacity"><div class="opacity-value"><input type="number" min="0" max="100" step="1" data-ann-field="backgroundOpacity" data-ann-percent aria-label="注釈の背景の不透明度（%）"><span>%</span></div></div></div>

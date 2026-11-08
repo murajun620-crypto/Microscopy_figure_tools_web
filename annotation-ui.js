@@ -1,14 +1,20 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=79b671978f24';
-import { paintMeasurements } from './annotation-render.js?v=79b671978f24';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=57c42d5b1bd8';
+import { paintMeasurements } from './annotation-render.js?v=57c42d5b1bd8';
 import { showDialog } from './movable-dialog.js?v=79b671978f24';
+import {createAnnotationTextEditor} from './annotation-editor.mjs?v=57c42d5b1bd8';
+import {createShortcutHandler} from './shortcuts.mjs?v=57c42d5b1bd8';
+import {formatText,TEXT_FORMAT_ACTIONS} from './text-format.mjs?v=57c42d5b1bd8';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
 export class AnnotationUI {
   constructor(api){
     this.api=api;this.selected=new Set();this.itemId=null;this.mode=null;this.gesture=null;this.draft=null;this.clipboard=[];this.formState='';
     this.dialog=$('annotationEditor');
+    this.textEditor=createAnnotationTextEditor();this.shortcut=createShortcutHandler({execute:(action,payload)=>this.command(action,payload),isEditing:()=>false,isCanvasActive:()=>this.api.active(),supportsAction:action=>TEXT_FORMAT_ACTIONS.includes(action)||['edit-text','escape','text','select','line','arrow','front','back','cycle-selection','nudge','duplicate','delete','select-all','copy-format','paste-format'].includes(action)||action.startsWith('align-')||action.startsWith('distribute-'),onHint:text=>{if(text)$('annotationStatus').textContent=text;}});
     for(const family of ANNOTATION_FONTS)$('annotationFont').add(new Option(family,family));
     for(const button of document.querySelectorAll('[data-add-annotation]'))button.addEventListener('click',()=>this.begin(button.dataset.addAnnotation));
     $('closeAnnotationEditor').onclick=()=>this.dialog.close();
+    $('annotationText').readOnly=true;$('annotationText').tabIndex=-1;$('annotationText').title='文字を編集するにはクリックまたはF2';
+    $('annotationText').addEventListener('focus',()=>{if(this.dialog.open&&this.focused&&!this.focused.locked){const id=this.focused.id;this.dialog.close();this.editText(id);}});
     $('editAnnotationButton').onclick=()=>this.edit();$('copyAnnotationButton').onclick=()=>{this.copy();this.paste();};$('deleteAnnotationButton').onclick=()=>this.remove();
     for(const input of this.dialog.querySelectorAll('[data-ann-field],[data-ann-coordinate],[data-ann-offset]')){
       input.addEventListener('change',()=>this.change(input));
@@ -23,13 +29,14 @@ export class AnnotationUI {
     const area=$('previewArea');
     for(const [name,handler] of [['pointerdown','down'],['pointermove','move'],['pointerup','up'],['pointercancel','cancel'],['dblclick','doubleClick']])area.addEventListener(name,event=>this[handler](event),true);
     document.addEventListener('keydown',event=>this.key(event),true);
+    document.addEventListener('pointerdown',()=>this.shortcut.reset(),true);window.addEventListener('blur',()=>this.shortcut.reset());
   }
   get current(){return this.api.current();}
   get annotations(){return this.current?.settings.annotations??[];}
   get focused(){return this.annotations.find(a=>this.selected.has(a.id));}
-  reset(){this.cancelDrawing();this.selected.clear();this.clipboard=[];this.itemId=null;this.formState='';if(this.dialog.open)this.dialog.close();}
+  reset(){this.textEditor.finish(false,{focus:false});this.shortcut.reset();this.cancelDrawing();this.selected.clear();this.clipboard=[];this.itemId=null;this.formState='';if(this.dialog.open)this.dialog.close();}
   formValues(){return JSON.stringify([...this.dialog.querySelectorAll('[data-ann-field],[data-ann-coordinate],[data-ann-offset]')].map(input=>input.type==='checkbox'?input.checked:input.value));}
-  get pending(){return this.dialog.open&&this.formState!==this.formValues();}
+  get pending(){return this.textEditor.active||this.dialog.open&&this.formState!==this.formValues();}
   commit(annotations){try{const settings=clone(this.current.settings);settings.annotations=annotations;this.api.commit(settings);return true;}catch(error){this.api.notify(error.message,true);this.sync();return false;}}
   sync(){
     const item=this.current;
@@ -72,7 +79,7 @@ export class AnnotationUI {
     const p=this.point(event),q=this.planPoint(p),plan=this.api.plan(),tolerance=8/this.api.scale();
     if(this.mode){
       this.stop(event);$('preview').focus({preventScroll:true});$('preview').setPointerCapture(event.pointerId);
-      if(!this.draft)this.draft=newAnnotation(this.mode,p,p,undefined,defaultAnnotationFontPt(this.current.settings,plan));
+      if(!this.draft)this.draft=newAnnotation(this.mode,p,p,undefined,this.mode==='text'?9:defaultAnnotationFontPt(this.current.settings,plan));
       this.gesture={kind:'create',start:p,client:{x:event.clientX,y:event.clientY},second:this.draft.points[0].x!==p.x||this.draft.points[0].y!==p.y};
       if(this.mode==='text'){this.finishCreate();this.edit();}this.api.render();return;
     }
@@ -126,7 +133,21 @@ export class AnnotationUI {
       if(!box.annotation.locked)for(const p of box.annotation.type==='text'?[box.points[0]]:box.points){context.beginPath();context.arc(p.x,p.y,4/scale,0,Math.PI*2);context.fill();context.stroke();}
     }context.restore();
   }
-  edit(id=this.focused?.id){if(!id||this.api.busy())return;this.selected=new Set([id]);this.mode=null;this.sync();if(!this.dialog.open)showDialog(this.dialog);this.fillForm();}
+  textValue(a){return {text:a.text,fontSize:a.fontPt,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,underline:a.underline,textAlign:a.align};}
+  textPatch(a,value){Object.assign(a,{text:value.text,fontPt:value.fontSize,fontFamily:value.fontFamily,bold:value.bold,italic:value.italic,underline:value.underline,align:value.textAlign});}
+  edit(id=this.focused?.id){
+    if(!id||this.api.busy())return;const a=this.annotations.find(a=>a.id===id);if(!a||a.locked)return;
+    if(a.type!=='text')return this.editDetails(id);
+    this.editText(id);
+  }
+  editText(id){
+    const a=this.annotations.find(a=>a.id===id);if(!a||a.locked||this.api.busy())return;
+    this.textEditor.finish(false,{focus:false});this.selected=new Set([id]);this.cancelDrawing();this.sync();this.api.render();
+    const item=this.current,before=clone(item.settings);this.textEditor.open({value:this.textValue(a),fonts:ANNOTATION_FONTS,maxLength:1000,anchor:()=>$('preview').getBoundingClientRect(),focus:()=>$('preview').focus({preventScroll:true}),onSave:()=>$('saveProjectButton').click(),onDetails:()=>this.editDetails(id),
+      onInput:value=>{if(this.current!==item)return;const target=this.annotations.find(a=>a.id===id);if(target){this.textPatch(target,value);this.api.render();}},
+      onFinish:({cancel})=>{if(this.current!==item)return;const final=clone(item.settings.annotations);item.settings=before;if(!cancel)this.commit(final);this.sync();this.api.render();}});
+  }
+  editDetails(id=this.focused?.id){if(!id||this.api.busy())return;this.selected=new Set([id]);this.mode=null;this.sync();if(!this.dialog.open)showDialog(this.dialog);this.fillForm();}
   fillForm(){
     const a=this.focused;if(!a){this.dialog.close();return;}
     $('annotationEditorTitle').textContent=`${ANNOTATION_NAMES[a.type]}の設定`;$('annotationResult').textContent=annotationValue(a,this.current.settings.calibration);
@@ -136,7 +157,7 @@ export class AnnotationUI {
     for(const input of this.dialog.querySelectorAll('[data-ann-offset]'))input.value=a.labelOffset[input.dataset.annOffset];
     this.dialog.querySelector('[data-ann-measured]').hidden=!['distance','diameter'].includes(a.type);this.dialog.querySelector('[data-ann-end]').hidden=a.type==='text';
     const measured=['distance','diameter'].includes(a.type),hasText=measured||a.type==='text';
-    for(const field of ['text','fontPt','fontFamily','rotation','align','bold','italic','background','backgroundColor'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!hasText;
+    for(const field of ['text','fontPt','fontFamily','rotation','align','bold','italic','underline','background','backgroundColor'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!hasText;
     for(const field of ['linePt','lineStyle'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=a.type==='text';
     for(const field of ['arrowStyle','arrowSizePt'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!measured&&a.type!=='arrow';
     for(const input of this.dialog.querySelectorAll('[data-ann-offset]'))input.closest('label').hidden=!measured;
@@ -158,28 +179,45 @@ export class AnnotationUI {
       this.commit(all);this.fillForm();
     }catch(error){this.api.notify(error.message,true);this.fillForm();}
   }
-  remove(){if(!this.current||this.api.busy())return;this.commit(this.annotations.filter(a=>!this.selected.has(a.id)));this.selected.clear();this.sync();}
+  remove(){if(!this.current||this.api.busy())return;this.commit(this.annotations.filter(a=>a.locked||!this.selected.has(a.id)));this.selected.clear();this.sync();}
   copy(){this.clipboard=clone(this.annotations.filter(a=>this.selected.has(a.id)));}
   paste(){
     if(!this.current||!this.clipboard.length||this.api.busy())return;
     const copies=this.clipboard.slice(0,200-this.annotations.length).map(a=>({...clone(a),id:crypto.randomUUID(),locked:false})),ids=new Set(copies.map(a=>a.id));
     this.selected=ids;this.commit([...this.annotations,...translateAnnotations(copies,ids,10,10,this.current.width,this.current.height)]);
   }
-  layer(side){const selected=this.annotations.filter(a=>this.selected.has(a.id)),rest=this.annotations.filter(a=>!this.selected.has(a.id));this.commit(side==='front'?[...rest,...selected]:[...selected,...rest]);}
+  layer(side){const selected=this.annotations.filter(a=>this.selected.has(a.id)&&!a.locked),rest=this.annotations.filter(a=>!this.selected.has(a.id)||a.locked);this.commit(side==='front'?[...rest,...selected]:[...selected,...rest]);}
   align(kind){
-    const chosen=this.annotations.filter(a=>this.selected.has(a.id)&&!a.locked);if(chosen.length<2)return;
-    const axis=kind.endsWith('_v')||['top','bottom'].includes(kind)?'y':'x';
-    const positions=chosen.map(a=>({id:a.id,min:Math.min(...a.points.map(p=>p[axis])),max:Math.max(...a.points.map(p=>p[axis]))}));
-    const low=Math.min(...positions.map(p=>p.min)),high=Math.max(...positions.map(p=>p.max));
-    let all=clone(this.annotations);for(const p of positions){const delta=['left','top'].includes(kind)?low-p.min:['right','bottom'].includes(kind)?high-p.max:(low+high-p.min-p.max)/2;all=translateAnnotations(all,new Set([p.id]),axis==='x'?delta:0,axis==='y'?delta:0,this.current.width,this.current.height);}this.commit(all);
+    const chosen=this.annotations.filter(a=>this.selected.has(a.id)&&!a.locked),distribute=kind.startsWith('distribute_');if(chosen.length<(distribute?3:2))return;
+    const axis=kind.endsWith('_v')||['top','bottom'].includes(kind)?'y':'x',layout=new Map((this.api.plan()?.measurements||[]).map(box=>[box.id,box])),scale=this.api.plan()?.coordinateScale??1;
+    const positions=chosen.map(a=>{const box=layout.get(a.id),text=box?.textBox,points=box?.points||a.points.map(p=>({x:p.x*scale,y:p.y*scale})),values=a.type==='text'&&text?[]:points.map(p=>p[axis]);if(text)values.push(text[axis],text[axis]+text[axis==='x'?'width':'height']);return {id:a.id,min:Math.min(...values),max:Math.max(...values)};});
+    const low=Math.min(...positions.map(p=>p.min)),high=Math.max(...positions.map(p=>p.max));let cursor=low;
+    const gap=distribute?(high-low-positions.reduce((sum,p)=>sum+p.max-p.min,0))/(positions.length-1):0;
+    let all=clone(this.annotations);for(const p of distribute?positions.sort((a,b)=>a.min-b.min):positions){const delta=(distribute?cursor-p.min:['left','top'].includes(kind)?low-p.min:['right','bottom'].includes(kind)?high-p.max:(low+high-p.min-p.max)/2)/scale;cursor+=p.max-p.min+gap;all=translateAnnotations(all,new Set([p.id]),axis==='x'?delta:0,axis==='y'?delta:0,this.current.width,this.current.height);}this.commit(all);
   }
   key(event){
-    if(!this.current||this.api.busy()||document.querySelector('dialog[open]')||event.target.matches('input,textarea,select')||!this.api.active())return;
+    if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.getModifierState?.('AltGraph')||this.textEditor.active||!this.current||this.api.busy()||document.querySelector('dialog[open]')||event.target.matches('input,textarea,select')||!this.api.active())return;
+    if(event.target!==$('preview')&&event.target!==document.body&&!event.target.closest('#annotationList,[data-add-annotation],#editAnnotationButton,#copyAnnotationButton,#deleteAnnotationButton,[data-ann-layer],[data-ann-align]'))return;
+    if(this.shortcut(event)){event.stopImmediatePropagation();return;}
     if(event.key==='Escape'&&(this.mode||this.gesture)){this.stop(event);if(this.gesture?.before)this.current.settings=this.gesture.before;this.cancelDrawing();this.sync();this.api.render();return;}
     if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&event.key.toLowerCase()==='v'&&this.clipboard.length){this.stop(event);this.paste();return;}
     if(!this.selected.size)return;
     if(event.key==='Delete'||event.key==='Backspace'){this.stop(event);this.remove();}
-    else if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&['c','v'].includes(event.key.toLowerCase())){this.stop(event);event.key.toLowerCase()==='c'?this.copy():this.paste();}
+    else if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&['c','x','v'].includes(event.key.toLowerCase())){this.stop(event);if(event.key.toLowerCase()==='v')this.paste();else{this.copy();if(event.key.toLowerCase()==='x')this.remove();}}
     else if(!event.ctrlKey&&!event.metaKey&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){this.stop(event);const n=event.shiftKey?10:1;this.commit(translateAnnotations(this.annotations,this.selected,event.key==='ArrowLeft'?-n:event.key==='ArrowRight'?n:0,event.key==='ArrowUp'?-n:event.key==='ArrowDown'?n:0,this.current.width,this.current.height));}
+  }
+  command(action,payload){
+    if(TEXT_FORMAT_ACTIONS.includes(action)){const all=clone(this.annotations);for(const a of all)if(this.selected.has(a.id)&&!a.locked&&['text','distance','diameter'].includes(a.type))this.textPatch(a,formatText(this.textValue(a),action));this.commit(all);return;}
+    if(action==='edit-text')return this.edit();if(action==='delete')return this.remove();if(action==='duplicate'){this.copy();return this.paste();}
+    if(action==='text'||action==='line'||action==='arrow')return this.begin(action==='line'?'segment':action);
+    if(action==='escape'||action==='select'){if(this.gesture?.before)this.current.settings=this.gesture.before;this.cancelDrawing();this.selected.clear();this.shortcut.reset();this.sync();return this.api.render();}
+    if(action==='front'||action==='back')return this.layer(action);
+    if(action==='nudge')return this.commit(translateAnnotations(this.annotations,this.selected,payload.dx,payload.dy,this.current.width,this.current.height));
+    if(action==='select-all'){this.selected=new Set(this.annotations.filter(a=>a.visible).map(a=>a.id));this.sync();return this.api.render();}
+    if(action==='cycle-selection'){const list=this.annotations.filter(a=>a.visible),index=list.findIndex(a=>this.selected.has(a.id));if(list.length)this.select(list[(index+payload.direction+list.length)%list.length].id);return;}
+    if(action.startsWith('distribute-'))return this.align(action.endsWith('h')?'distribute_h':'distribute_v');
+    if(action.startsWith('align-'))return this.align(({center:'center_h',middle:'center_v'})[action.slice(6)]||action.slice(6));
+    if(action==='copy-format'){const a=this.focused;if(a)this.formatClipboard=this.textValue(a);return;}
+    if(action==='paste-format'&&this.formatClipboard){const all=clone(this.annotations);for(const a of all)if(this.selected.has(a.id)&&!a.locked)this.textPatch(a,{...this.formatClipboard,text:a.text});this.commit(all);}
   }
 }

@@ -2,26 +2,26 @@ import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=253e
 import {setupDirectSendButton} from './direct-transfer.mjs?v=253e6d7a3612';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=5f27e729adf3';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=5f27e729adf3';
-import { buildPlan, paint } from './render.js?v=5f27e729adf3';
-import { batchExport, exportImage } from './export.js?v=5f27e729adf3';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=57c42d5b1bd8';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=57c42d5b1bd8';
+import { buildPlan, paint } from './render.js?v=57c42d5b1bd8';
+import { batchExport, exportImage } from './export.js?v=57c42d5b1bd8';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=5f27e729adf3';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5f27e729adf3';
-import { createProject, readProject } from './project.js?v=5f27e729adf3';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=253e6d7a3612';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5f27e729adf3';
-import { prepareScaleBar } from './bar-workflow.js?v=5f27e729adf3';
-import { prepareCalibration } from './calibration-workflow.js?v=5f27e729adf3';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5f27e729adf3';
-import { AppUpdater } from './app-update.js?v=253e6d7a3612';
-import { ImageOverview } from './overview.js?v=5f27e729adf3';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5f27e729adf3';
-import { SamplePicker } from './sample-picker.js?v=5f27e729adf3';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=5f27e729adf3';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=57c42d5b1bd8';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=57c42d5b1bd8';
+import { createProject, readProject } from './project.js?v=57c42d5b1bd8';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=57c42d5b1bd8';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=57c42d5b1bd8';
+import { prepareScaleBar } from './bar-workflow.js?v=57c42d5b1bd8';
+import { prepareCalibration } from './calibration-workflow.js?v=57c42d5b1bd8';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=57c42d5b1bd8';
+import { AppUpdater } from './app-update.js?v=57c42d5b1bd8';
+import { ImageOverview } from './overview.js?v=57c42d5b1bd8';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=57c42d5b1bd8';
+import { SamplePicker } from './sample-picker.js?v=57c42d5b1bd8';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=57c42d5b1bd8';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
-import { AnnotationUI } from './annotation-ui.js?v=b307f808f67c';
+import { AnnotationUI } from './annotation-ui.js?v=57c42d5b1bd8';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
 import { estimateSourcePalette } from './palette-estimation.js?v=b307f808f67c';
 import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=b307f808f67c';
@@ -918,6 +918,7 @@ $('zoomSelect').addEventListener('change',()=>{
 for(const [id,raw] of [['rawPreviewButton',true],['processedPreviewButton',false]]) $(id).addEventListener('click',()=>{setTool('move');previewRaw=raw;$('rawPreviewButton').classList.toggle('active',raw);$('processedPreviewButton').classList.toggle('active',!raw);render();});
 let resizeFrame; new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(render); }).observe($('previewArea'));
 document.addEventListener('keydown', event => {
+  if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.getModifierState?.('AltGraph'))return;
   if(document.querySelector('dialog[open]'))return;
   const editing = event.target.matches('input, textarea, select');
   if(!editing && current && !busy && event.code==='Space' && (event.target===canvas || event.target===document.body)) {event.preventDefault();spacePan=true;canvas.style.cursor='grab';return;}
@@ -930,6 +931,7 @@ document.addEventListener('keydown', event => {
   }
   if (event.key === 'Escape' && current && !busy) { if (drag?.before) current.settings = drag.before; drag = pendingCrop = cropStart = measurementStart = measurement = null; current.settings.cropOptions.pending=null;current.history.push(current.settings);setTool('move'); syncInputs(); }
   if (!editing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(event.shiftKey); }
+  if (!editing && (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'y') { event.preventDefault(); undo(true); }
   if((event.ctrlKey||event.metaKey)&&!editing) {
     const key=event.key.toLowerCase();
     if(key==='s'){event.preventDefault();$(event.shiftKey?'settingsSaveMenuButton':'saveProjectButton').click();}
