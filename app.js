@@ -1,5 +1,5 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=253e6d7a3612';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=253e6d7a3612';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=717056f4acf4';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=717056f4acf4';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=57c42d5b1bd8';
@@ -10,12 +10,12 @@ import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?
 import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=57c42d5b1bd8';
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=57c42d5b1bd8';
 import { createProject, readProject } from './project.js?v=57c42d5b1bd8';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=57c42d5b1bd8';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=717056f4acf4';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=57c42d5b1bd8';
 import { prepareScaleBar } from './bar-workflow.js?v=57c42d5b1bd8';
 import { prepareCalibration } from './calibration-workflow.js?v=57c42d5b1bd8';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=57c42d5b1bd8';
-import { AppUpdater } from './app-update.js?v=57c42d5b1bd8';
+import { AppUpdater } from './app-update.js?v=717056f4acf4';
 import { ImageOverview } from './overview.js?v=57c42d5b1bd8';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=57c42d5b1bd8';
 import { SamplePicker } from './sample-picker.js?v=57c42d5b1bd8';
@@ -1213,6 +1213,11 @@ async function openProject(file,options={}){
     prepareFigureStudioProjectReplacement(project.ui.figureStudioProjectId,options);
   }catch(error){for(const item of restored)URL.revokeObjectURL(item.thumbnail);if(activeDecoded)releaseImage(activeDecoded.source);throw error;}
   // Replace the current work only after every embedded image/settings pair is valid.
+  if(options.fromBridge&&options.force){
+    annotationUI?.textEditor?.finish(true,{focus:false});annotationUI?.cancelDrawing();
+    if(annotationUI?.dialog.open)annotationUI.dialog.close();
+    drag=measurement=measurementStart=pendingCrop=cropStart=null;
+  }
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...restored);
   figureStudioProjectId=project.ui.figureStudioProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
@@ -1487,20 +1492,21 @@ figureStudioBridge=setupFigureBridge({
     return identity.projectId===figureStudioProjectId&&(!imageId||identity.images.some(image=>image.imageId===imageId)&&items.some(item=>item.id===imageId));
   },
   canAdoptAccepted(result){
+    if(busy||projectSaving||pendingInputEdit()||drag||cropStart||measurementStart)return false;
     if((result?.batch?.projectId??result?.image?.projectId)!==figureStudioProjectId||!Array.isArray(result?.bridgeState?.files)||items.length!==result.bridgeState.files.length)return false;
     const files=[...result.bridgeState.files];
     return items.every(item=>{const index=files.indexOf(item.file);if(index<0)return false;files.splice(index,1);return true;});
   },
   onConnectionChange(connected){figureStudioDirectSender?.setBridgeConnected(connected);},
-  async loadProject(file,{reconnect,imageId}={}) {
+  async loadProject(file,{reconnect,imageId,force=false}={}) {
     if (busy) throw new Error('画像の処理中です。少し待ってから開き直してください。');
     setBusy(true);
     try {
       const requested=await readMifitoIdentity(file);
       if(imageId&&!requested.images.some(image=>image.imageId===imageId))throw new Error('元プロジェクトに対象の画像が見つかりません。');
-      figureBridgePreservedOnReconnect=!!(reconnect&&current&&source&&requested.projectId===figureStudioProjectId&&(!imageId||items.some(item=>item.id===imageId)));
+      figureBridgePreservedOnReconnect=!!(!force&&reconnect&&current&&source&&requested.projectId===figureStudioProjectId&&(!imageId||items.some(item=>item.id===imageId)));
       if(!figureBridgePreservedOnReconnect){
-        await openProject(file,{fromBridge:true});
+        await openProject(file,{fromBridge:true,...(force?{force:true}:{})});
       }
       if(imageId)await chooseFigureStudioImage(imageId);
     }

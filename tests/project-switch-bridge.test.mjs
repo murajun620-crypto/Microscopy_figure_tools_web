@@ -20,7 +20,7 @@ function fixture({nextId='project-new',readError=null,decodeError=null,detachErr
   buildPlan(){},context:{},thumbnail:async()=>{events.push('thumbnail');return 'blob:new';},History,releaseImage:value=>events.push(`release:${value}`),requestAnimationFrame:fn=>fn(),URL:{revokeObjectURL:value=>events.push(`revoke:${value}`)},
   items,current:oldItem,figurePreviewCache:new Map([['old','preview']]),figurePreviewProjectId:'old',clearDownloads(){events.push('clear-downloads');},saveDirectory:'old-directory',previewRaw:true,projectHandle:'old-handle',projectName:'old.mifito',
   sourceHandles:new Map(),folderSupported:true,restoreExportFormats:formats=>formats,projectLabelControls:[],document:{querySelectorAll:()=>[]},
-  $:id=>{if(!elements.has(id))elements.set(id,{value:'',checked:false});return elements.get(id);},pendingCrop:null,syncInputs(){},render(){},workSaveState:{markSaved(){}},workspaceSnapshot:()=>'',projectUI:()=>({}),scheduleWorkState(){},busy:false,projectSaving:false,events,
+  $:id=>{if(!elements.has(id))elements.set(id,{value:'',checked:false});return elements.get(id);},pendingCrop:null,drag:null,measurement:null,measurementStart:null,cropStart:null,annotationUI:{textEditor:{finish(cancel){assert.equal(cancel,true);events.push('discard-text');}},cancelDrawing(){events.push('discard-drawing');},dialog:{open:true,close(){events.push('close-dialog');}}},syncInputs(){},render(){},workSaveState:{markSaved(){}},workspaceSnapshot:()=>'',projectUI:()=>({}),scheduleWorkState(){},busy:false,projectSaving:false,events,
  };
  const keys=Object.keys(env),api=new Function(...keys,`${helper}\n${newProjectSource}\n${openSource}\n${acceptanceSource}\nfunction activateItem(item){current=item;events.push('activate');}\nreturn {prepare:prepareFigureStudioProjectReplacement,open:openProject,newProject,accept:acceptFigureStudioResult,acceptDirect:acceptDirectFigureStudioResult,projectLoaded:figureStudioProjectLoaded,state:()=>({projectId:figureStudioProjectId,baseline:figureBridgeBaseline,ack:figureAcknowledgements,saved:figureWorkspaceSavedSignature,finish:figureWorkspaceFinishRestore,items:[...items],cache:figurePreviewCache})};`)(...keys.map(key=>env[key]));
  return {api,events,oldItem,baseline,ack,currentEditState,file:new File(['project'],'new.mifito')};
@@ -31,6 +31,11 @@ test('successful user project switch detaches only after decode and before repla
  assert.ok(events.indexOf('detach')>events.indexOf('thumbnail'));assert.ok(events.indexOf('detach')<events.indexOf('revoke:blob:old'));
  assert.ok(events.indexOf('reset-pending')>events.indexOf('detach'));assert.ok(events.indexOf('reset-pending')<events.indexOf('revoke:blob:old'));
  const state=api.state();assert.equal(state.projectId,'project-new');assert.notEqual(state.items[0],oldItem);assert.equal(state.baseline,null);assert.deepEqual(state.ack,{reset:true});assert.equal(state.saved,null);assert.equal(state.finish,null);
+});
+
+test('confirmed replacement closes old editors only after every new image has decoded',async()=>{
+ const f=fixture();await f.api.open(f.file,{fromBridge:true,force:true});assert.ok(f.events.indexOf('discard-text')>f.events.indexOf('thumbnail'));assert.ok(f.events.indexOf('discard-text')<f.events.indexOf('revoke:blob:old'));assert.ok(f.events.includes('close-dialog'));assert.equal(f.events.includes('detach'),false);
+ const bad=fixture({decodeError:Error('invalid image')});await assert.rejects(bad.api.open(bad.file,{fromBridge:true,force:true}),/invalid image/);assert.equal(bad.events.includes('discard-text'),false);assert.equal(bad.api.state().items[0],bad.oldItem);
 });
 
 test('reopening the same stable project keeps its active bridge binding',async()=>{
