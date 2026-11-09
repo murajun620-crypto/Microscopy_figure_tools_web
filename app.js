@@ -1,4 +1,4 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=workspace-update-v0715-2';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=source-save-v0717-1';
 import {setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
@@ -11,12 +11,12 @@ import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPic
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=ffbc761e0d41';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
 import { createProject, readProject } from './project.js?v=ffbc761e0d41';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=139161c09113';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=f258ac0e51ce';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ffbc761e0d41';
 import { prepareScaleBar } from './bar-workflow.js?v=ffbc761e0d41';
 import { prepareCalibration } from './calibration-workflow.js?v=ffbc761e0d41';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=ffbc761e0d41';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=139161c09113';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=f258ac0e51ce';
 import { ImageOverview } from './overview.js?v=ffbc761e0d41';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=ffbc761e0d41';
 import { SamplePicker } from './sample-picker.js?v=ffbc761e0d41';
@@ -1594,6 +1594,9 @@ figureStudioDirectSender?.setBridgeConnected(figureStudioBridge?.isConnected===t
 const workspaceTableFields=['enabled','calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','crop.x','crop.y','crop.width','crop.height'];
 const workspaceItemFields=['barVisible','labelVisible','labelText','subtext'];
 const workspaceStaticInputs=new Set([...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file'&&!input.dataset.imageField).map(input=>input.id));
+// The bridge controls mount only when Studio opens a source image. Validation
+// also runs before that connection is restored, so this ID is known up front.
+workspaceStaticInputs.add('figure-studio-bridge-send-scope');
 const workspaceDialogs=new Set([...document.querySelectorAll('dialog[id]')].filter(node=>node.id!=='updateDialog').map(node=>node.id));
 for(const event of ['input','change','pointerdown','keydown','wheel'])document.addEventListener(event,()=>{figureWorkspaceEditSerial++;});
 function workspaceFocusReady(){const frame=window.frameElement;return !document.hidden&&(!frame||!frame.inert&&!frame.hidden&&frame.getClientRects().length>0);}
