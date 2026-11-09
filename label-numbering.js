@@ -1,5 +1,5 @@
-import { sequenceLabel } from './core.js?v=d76443bdcb06';
-import {findPanelLabel, PRIMARY_LABEL_ID} from './panel-labels.js?v=d76443bdcb06';
+import { sequenceLabel } from './core.js?v=ffbc761e0d41';
+import {findPanelLabel, PRIMARY_LABEL_ID} from './panel-labels.js?v=ffbc761e0d41';
 
 // Mirrors SectionSettingsDialog.panel_numbering_settings in the Python app.
 export function panelNumbering(preset, values = {}) {

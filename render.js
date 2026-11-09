@@ -1,10 +1,10 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=d76443bdcb06';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=ffbc761e0d41';
 import { inlineRuns } from './inline-text.js?v=79b671978f24';
 import { measurementLayout } from './annotations.js?v=57c42d5b1bd8';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=57c42d5b1bd8';
 import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=79b671978f24';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
-import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
+import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;

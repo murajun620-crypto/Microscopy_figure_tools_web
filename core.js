@@ -2,7 +2,7 @@
 import { validateAnnotations } from './annotations.js?v=57c42d5b1bd8';
 import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=79b671978f24';
 import {validateStudioSize} from './studio-size.mjs?v=5f27e729adf3';
-import {MAX_PANEL_LABELS} from './panel-labels.js?v=d76443bdcb06';
+import {MAX_PANEL_LABELS} from './panel-labels.js?v=ffbc761e0d41';
 export const UNITS = { nm: 0.001, 'µm': 1, mm: 1000 };
 export const LIMITS = { sourcePixels: 64_000_000, outputPixels: 64_000_000, edge: 16384, fileBytes: 128 * 1024 * 1024, batchBytes: 256 * 1024 * 1024, files: 100 };
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));

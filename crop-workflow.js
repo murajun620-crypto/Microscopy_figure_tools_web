@@ -1,5 +1,5 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=d76443bdcb06';
-import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
+import { copy, validateCrop, validateSettings } from './core.js?v=ffbc761e0d41';
+import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 
 export function cropTargets(items,current,scope) {
   if(!['batch','individual'].includes(scope)||!items.includes(current))throw new Error('トリミングの設定対象が不正です。');

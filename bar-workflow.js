@@ -1,4 +1,4 @@
-import { copy, validateSettings } from './core.js?v=d76443bdcb06';
+import { copy, validateSettings } from './core.js?v=ffbc761e0d41';
 
 // Visibility and calibration belong to each image, even when sharing a style.
 export function prepareScaleBar(items,current,settings,scope) {

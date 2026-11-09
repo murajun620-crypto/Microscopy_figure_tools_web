@@ -1,12 +1,12 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=d76443bdcb06';
-import { numberedLabel } from './label-numbering.js?v=d76443bdcb06';
-import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=d76443bdcb06';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=d76443bdcb06';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=ffbc761e0d41';
+import { numberedLabel } from './label-numbering.js?v=ffbc761e0d41';
+import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=ffbc761e0d41';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=ffbc761e0d41';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';
-import { outputBase, extensionFor } from './save-files.js?v=d76443bdcb06';
+import { outputBase, extensionFor } from './save-files.js?v=ffbc761e0d41';
 
 export async function exportImage(source, settings, format,options={}) {
   if (format === 'svg') {
