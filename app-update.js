@@ -1,6 +1,6 @@
 import { showDialog } from './movable-dialog.js?v=b307f808f67c';
 
-export const APP_BUILD = 'f258ac0e51ce';
+export const APP_BUILD = 'b7a3c8d091ef';
 const $=id=>document.getElementById(id);
 export function updateAvailability(latest,version,build){
   if(!latest||!/^\d{1,5}\.\d{1,5}\.\d{1,5}$/.test(latest.version)||!/^[a-f\d]{12}$/.test(latest.build))throw new Error('配信情報を確認できませんでした。');
@@ -37,7 +37,7 @@ export class AppUpdater {
   }
   message(text,error=false){$('updateMessage').textContent=text;$('updateMessage').classList.toggle('error',error);}
   sync(){
-    const disabled=this.api.busy();
+    const disabled=this.api.busy()||this.api.versionChecking?.();
     $('checkUpdateButton').disabled=$('recheckUpdateButton').disabled=disabled||this.checking;
     $('applyUpdateButton').disabled=$('retryUpdateRestore').disabled=$('downloadUpdateBackup').disabled=disabled||this.checking;
     $('closeUpdateDialog').disabled=disabled;
@@ -60,18 +60,20 @@ export class AppUpdater {
     }catch(error){this.message(`更新を確認できませんでした。接続を確認して再確認してください。${error.name==='AbortError'?'通信がタイムアウトしました。':error.message}`,true);}
     finally{clearTimeout(timeout);this.checking=false;this.sync();}
   }
-  async apply(){
+  async apply({pendingToken=null}={}){
     if(!this.available||this.api.busy())return;
     this.api.lock(true);this.message('作業内容を一時保存しています…');
     const token=crypto.randomUUID();
     try{
+      if(window.FigureAppRelease){this.available=await window.FigureAppRelease.latest();if(updateAvailability(this.available,this.api.version,APP_BUILD)==='current'){this.api.lock(false);return false;}}
       const session=this.recovery&&!this.api.hasWork()?this.recovery.record.session:await this.api.capture();
       const record={format:'mifito-update',version:1,fromVersion:this.api.version,fromBuild:APP_BUILD,target:this.available,url:location.href,createdAt:Date.now(),session};
       await updateSessionStore('put',token,record);
-      const url=new URL(location.href);url.searchParams.set('_update',token);
+      const url=window.FigureAppRelease?window.FigureAppRelease.navigationURL(location.href,this.available,pendingToken):new URL(location.href);url.searchParams.set('_update',token);
       this.reloading=true;location.replace(url.href);
       setTimeout(()=>{this.reloading=false;this.api.lock(false);},5000);
-    }catch(error){this.reloading=false;this.api.lock(false);this.message(`更新を中止しました。現在の作業はそのままです。${error.message}`,true);}
+      return true;
+    }catch(error){this.reloading=false;this.api.lock(false);this.message(`更新を中止しました。現在の作業はそのままです。${error.message}`,true);return false;}
   }
   async restore(){
     const token=new URL(location.href).searchParams.get('_update');
@@ -83,6 +85,8 @@ export class AppUpdater {
       this.recovery={token,record};
       finish=await this.api.restore(record.session);
       const original=new URL(record.url);original.searchParams.delete('_update');
+      original.searchParams.set('_appBuild',APP_BUILD);original.searchParams.set('_appReload',crypto.randomUUID());
+      const pendingToken=new URL(location.href).searchParams.get('_projectOpen');if(pendingToken)original.searchParams.set('_projectOpen',pendingToken);
       if(original.origin===location.origin&&original.pathname===location.pathname)history.replaceState(null,'',original.href);
       try{await updateSessionStore('delete',token);}catch{}
       this.recovery=null;$('updateDialog').close();

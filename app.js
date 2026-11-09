@@ -11,12 +11,12 @@ import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPic
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=ffbc761e0d41';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
 import { createProject, readProject } from './project.js?v=ffbc761e0d41';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=f258ac0e51ce';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b7a3c8d091ef';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ffbc761e0d41';
 import { prepareScaleBar } from './bar-workflow.js?v=ffbc761e0d41';
 import { prepareCalibration } from './calibration-workflow.js?v=ffbc761e0d41';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=ffbc761e0d41';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=f258ac0e51ce';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=b7a3c8d091ef';
 import { ImageOverview } from './overview.js?v=ffbc761e0d41';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=ffbc761e0d41';
 import { SamplePicker } from './sample-picker.js?v=ffbc761e0d41';
@@ -27,6 +27,7 @@ import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f
 import { estimateSourcePalette } from './palette-estimation.js?v=b307f808f67c';
 import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=b307f808f67c';
 
+window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
 const canvas = $('preview'), context = canvas.getContext('2d');
 const items = [];
@@ -69,7 +70,7 @@ function commitPanelLabel(key, value) {
   });
   applyPanelLabelUpdates(updates);
 }
-let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
+let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null,projectVersionChecking=false;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
 let annotationUI=null,mapEstimate=null,appUpdater=null,imageOverview=null,imageTable=null,previewMode='single';
@@ -287,7 +288,7 @@ for (const [id,offset] of [['previousImage',-1],['nextImage',1]]) $(id).addEvent
 });
 function setBusy(value) {
   if (value) cancelWheelZoom();
-  busy = value; document.body.classList.toggle('busy', value);
+  busy = value;value ||= projectVersionChecking||appUpdater?.reloading; document.body.classList.toggle('busy', !!value);
   figureStudioDirectSender?.sync();
   $('projectInput').disabled=value;
   $('openProjectButton').disabled=value;
@@ -1256,6 +1257,10 @@ $('projectInput').addEventListener('change',()=>{
   if(file)action(()=>openProject(file));
 });
 async function openProject(file,options={}){
+  if(projectVersionChecking)return false;
+  const wasBusy=busy;projectVersionChecking=true;setBusy(false);
+  try{if(window.FigureAppRelease&&!await window.FigureAppRelease.ensureCurrent({file,handle:sourceHandles.get(file)||null,options}))return false;}
+  finally{projectVersionChecking=false;if(!appUpdater?.reloading)setBusy(wasBusy);}
   notify('プロジェクトを読み込んでいます…');
   const project=await readProject(file),restored=[];
   let activeDecoded=null;
@@ -1305,6 +1310,7 @@ async function openProject(file,options={}){
   pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
   workSaveState.markSaved(workspaceSnapshot(items,projectUI()));scheduleWorkState();
   notify(`プロジェクトを開きました（${items.length}枚）。編集を再開できます。`);
+  return true;
 }
 async function saveSettingsFile(session) {
   if(busy||!current)return;closeSettingsSaveMenu();
@@ -1464,11 +1470,12 @@ for(const id of ['multiDemoButton','emptyDemoButton'])$(id).addEventListener('cl
 annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
 imageTable=new ImageSettingsTable({items:()=>items,current:()=>current,busy:()=>busy,edit:editImageTable,select:item=>action(()=>selectItem(item)),notify});
 imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,planOptions:labelPlanOptions,select:item=>action(()=>selectItem(item))});
-appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
+appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,versionChecking:()=>projectVersionChecking,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
 render();
 const galleryProject = new URLSearchParams(location.search).get('gallery');
+if(window.FigureAppRelease&&!await window.FigureAppRelease.startup())throw Error('最新版へ切り替えています。');
 if (!await appUpdater.restore() && !getFigureBridgeContext() && galleryProject && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(galleryProject)) {
   await action(async () => {
     const response = await fetch(new URL(`gallery/projects/${galleryProject}.mifito`, import.meta.url));
@@ -1736,4 +1743,12 @@ window.FigureStudioWorkspaceState={
  markSaved(signature){if(typeof signature==='string'&&signature===figureWorkspaceSignature())figureWorkspaceSavedSignature=signature;}
 };
 window.addEventListener('focus',()=>window.FigureStudioWorkspaceState.finishRestore());
+
+window.FigureAppRelease?.configure({
+ ready:()=>!busy&&!projectSaving,
+ update:async(target,pendingToken)=>{appUpdater.available=target;return appUpdater.apply({pendingToken});},
+ open:async record=>{if(busy)throw Error('画像の処理が完了してから再試行してください。');if(record.handle)sourceHandles.set(record.file,record.handle);setBusy(true);try{return await openProject(record.file,record.options);}finally{setBusy(false);}},
+ error:error=>notify(error.message,true)
+});
+void window.FigureAppRelease?.resumePending().catch(error=>notify(error.message,true));
 
