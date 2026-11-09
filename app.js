@@ -1,5 +1,5 @@
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=studio-send-default-all-v1';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=studio-send-default-all-v1';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=workspace-update-v0715-2';
+import {setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
 import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ffbc761e0d41';
@@ -11,12 +11,12 @@ import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPic
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=ffbc761e0d41';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
 import { createProject, readProject } from './project.js?v=ffbc761e0d41';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=a384b35f0cf8';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=139161c09113';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ffbc761e0d41';
 import { prepareScaleBar } from './bar-workflow.js?v=ffbc761e0d41';
 import { prepareCalibration } from './calibration-workflow.js?v=ffbc761e0d41';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=ffbc761e0d41';
-import { AppUpdater } from './app-update.js?v=ffbc761e0d41';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=139161c09113';
 import { ImageOverview } from './overview.js?v=ffbc761e0d41';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=ffbc761e0d41';
 import { SamplePicker } from './sample-picker.js?v=ffbc761e0d41';
@@ -1685,6 +1685,14 @@ function validateMiFiToWorkspaceState(snapshot){
 }
 window.FigureStudioWorkspaceState={
  version:1,app:'mifito',
+ release:{version:APP_VERSION,build:APP_BUILD},
+ setUpdateReloading(value){if(appUpdater)appUpdater.reloading=!!value;},
+ captureReloadHandles(){return items.length?structuredClone({projectId:figureStudioProjectId,projectHandle,saveDirectory,items:items.map(item=>({id:item.id,sourceHandle:item.sourceHandle??null,sourceDirectory:item.sourceDirectory??null}))}):null;},
+ restoreReloadHandles(saved){
+  if(saved?.projectId!==figureStudioProjectId||!Array.isArray(saved.items))throw Error('元画像と保存先の対応を確認できませんでした。');
+  const handle=(value,kind)=>value?.kind===kind?value:null;projectHandle=handle(saved.projectHandle,'file');saveDirectory=handle(saved.saveDirectory,'directory');
+  for(const item of items){const previous=saved.items.find(entry=>entry.id===item.id);if(previous){item.sourceHandle=handle(previous.sourceHandle,'file');item.sourceDirectory=handle(previous.sourceDirectory,'directory');}}scheduleWorkState();
+ },
  async capture(){
   workspaceReady();checkWorkspaceRawInputs();const signature=figureWorkspaceSignature();
   if(!items.length)return {version:1,app:'mifito',state:null,binding:null};

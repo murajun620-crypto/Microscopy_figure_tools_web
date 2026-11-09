@@ -1,6 +1,6 @@
 import { showDialog } from './movable-dialog.js?v=b307f808f67c';
 
-export const APP_BUILD = 'ffbc761e0d41';
+export const APP_BUILD = '139161c09113';
 const $=id=>document.getElementById(id);
 export function updateAvailability(latest,version,build){
   if(!latest||!/^\d{1,5}\.\d{1,5}\.\d{1,5}$/.test(latest.version)||!/^[a-f\d]{12}$/.test(latest.build))throw new Error('配信情報を確認できませんでした。');
