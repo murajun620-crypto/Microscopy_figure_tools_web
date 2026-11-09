@@ -1,5 +1,5 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=57c42d5b1bd8';
-import { prepareCrop } from './crop-workflow.js?v=57c42d5b1bd8';
+import { copy, validateCrop, validateSettings } from './core.js?v=label-pt-v1914-1';
+import { prepareCrop } from './crop-workflow.js?v=label-pt-v1914-1';
 
 const fields=new Set(['calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','crop.x','crop.y','crop.width','crop.height']);
 export function prepareImageTableEdit(item,path,value){

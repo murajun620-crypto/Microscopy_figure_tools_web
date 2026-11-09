@@ -1,4 +1,4 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=57c42d5b1bd8';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=label-pt-v1914-1';
 import { inlineRuns } from './inline-text.js?v=79b671978f24';
 import { measurementLayout } from './annotations.js?v=57c42d5b1bd8';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=57c42d5b1bd8';
@@ -38,7 +38,37 @@ function textRuns(context, text, size) {
 
 // Port of MainWindow._calculate_scale_bar_layout and _panel_label_layout.
 // Output-scale rounding happens before layout, as in Qt, not after drawing.
-export function buildPlan(settings, context, strict = false, scale = 1, includeLabel = true) {
+export function buildPlan(settings, context, strict = false, scale = 1, includeLabel = true, options = {}) {
+  const label = settings.panelLabel;
+  const layout = size => buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, size);
+  if (!label.visible || label.fontUnit !== 'pt') return layout();
+  const pointSize = plan => {
+    if (options.forStudio) {
+      const physical = studioSvgSize(plan, settings.output.studioSize);
+      return physical.bodyWidthMm / (plan.crop.width * scale) * 72 / 25.4;
+    }
+    return settings.output.sizeCm / 2.54 * 72 / (settings.output.sizeAxis === 'height' ? plan.height : plan.width);
+  };
+  // Outside labels and colorbars can enlarge the physical-size axis. Solve
+  // against the completed layout so that a 9 pt label is still 9 pt on export.
+  let plan = layout(), size = label.fontPt / pointSize(plan);
+  plan = layout(size);
+  if (Math.abs(size * pointSize(plan) - label.fontPt) < .01) return plan;
+  let low = 0, high = Math.max(size, 1);
+  while (high < 1e6 && high * pointSize(layout(high)) < label.fontPt) high *= 2;
+  if (high * pointSize(layout(high)) < label.fontPt) throw new Error('指定したラベル文字が保存サイズに収まりません。画像の保存サイズを大きくしてください。');
+  let best = plan, error = Infinity;
+  for (let i = 0; i < 32; i++) {
+    size = (low + high) / 2; plan = layout(size);
+    const actual = size * pointSize(plan), difference = Math.abs(actual - label.fontPt);
+    if (difference < error) { best = plan; error = difference; }
+    if (difference < .01) return plan;
+    if (actual < label.fontPt) low = size; else high = size;
+  }
+  if (error <= .05) return best;
+  throw new Error('ラベル文字サイズを計算できません。保存サイズまたは文字サイズを調整してください。');
+}
+function buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, labelSize) {
   const { crop, scaleBar: bar, panelLabel: label } = settings;
   const width = crop.width * scale, imageHeight = crop.height * scale, short = Math.min(width, imageHeight),barFontSize=pixels(short,bar.fontPercent);
   const boxes = [], warnings = [];
@@ -70,11 +100,11 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
       fontSize,barWidth,thickness,textWidth,textHeight,gap });
   } else if (bar.visible && !tooWide) warnings.push(settings.calibration ? 'スケールバーの長さを入力してください。' : '未校正：スケールバーは表示されません。');
   if (label.visible) {
-    const [main, supplemental] = panelParts(label, includeLabel), fontSize = pixels(short, label.fontPercent);
+    const [main, supplemental] = panelParts(label, includeLabel), fontSize = labelSize ?? pixels(short, label.fontPercent);
     const m = metrics(context, main, fontSize), sub = textRuns(context, supplemental, fontSize);
     const labelWidth = main ? m.tightWidth : 0, subWidth = supplemental ? Math.max(pyRound(sub.width),sub.advance) : 0;
     const gap = main && supplemental ? metrics(context,' ',fontSize).advance : 0;
-    const subHeight = supplemental ? pyRound(sub.height) : 0, contentHeight = Math.max(main ? m.tightHeight : 0,subHeight,fontSize);
+    const subHeight = supplemental ? pyRound(sub.height) : 0, contentHeight = Math.ceil(Math.max(main ? m.tightHeight : 0,subHeight,fontSize));
     const paddingX = label.background ? Math.max(2,pyRound(fontSize*.3)) : 0, paddingY = label.background ? Math.max(2,pyRound(fontSize*.22)) : 0;
     const boxWidth = Math.max(1,labelWidth+gap+subWidth+paddingX*2), boxHeight = Math.max(1,contentHeight+paddingY*2);
     const outsideGap = Math.max(1,pyRound(3*short/1000));
@@ -120,7 +150,7 @@ export function paint(context, source, plan, settings, {scale=1,annotations=true
   context.restore();
 }
 export function renderCanvas(source,settings,options={}) {
-  const canvas=document.createElement('canvas'),plan=buildPlan(settings,canvas.getContext('2d'),true,settings.output.scale,options.includeLabel??true),metrics=outputMetrics(plan,settings.output);
+  const canvas=document.createElement('canvas'),plan=buildPlan(settings,canvas.getContext('2d'),true,settings.output.scale,options.includeLabel??true,options),metrics=outputMetrics(plan,settings.output);
   canvas.width=metrics.width;canvas.height=metrics.height;paint(canvas.getContext('2d'),source,plan,settings,options);
   return {canvas,plan,metrics};
 }

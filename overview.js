@@ -1,5 +1,5 @@
-import { decodeImage, releaseImage } from './io.js?v=57c42d5b1bd8';
-import { buildPlan, paint } from './render.js?v=57c42d5b1bd8';
+import { decodeImage, releaseImage } from './io.js?v=label-pt-v1914-1';
+import { buildPlan, paint } from './render.js?v=label-pt-v1914-1';
 
 // Decode one image at a time and draw only cards near the visible viewport.
 export class ImageOverview {
@@ -47,7 +47,7 @@ export class ImageOverview {
         const key=`${signature}:${Math.round(width)}:${ratio}`;if(card.signature===key)continue;
         let decoded=null;card.status.textContent='読み込み中…';card.button.classList.remove('failed');
         try{
-          const settings=structuredClone(item.settings),context=card.canvas.getContext('2d'),plan=buildPlan(settings,context);
+          const settings=structuredClone(item.settings),context=card.canvas.getContext('2d'),plan=buildPlan(settings,context,false,1,true,this.api.planOptions?.());
           decoded=await decodeImage(item.file,item);
           if(!this.active||revision!==this.revision||!this.cards.has(item.id))break;
           const scale=Math.min(1,width*ratio/plan.width,240*ratio/plan.height,Math.sqrt(320000/(plan.width*plan.height)));

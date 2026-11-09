@@ -112,7 +112,7 @@ export function defaultSettings(width, height) {
     crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [],mapColorbar:defaultMapColorbar(),
     cropOptions: { aspect: 'free', application: 'selection', width: 5, height: 4, pending: null },
     scaleBar: { visible: true, length: null, unit: 'µm', anchor: 'bottom-right', position: null, fontPercent: 9, thicknessPercent: 0.8, gapPercent: 1, verticalPaddingPercent: 3, color: '#ffffff', textColor: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.5, showText: true, outsideTransparent: true, outsideColor: '#ffffff' },
-    panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
+    panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontUnit: 'pt', fontPt: 9, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
     output: { scale: 1, resampling: 'smooth', sizeCm: 4, sizeAxis: 'width', dpi:600, outsideTransparent: true, outsideColor: '#ffffff', pptEditable: false, pptIncludeLabel: true, studioSize:{axis:'height',mm:40} },
   };
 }
@@ -169,6 +169,9 @@ export function validateSettings(value, width, height) {
       target.gapPercent = numberRange(settings.gapPercent ?? 1, 0, 10, 'バー－文字間隔');
       target.verticalPaddingPercent = numberRange(settings.verticalPaddingPercent ?? 3, 0, 10, '上下余白補正');
     } else {
+      target.fontUnit = settings.fontUnit ?? 'percent';
+      if (!['pt', 'percent'].includes(target.fontUnit)) throw new Error('ラベル文字サイズの単位が不正です。');
+      target.fontPt = numberRange(settings.fontPt ?? 9, 0.1, 200, 'ラベル文字サイズ（pt）');
       target.text = text(settings.text); target.subtext = text(settings.subtext); target.bold = boolean(settings.bold);
       target.parentheses = boolean(settings.parentheses ?? true);
     }
@@ -212,7 +215,7 @@ export function desktopSettings(data, image) {
   Object.assign(s.scaleBar,{visible:b.visible,length:b.length??null,unit:unit(b.unit),anchor:b.placement_mode==='outside_bottom'?`outside-bottom-${b.horizontal_alignment??b.position_preset.split('-').at(-1)}`:b.position_preset,
     position:b.use_custom_position?b.custom_position:null,thicknessPercent:b.line_width_ratio_percent??b.line_width,color:b.line_color,showText:l.visible,fontPercent:l.font_ratio_percent??l.font_scale,textColor:l.color,gapPercent:l.text_gap_ratio_percent??l.text_bar_gap_offset,
     verticalPaddingPercent:data.layout?.edge_margin_ratio_percent??g.vertical_padding_offset??0,background:g.visible,backgroundColor:g.color,opacity:g.opacity_percent/100,outsideTransparent:a.transparent??true,outsideColor:a.background_color??'#ffffff'});
-  Object.assign(s.panelLabel,{visible:p.visible??true,text:p.text??'a',subtext:p.supplemental_text??'',parentheses:p.use_parentheses??true,anchor:p.position_preset??'top-left',fontPercent:p.font_ratio_percent??p.font_scale??9,color:p.text_color??'#ffffff',background:p.background_visible??false,backgroundColor:p.background_color??'#000000',opacity:(p.background_opacity_percent??65)/100,outsideTransparent:p.outside_transparent??true,outsideColor:p.outside_background_color??'#ffffff',position:p.use_custom_position?p.position:null});
+  Object.assign(s.panelLabel,{visible:p.visible??true,text:p.text??'a',subtext:p.supplemental_text??'',parentheses:p.use_parentheses??true,anchor:p.position_preset??'top-left',fontUnit:'percent',fontPercent:p.font_ratio_percent??p.font_scale??9,color:p.text_color??'#ffffff',background:p.background_visible??false,backgroundColor:p.background_color??'#000000',opacity:(p.background_opacity_percent??65)/100,outsideTransparent:p.outside_transparent??true,outsideColor:p.outside_background_color??'#ffffff',position:p.use_custom_position?p.position:null});
   Object.assign(s.output,{scale:o.scale_factor??1,resampling:o.image_resampling??'smooth',sizeAxis:o.size_axis??'width',sizeCm:o.size_cm??4,dpi:o.dpi??600,pptEditable:o.ppt_label_text??false,studioSize:null});
   return validateSettings(s,image.width,image.height);
 }

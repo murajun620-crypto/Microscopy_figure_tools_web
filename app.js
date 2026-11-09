@@ -2,24 +2,24 @@ import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=7170
 import {setupDirectSendButton} from './direct-transfer.mjs?v=717056f4acf4';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=57c42d5b1bd8';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=57c42d5b1bd8';
-import { buildPlan, paint } from './render.js?v=57c42d5b1bd8';
-import { batchExport, exportImage } from './export.js?v=57c42d5b1bd8';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=label-pt-v1914-1';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=label-pt-v1914-1';
+import { buildPlan, paint } from './render.js?v=label-pt-v1914-1';
+import { batchExport, exportImage } from './export.js?v=label-pt-v1914-1';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=57c42d5b1bd8';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=57c42d5b1bd8';
-import { createProject, readProject } from './project.js?v=57c42d5b1bd8';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=717056f4acf4';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=57c42d5b1bd8';
-import { prepareScaleBar } from './bar-workflow.js?v=57c42d5b1bd8';
-import { prepareCalibration } from './calibration-workflow.js?v=57c42d5b1bd8';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=57c42d5b1bd8';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=label-pt-v1914-1';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=label-pt-v1914-1';
+import { createProject, readProject } from './project.js?v=label-pt-v1914-1';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=label-pt-v1914-1';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=label-pt-v1914-1';
+import { prepareScaleBar } from './bar-workflow.js?v=label-pt-v1914-1';
+import { prepareCalibration } from './calibration-workflow.js?v=label-pt-v1914-1';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=label-pt-v1914-1';
 import { AppUpdater } from './app-update.js?v=717056f4acf4';
-import { ImageOverview } from './overview.js?v=57c42d5b1bd8';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=57c42d5b1bd8';
-import { SamplePicker } from './sample-picker.js?v=57c42d5b1bd8';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=57c42d5b1bd8';
+import { ImageOverview } from './overview.js?v=label-pt-v1914-1';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=label-pt-v1914-1';
+import { SamplePicker } from './sample-picker.js?v=label-pt-v1914-1';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=label-pt-v1914-1';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
 import { AnnotationUI } from './annotation-ui.js?v=57c42d5b1bd8';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
@@ -297,6 +297,8 @@ function syncInputs() {
     if (input.type === 'checkbox') input.checked = value; else input.value = value ?? '';
   }
   syncOpacityFields();
+  $('labelFontPtField').hidden=current.settings.panelLabel.fontUnit!=='pt';
+  $('labelFontPercentField').hidden=current.settings.panelLabel.fontUnit==='pt';
   syncStudioSizeControls(true);
   $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = current.settings.panelLabel.anchor;
   const c = current.settings.crop;
@@ -528,6 +530,7 @@ function setPreviewMode(mode){
 $('singlePreviewButton').addEventListener('click',()=>setPreviewMode('single'));
 $('allPreviewButton').addEventListener('click',()=>setPreviewMode('all'));
 
+function labelPlanOptions(){return {forStudio:new URLSearchParams(location.search).get('figureWorkspace')==='1'||!!getFigureBridgeContext()};}
 function render() {
   scheduleWorkState();imageTable?.sync();
   const overview=previewMode==='all'&&!!current;
@@ -543,7 +546,7 @@ function render() {
   const settings = current.settings, raw = tool === 'crop'||previewRaw;
   try {
     const rawCrop=previewRaw&&tool!=='crop'?{x:0,y:0,width:current.width,height:current.height}:settings.crop;
-    plan = raw ? { width:rawCrop.width,height:rawCrop.height,imageHeight:rawCrop.height,top:0,bottom:0,crop:rawCrop,annotations:[],warnings:[],fills:[] } : buildPlan(settings, context);
+    plan = raw ? { width:rawCrop.width,height:rawCrop.height,imageHeight:rawCrop.height,top:0,bottom:0,crop:rawCrop,annotations:[],warnings:[],fills:[] } : buildPlan(settings, context,false,1,true,labelPlanOptions());
     const area = $('previewArea'), zoom = $('zoomSelect').value;
     if (!area.clientWidth) return;
     const displayScale = zoom === 'fit' ? Math.min((area.clientWidth - 58) / plan.width, (area.clientHeight - 58) / plan.height, 1) : Number(zoom);
@@ -1401,7 +1404,7 @@ for(const id of ['demoButton','emptySingleDemoButton'])$(id).addEventListener('c
 for(const id of ['multiDemoButton','emptyDemoButton'])$(id).addEventListener('click',()=>samplePicker.open(3));
 annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
 imageTable=new ImageSettingsTable({items:()=>items,current:()=>current,busy:()=>busy,edit:editImageTable,select:item=>action(()=>selectItem(item)),notify});
-imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,select:item=>action(()=>selectItem(item))});
+imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,planOptions:labelPlanOptions,select:item=>action(()=>selectItem(item))});
 appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
 setBusy(false);
 await Promise.all([document.fonts.load('400 16px FigureSans'), document.fonts.load('700 16px FigureSans')]);
