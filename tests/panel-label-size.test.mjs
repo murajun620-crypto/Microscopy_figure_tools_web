@@ -4,8 +4,16 @@ import {defaultSettings,validateSettings,serializeProject,parseProject,outputMet
 import {buildPlan,renderSvg} from '../render.js';
 import {studioSvgSize} from '../studio-size.mjs';
 import {createProject,readProject} from '../project.js';
+import {readFile} from 'node:fs/promises';
+import {APP_BUILD,updateAvailability} from '../app-update.js';
 const context={font:'',measureText(text){const n=parseFloat(this.font)||20;return {width:text.length*n*.6,actualBoundingBoxLeft:0,actualBoundingBoxRight:text.length*n*.6,actualBoundingBoxAscent:n*.75,actualBoundingBoxDescent:n*.2,fontBoundingBoxAscent:n*.9,fontBoundingBoxDescent:n*.22};},save(){},restore(){},scale(){},clearRect(){},drawImage(){}};
 const labelBox=plan=>plan.annotations.find(b=>b.kind==='panelLabel');
+
+test('release metadata supports update checks from the previous version and identifies the current build',async()=>{
+ const metadata=JSON.parse(await readFile(new URL('../version.json',import.meta.url),'utf8'));
+ assert.equal(metadata.build,APP_BUILD);assert.equal(updateAvailability(metadata,'1.9.13','717056f4acf4'),'available');
+ assert.equal(updateAvailability(metadata,metadata.version,APP_BUILD),'current');
+});
 const near=(actual,expected,tolerance=.011)=>assert.ok(Math.abs(actual-expected)<tolerance,`${actual} != ${expected}`);
 function fixture(w,h){const s=defaultSettings(w,h);s.scaleBar.visible=false;Object.assign(s.panelLabel,{text:'XZ image',parentheses:false});return s;}
 

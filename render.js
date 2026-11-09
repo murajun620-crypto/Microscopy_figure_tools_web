@@ -1,4 +1,4 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=label-pt-v1914-1';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=9f03e07fb447';
 import { inlineRuns } from './inline-text.js?v=79b671978f24';
 import { measurementLayout } from './annotations.js?v=57c42d5b1bd8';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=57c42d5b1bd8';
