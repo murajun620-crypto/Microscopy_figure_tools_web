@@ -2,6 +2,7 @@
 import { validateAnnotations } from './annotations.js?v=57c42d5b1bd8';
 import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=79b671978f24';
 import {validateStudioSize} from './studio-size.mjs?v=5f27e729adf3';
+import {MAX_PANEL_LABELS} from './panel-labels.js?v=d76443bdcb06';
 export const UNITS = { nm: 0.001, 'µm': 1, mm: 1000 };
 export const LIMITS = { sourcePixels: 64_000_000, outputPixels: 64_000_000, edge: 16384, fileBytes: 128 * 1024 * 1024, batchBytes: 256 * 1024 * 1024, files: 100 };
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
@@ -109,7 +110,7 @@ export function relativeCrop(crop, oldWidth, oldHeight, newWidth, newHeight) {
 export function defaultSettings(width, height) {
   validateSize(width, height);
   return {
-    crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [],mapColorbar:defaultMapColorbar(),
+    crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [], additionalPanelLabels: [], mapColorbar:defaultMapColorbar(),
     cropOptions: { aspect: 'free', application: 'selection', width: 5, height: 4, pending: null },
     scaleBar: { visible: true, length: null, unit: 'µm', anchor: 'bottom-right', position: null, fontPercent: 9, thicknessPercent: 0.8, gapPercent: 1, verticalPaddingPercent: 3, color: '#ffffff', textColor: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.5, showText: true, outsideTransparent: true, outsideColor: '#ffffff' },
     panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontUnit: 'pt', fontPt: 9, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
@@ -149,10 +150,9 @@ export function validateSettings(value, width, height) {
     if (!value.calibration || !Object.hasOwn(UNITS, value.calibration.unit)) throw new Error('校正の単位が不正です。');
     result.calibration = { pixelSize: positive(value.calibration.pixelSize, '校正値'), unit: value.calibration.unit };
   }
-  for (const name of ['scaleBar', 'panelLabel']) {
-    const settings = value[name];
+  function decoration(name, settings) {
     if (!settings || !anchors.includes(settings.anchor)) throw new Error('注釈の位置が不正です。');
-    const target = result[name];
+    const target = copy(defaults[name]);
     for (const key of ['visible', 'background']) target[key] = boolean(settings[key]);
     for (const key of ['color', 'backgroundColor']) target[key] = color(settings[key]);
     target.anchor = settings.anchor;
@@ -175,7 +175,17 @@ export function validateSettings(value, width, height) {
       target.text = text(settings.text); target.subtext = text(settings.subtext); target.bold = boolean(settings.bold);
       target.parentheses = boolean(settings.parentheses ?? true);
     }
+    return target;
   }
+  for (const name of ['scaleBar', 'panelLabel']) result[name] = decoration(name, value[name]);
+  const additional = value.additionalPanelLabels ?? [];
+  if (!Array.isArray(additional) || additional.length >= MAX_PANEL_LABELS) throw new Error(`ラベルは画像1枚につき${MAX_PANEL_LABELS}個までです。`);
+  const labelIds = new Set(['primary']);
+  result.additionalPanelLabels = additional.map(label => {
+    if (!label || typeof label.id !== 'string' || !/^[a-zA-Z0-9-]{1,128}$/.test(label.id) || labelIds.has(label.id)) throw new Error('ラベルの識別情報が不正です。');
+    labelIds.add(label.id);
+    return {...decoration('panelLabel', label), id:label.id};
+  });
   const output = value.output;
   if (!output || ![1, 2, 4].includes(output.scale) || !['nearest', 'smooth'].includes(output.resampling) || !['width', 'height'].includes(output.sizeAxis)) throw new Error('出力設定が不正です。');
   if (![300,600,1200].includes(output.dpi ?? 600)) throw new Error('保存解像度が不正です。');

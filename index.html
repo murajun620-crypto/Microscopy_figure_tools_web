@@ -9,7 +9,7 @@
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=b307f808f67c">
-  <script type="module" src="./app.js?v=9f03e07fb447"></script>
+  <script type="module" src="./app.js?v=d76443bdcb06"></script>
 </head>
 <body>
   <header class="app-header">
@@ -116,7 +116,13 @@
         <details open>
           <summary><span class="step">4</span> パネルラベル</summary>
           <div class="detail-body">
-            <div class="label-format-card">
+            <label>設定対象<select id="labelScope"><option value="batch">一括設定（全画像）</option><option value="individual">個別設定（この画像）</option></select></label>
+            <label>編集するラベル<select id="panelLabelSelection" aria-label="編集するラベル"></select></label>
+            <div class="field-row"><button id="addPanelLabel" class="button" type="button">＋ ラベルを追加</button><button id="removePanelLabel" class="button" type="button" title="追加ラベルを削除します。ラベル1は表示をオフにできます。">削除</button></div>
+            <p class="hint">位置・書式・追加・削除は設定対象へ適用します。文字列・表示・ドラッグ移動はこの画像だけに適用します。</p>
+            <label class="check"><input id="panelLabelVisible" type="checkbox" data-setting="panelLabel.visible">このラベルを表示</label>
+            <div class="field-row"><label>文字列<input id="panelLabelText" type="text" maxlength="200" data-setting="panelLabel.text"></label><label>補足文字<input id="panelLabelSubtext" type="text" maxlength="200" data-setting="panelLabel.subtext"></label></div>
+            <details class="label-format-card"><summary>連番の設定</summary><div class="detail-body">
               <label>パネルラベルの種別<select id="panelFormat"><option value="alpha">1. (a), (b), (c)</option><option value="branch-number">2. (a-1), (a-2), (a-3)</option><option value="branch-roman">3. (a-i), (a-ii), (a-iii)</option><option value="number">4. (1), (2), (3)</option><option value="custom">5. カスタム...</option><option value="none">6. なし</option></select></label>
               <label id="panelBranchRow" hidden>親文字<input id="panelBranchParent" type="text" maxlength="3" value="a"></label>
               <div id="panelCustomOptions" hidden>
@@ -128,10 +134,10 @@
               <label id="panelStartRow" hidden>開始番号<input id="batchStart" type="number" min="1" max="9999" step="1" value="1"></label>
               <p id="labelFormatPreview" class="readout" aria-live="polite"></p>
               <label class="check"><input id="labelApplySelected" type="checkbox">チェックした画像だけに適用</label>
-              <button id="applyPanelLabels" class="button full">ラベルを適用</button>
+              <button id="applyPanelLabels" class="button full">選択中のラベルに連番を適用</button>
               <p class="hint">一覧順で連番を付けます。ラベル表示OFFの画像は連番を飛ばし、本文を空欄にします。補足文字は保持します。</p>
-            </div>
-            <p class="hint">ラベルの表示・文字列・補足文字は、画像一覧の「バー・ラベル設定」で編集します。</p>
+            </div></details>
+            <p class="hint">画像一覧・画像設定表のラベル欄は、ラベル1を編集します。</p>
             <div class="field-row">
               <label>サイズの単位<select id="labelFontUnit" data-setting="panelLabel.fontUnit"><option value="pt">pt</option><option value="percent">短辺の%</option></select></label>
               <label id="labelFontPtField" title="保存画像、またはStudioに貼る画像サイズに対する文字サイズです。"><span>文字サイズ（pt）</span><input id="labelFontPt" type="number" min="0.1" max="200" step="0.1" value="9" data-setting="panelLabel.fontPt"></label>
@@ -143,7 +149,7 @@
             <label class="check"><input id="labelBackground" type="checkbox" data-setting="panelLabel.background">個別背景を表示</label>
             <div class="opacity-field"><label for="labelOpacity">背景の不透明度</label><div class="opacity-controls"><input id="labelOpacity" type="range" min="0" max="1" step="0.01" value="0.65" data-setting="panelLabel.opacity"><div class="opacity-value"><input id="labelOpacityValue" type="number" min="0" max="100" step="1" value="65" data-opacity-for="labelOpacity" aria-label="パネルラベルの背景の不透明度（%）"><span aria-hidden="true">%</span></div></div></div>
             <div class="field-row"><label class="check"><input id="labelOutsideTransparent" type="checkbox" data-setting="panelLabel.outsideTransparent" checked>外側領域を透明</label><label class="color-field">外側領域の色<input id="labelOutsideColor" type="color" value="#ffffff" data-setting="panelLabel.outsideColor"></label></div>
-            <p class="hint">図中文字はPython版と同じArial・標準です。サイズはトリミング後画像の短辺に対する割合。補足文字は $_2$・$^2$・$\alpha$ などを使用できます。</p>
+            <p class="hint">図中文字はArial・標準です。pt指定は画像の縦横比に依存しません。補足文字は $_2$・$^2$・$\alpha$ などを使用できます。画像1枚にラベルを10個まで追加できます。</p>
           </div>
         </details>
         <details id="annotationsSection" open>

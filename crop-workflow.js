@@ -1,4 +1,5 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=9f03e07fb447';
+import { copy, validateCrop, validateSettings } from './core.js?v=d76443bdcb06';
+import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
 
 export function cropTargets(items,current,scope) {
   if(!['batch','individual'].includes(scope)||!items.includes(current))throw new Error('トリミングの設定対象が不正です。');
@@ -18,7 +19,7 @@ export function prepareCrop(items,current,crop,scope,reset=false) {
     const settings=copy(item.settings),previous=settings.crop;
     settings.crop=next;settings.cropOptions.pending=null;
     if(item===current||scope==='batch')settings.cropOptions={...copy(current.settings.cropOptions),pending:null};
-    if(settings.panelLabel.position){settings.panelLabel.position.x=Math.max(0,settings.panelLabel.position.x-next.x+previous.x);settings.panelLabel.position.y=Math.max(0,settings.panelLabel.position.y-next.y+previous.y);}
+    for(const label of panelLabels(settings))if(label.position){label.position.x=Math.max(0,label.position.x-next.x+previous.x);label.position.y=Math.max(0,label.position.y-next.y+previous.y);}
     settings.scaleBar.position=null;settings.scaleBar.fontPercent=9;
     return {item,settings:validateSettings(settings,item.width,item.height)};
   });

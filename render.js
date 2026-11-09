@@ -1,9 +1,10 @@
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=9f03e07fb447';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=d76443bdcb06';
 import { inlineRuns } from './inline-text.js?v=79b671978f24';
 import { measurementLayout } from './annotations.js?v=57c42d5b1bd8';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=57c42d5b1bd8';
 import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=79b671978f24';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
+import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
 
 export const FONT = 'Arial';
 export const font = size => `${size}px Arial, sans-serif`;
@@ -39,9 +40,9 @@ function textRuns(context, text, size) {
 // Port of MainWindow._calculate_scale_bar_layout and _panel_label_layout.
 // Output-scale rounding happens before layout, as in Qt, not after drawing.
 export function buildPlan(settings, context, strict = false, scale = 1, includeLabel = true, options = {}) {
-  const label = settings.panelLabel;
+  const labels = panelLabels(settings).filter(label => label.visible && label.fontUnit === 'pt');
   const layout = size => buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, size);
-  if (!label.visible || label.fontUnit !== 'pt') return layout();
+  if (!labels.length) return layout();
   const pointSize = plan => {
     if (options.forStudio) {
       const physical = studioSvgSize(plan, settings.output.studioSize);
@@ -51,25 +52,25 @@ export function buildPlan(settings, context, strict = false, scale = 1, includeL
   };
   // Outside labels and colorbars can enlarge the physical-size axis. Solve
   // against the completed layout so that a 9 pt label is still 9 pt on export.
-  let plan = layout(), size = label.fontPt / pointSize(plan);
+  let plan = layout(), size = 1 / pointSize(plan);
   plan = layout(size);
-  if (Math.abs(size * pointSize(plan) - label.fontPt) < .01) return plan;
+  if (Math.abs(size * pointSize(plan) - 1) < .00005) return plan;
   let low = 0, high = Math.max(size, 1);
-  while (high < 1e6 && high * pointSize(layout(high)) < label.fontPt) high *= 2;
-  if (high * pointSize(layout(high)) < label.fontPt) throw new Error('指定したラベル文字が保存サイズに収まりません。画像の保存サイズを大きくしてください。');
+  while (high < 1e6 && high * pointSize(layout(high)) < 1) high *= 2;
+  if (high * pointSize(layout(high)) < 1) throw new Error('指定したラベル文字が保存サイズに収まりません。画像の保存サイズを大きくしてください。');
   let best = plan, error = Infinity;
   for (let i = 0; i < 32; i++) {
     size = (low + high) / 2; plan = layout(size);
-    const actual = size * pointSize(plan), difference = Math.abs(actual - label.fontPt);
+    const actual = size * pointSize(plan), difference = Math.abs(actual - 1);
     if (difference < error) { best = plan; error = difference; }
-    if (difference < .01) return plan;
-    if (actual < label.fontPt) low = size; else high = size;
+    if (difference < .00005) return plan;
+    if (actual < 1) low = size; else high = size;
   }
-  if (error <= .05) return best;
+  if (error <= .00025) return best;
   throw new Error('ラベル文字サイズを計算できません。保存サイズまたは文字サイズを調整してください。');
 }
 function buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, labelSize) {
-  const { crop, scaleBar: bar, panelLabel: label } = settings;
+  const { crop, scaleBar: bar } = settings;
   const width = crop.width * scale, imageHeight = crop.height * scale, short = Math.min(width, imageHeight),barFontSize=pixels(short,bar.fontPercent);
   const boxes = [], warnings = [];
   const barWidth=bar.visible&&settings.calibration&&bar.length?Math.max(1,pyRound(scaleBarPixels(settings.calibration,bar.length,bar.unit)*scale)):null;
@@ -99,8 +100,8 @@ function buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, la
       runs:bar.showText ? [{ text:`${lengthText(bar.length)} ${bar.unit}`, size:fontSize, x:cx+Math.floor((contentWidth-barWidth)/2)+barWidth/2-(m.left+m.right)/2, y:textY+m.ascent }] : [],
       fontSize,barWidth,thickness,textWidth,textHeight,gap });
   } else if (bar.visible && !tooWide) warnings.push(settings.calibration ? 'スケールバーの長さを入力してください。' : '未校正：スケールバーは表示されません。');
-  if (label.visible) {
-    const [main, supplemental] = panelParts(label, includeLabel), fontSize = labelSize ?? pixels(short, label.fontPercent);
+  for (const [labelIndex, label] of panelLabels(settings).entries()) if (label.visible) {
+    const [main, supplemental] = panelParts(label, includeLabel), fontSize = label.fontUnit === 'pt' && labelSize !== undefined ? label.fontPt * labelSize : pixels(short, label.fontPercent);
     const m = metrics(context, main, fontSize), sub = textRuns(context, supplemental, fontSize);
     const labelWidth = main ? m.tightWidth : 0, subWidth = supplemental ? Math.max(pyRound(sub.width),sub.advance) : 0;
     const gap = main && supplemental ? metrics(context,' ',fontSize).advance : 0;
@@ -113,14 +114,18 @@ function buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, la
     const runs=[];
     if(main) runs.push({text:main,size:fontSize,x:paddingX-m.left,y:paddingY+Math.max(0,(contentHeight-m.tightHeight)/2)-m.top});
     if(supplemental) runs.push(...sub.runs.map(run=>({...run,x:run.x+paddingX+labelWidth+gap-sub.left,y:run.y+paddingY+Math.max(0,(contentHeight-subHeight)/2)-sub.top})));
-    boxes.push({kind:'panelLabel',anchor:label.anchor,style:label,x,y,width:boxWidth,height:boxHeight,band,bandHeight:band?boxHeight+outsideGap:0,backgroundRect:label.background?rect(0,0,boxWidth,boxHeight):null,runs,fontSize,subSize:fontSize,labelWidth,gap,pad:paddingX,main,supplemental});
+    boxes.push({kind:'panelLabel',labelIndex,anchor:label.anchor,style:label,x,y,width:boxWidth,height:boxHeight,band,bandHeight:band?boxHeight+outsideGap:0,backgroundRect:label.background?rect(0,0,boxWidth,boxHeight):null,runs,fontSize,subSize:fontSize,labelWidth,gap,pad:paddingX,main,supplemental});
   }
-  const top=Math.max(0,...boxes.filter(b=>b.band==='top').map(b=>b.bandHeight)), bottom=Math.max(0,...boxes.filter(b=>b.band==='bottom').map(b=>b.bandHeight));
+  // Outside labels that overlap horizontally receive separate rows.
+  for (const [index, box] of boxes.entries()) {
+    box.bandOffset = box.band && box.kind === 'panelLabel' && box.labelIndex > 0 ? Math.max(0, ...boxes.slice(0,index).filter(other => other.band === box.band && other.x < box.x + box.width && box.x < other.x + other.width).map(other => other.bandOffset + other.bandHeight)) : 0;
+  }
+  const top=Math.max(0,...boxes.filter(b=>b.band==='top').map(b=>b.bandOffset+b.bandHeight)), bottom=Math.max(0,...boxes.filter(b=>b.band==='bottom').map(b=>b.bandOffset+b.bandHeight));
   const fills=[];
   for(const box of boxes) {
     const shift=box.band==='top'?0:top;
-    box.area=box.band ? rect(0,box.band==='top'?0:top+imageHeight,width,box.bandHeight) : rect(0,top,width,imageHeight);
-    box.y+=shift;
+    box.area=box.band ? rect(0,(box.band==='top'?0:top+imageHeight)+box.bandOffset,width,box.bandHeight) : rect(0,top,width,imageHeight);
+    box.y+=shift+box.bandOffset;
     if(box.style.position) { box.x=clamp(box.style.position.x*scale,box.area.x,Math.max(box.area.x,width-box.width)); box.y=clamp(box.style.position.y*scale+shift,box.area.y,Math.max(box.area.y,box.area.y+box.area.height-box.height)); }
     if(box.band && !box.style.outsideTransparent) fills.push({...box.area,color:box.style.outsideColor});
   }
@@ -128,13 +133,14 @@ function buildPlanAtLabelSize(settings, context, strict, scale, includeLabel, la
   plan.measurements=measurementLayout(settings,plan,context);return plan;
 }
 
-export function paint(context, source, plan, settings, {scale=1,annotations=true,panelText=true,image=true,annotationShapes=true,onlyAnnotationKind=null}={}) {
+export function paint(context, source, plan, settings, {scale=1,annotations=true,panelText=true,image=true,annotationShapes=true,onlyAnnotationKind=null,onlyLabelIndex=null}={}) {
   context.save();context.scale(scale,scale);context.clearRect(0,0,plan.width,plan.height);
   if(image) for(const fill of plan.fills||[]) {context.fillStyle=fill.color;context.fillRect(fill.x,fill.y,fill.width,fill.height);}
   context.imageSmoothingEnabled=settings.output.resampling==='smooth';context.imageSmoothingQuality='high';
   const c=plan.crop;if(image) context.drawImage(source,c.x,c.y,c.width,c.height,plan.left??0,plan.top,plan.imageWidth??plan.width,plan.imageHeight??c.height);
   if(annotations) for(const box of plan.annotations) {
     if(onlyAnnotationKind&&box.kind!==onlyAnnotationKind)continue;
+    if(onlyLabelIndex!==null&&box.labelIndex!==onlyLabelIndex)continue;
     const s=box.style,bg=box.backgroundRect;
     context.save();context.translate(pyRound(box.x),pyRound(box.y));
     if(annotationShapes&&bg) {context.fillStyle=s.backgroundColor;context.globalAlpha=Math.round(s.opacity*255)/255;context.fillRect(bg.x,bg.y,bg.width,bg.height);context.globalAlpha=1;}

@@ -2,24 +2,25 @@ import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=7170
 import {setupDirectSendButton} from './direct-transfer.mjs?v=717056f4acf4';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=9f03e07fb447';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=9f03e07fb447';
-import { buildPlan, paint } from './render.js?v=9f03e07fb447';
-import { batchExport, exportImage } from './export.js?v=9f03e07fb447';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=d76443bdcb06';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=d76443bdcb06';
+import { buildPlan, paint } from './render.js?v=d76443bdcb06';
+import { batchExport, exportImage } from './export.js?v=d76443bdcb06';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=9f03e07fb447';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=9f03e07fb447';
-import { createProject, readProject } from './project.js?v=9f03e07fb447';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=9f03e07fb447';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=9f03e07fb447';
-import { prepareScaleBar } from './bar-workflow.js?v=9f03e07fb447';
-import { prepareCalibration } from './calibration-workflow.js?v=9f03e07fb447';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=9f03e07fb447';
-import { AppUpdater } from './app-update.js?v=9f03e07fb447';
-import { ImageOverview } from './overview.js?v=9f03e07fb447';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=9f03e07fb447';
-import { SamplePicker } from './sample-picker.js?v=9f03e07fb447';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=9f03e07fb447';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=d76443bdcb06';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=d76443bdcb06';
+import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=d76443bdcb06';
+import { createProject, readProject } from './project.js?v=d76443bdcb06';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=d76443bdcb06';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=d76443bdcb06';
+import { prepareScaleBar } from './bar-workflow.js?v=d76443bdcb06';
+import { prepareCalibration } from './calibration-workflow.js?v=d76443bdcb06';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=d76443bdcb06';
+import { AppUpdater } from './app-update.js?v=d76443bdcb06';
+import { ImageOverview } from './overview.js?v=d76443bdcb06';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=d76443bdcb06';
+import { SamplePicker } from './sample-picker.js?v=d76443bdcb06';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=d76443bdcb06';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
 import { AnnotationUI } from './annotation-ui.js?v=57c42d5b1bd8';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
@@ -44,6 +45,30 @@ var figureStudioBridge,figureStudioDirectSender;
 let saveBatch=false;
 
 let current = null, source = null, plan = null, previewScale = 1, tool = 'move',previewRaw=false;
+let selectedPanelLabelId = PRIMARY_LABEL_ID;
+function settingTarget(settings, section) { return section === 'panelLabel' ? findPanelLabel(settings, selectedPanelLabelId) ?? settings.panelLabel : settings[section]; }
+function syncPanelLabelControls() {
+  if (!current) return;
+  if (!findPanelLabel(current.settings, selectedPanelLabelId)) selectedPanelLabelId = PRIMARY_LABEL_ID;
+  const select = $('panelLabelSelection');
+  select.replaceChildren(...panelLabels(current.settings).map((label,index) => new Option(`ラベル${index+1}：${label.text || label.subtext || '文字なし'}`, panelLabelId(label,index))));
+  select.value = selectedPanelLabelId;
+}
+function applyPanelLabelUpdates(updates, selection = selectedPanelLabelId) {
+  for (const update of updates) { update.settings = validateSettings(update.settings, update.item.width, update.item.height); buildPlan(update.settings, context); }
+  settingsTransactions.apply(updates, {clearCropError:false,origin:current});
+  for (const {item} of updates) { const p=item.settings.panelLabel; item.labelVisible=p.visible; item.labelText=p.text; item.subtext=p.subtext; }
+  selectedPanelLabelId=selection; syncInputs(); renderList(); render();
+}
+function commitPanelLabel(key, value) {
+  const shared = !['visible','text','subtext','position'].includes(key) && $('labelScope').value === 'batch';
+  const updates = (shared ? items : [current]).filter(item => findPanelLabel(item.settings,selectedPanelLabelId)).map(item => {
+    const settings=copy(item.settings), label=findPanelLabel(settings,selectedPanelLabelId);
+    label[key]=value; if(key==='anchor')label.position=null;
+    return {item,settings};
+  });
+  applyPanelLabelUpdates(updates);
+}
 let measurement = null, measurementStart = null, drag = null, pendingCrop = null, cropStart = null, busy = false, batchController = null, toastTimer = null;
 let wheelZoomFrame = 0, wheelZoomAnchor = null;
 let previewFrame = 0, spacePan = false, hoverPixel = null;
@@ -53,15 +78,15 @@ let workStateQueued=false, leaveGuardInstalled=false, projectSaving=false;
 $('appVersion').textContent=`v${APP_VERSION}`;
 $('appVersion').setAttribute('aria-label',`バージョン ${APP_VERSION}`);
 function projectUI() {
-  return {figureStudioProjectId,formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,mapRangeScope:$('mapRangeScope').value,studioSizeScope:$('studioSizeAll').checked?'batch':'individual',labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
+  return {figureStudioProjectId,formats:[...document.querySelectorAll('[data-export-format]:checked')].map(input=>input.dataset.exportFormat),dpi:Number($('saveDpi').value),includeSettings:$('includeSettings').checked,colorMode:'simple',cropScope:$('cropScope').value,barScope:$('barScope').value,calibrationScope:$('calibrationScope').value,mapRangeScope:$('mapRangeScope').value,studioSizeScope:$('studioSizeAll').checked?'batch':'individual',labelScope:$('labelScope').value,labelApplySelected:$('labelApplySelected').checked,labelControls:Object.fromEntries(projectLabelControls.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};
 }
 function pendingInputEdit() {
   if(!current)return false;
   if(annotationUI?.pending||imageTable?.pending)return true;
   for(const input of document.querySelectorAll('[data-setting],[data-opacity-for],#imageList [data-item-key]')) {
     let expected;
-    if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=current.settings[section][key];}
-    else if(input.dataset.opacityFor){const [section,key]=$(input.dataset.opacityFor).dataset.setting.split('.');expected=Math.round(current.settings[section][key]*100);}
+    if(input.dataset.setting){const [section,key]=input.dataset.setting.split('.');expected=settingTarget(current.settings,section)[key];}
+    else if(input.dataset.opacityFor){const [section,key]=$(input.dataset.opacityFor).dataset.setting.split('.');expected=Math.round(settingTarget(current.settings,section)[key]*100);}
     else {const item=items.find(item=>item.id===input.closest('[data-image-id]').dataset.imageId);expected=item?.[input.dataset.itemKey];}
     if(input.type==='checkbox'){if(input.checked!==expected)return true;}
     else if(input.type==='number'||input.type==='range'||input.hasAttribute('data-number')) {if(input.value===''?expected!=null&&expected!=='':Number(input.value)!==Number(expected))return true;}
@@ -213,6 +238,31 @@ $('applyMapToAll').addEventListener('click',()=>{
   }catch(error){notify(error.message,true);}
 });
 for (const [id,options] of [['barAnchor',[['bottom-right','右下'],['bottom-left','左下'],['top-right','右上'],['top-left','左上'],...outsideAnchors]],['labelAnchor',[['top-left','左上'],['outside-top-left','画像外・左上'],['outside-bottom-left','画像外・左下'],['outside-bottom-center','画像外・下中央'],['outside-bottom-right','画像外・右下']]]]) for(const [value,label] of options) $(id).add(new Option(label,value));
+for(const [value,label] of [['top-right','右上'],['bottom-left','左下'],['bottom-right','右下'],['outside-top-right','画像外・右上']])$('labelAnchor').add(new Option(label,value));
+$('panelLabelSelection').addEventListener('change',()=>{selectedPanelLabelId=$('panelLabelSelection').value;syncInputs();setBusy(busy);});
+$('addPanelLabel').addEventListener('click',()=>{
+  if(busy||!current)return;
+  try{
+    const id=crypto.randomUUID(),anchor=nextLabelAnchor(current.settings),targets=$('labelScope').value==='batch'?items:[current];
+    const updates=targets.map(item=>{
+      const settings=copy(item.settings);
+      if(panelLabels(settings).length>=MAX_PANEL_LABELS)throw new Error(`${item.name}：ラベルは${MAX_PANEL_LABELS}個までです。`);
+      const label={...copy(findPanelLabel(settings,selectedPanelLabelId)??settings.panelLabel),id,visible:true,anchor,position:null};
+      if(anchor.startsWith('outside-')&&label.color.toLowerCase()==='#ffffff'&&!label.background)label.color='#000000';
+      (settings.additionalPanelLabels??=[]).push(label);return {item,settings};
+    });
+    applyPanelLabelUpdates(updates,id);
+  }catch(error){notify(error.message,true);}
+});
+$('removePanelLabel').addEventListener('click',()=>{
+  if(busy||!current||selectedPanelLabelId===PRIMARY_LABEL_ID)return;
+  try{
+    const updates=($('labelScope').value==='batch'?items:[current]).filter(item=>findPanelLabel(item.settings,selectedPanelLabelId)).map(item=>{
+      const settings=copy(item.settings);settings.additionalPanelLabels=settings.additionalPanelLabels.filter(label=>label.id!==selectedPanelLabelId);return {item,settings};
+    });
+    applyPanelLabelUpdates(updates,PRIMARY_LABEL_ID);
+  }catch(error){notify(error.message,true);}
+});
 
 function notify(message, error = false) {
   clearTimeout(toastTimer); $('status').textContent = message; $('status').classList.toggle('error', error); $('status').hidden = false;
@@ -260,13 +310,15 @@ function setBusy(value) {
   refreshSaveUI();
   $('undoButton').disabled = value || !current?.history.canUndo; $('redoButton').disabled = value || !current?.history.canRedo;
   if(current){
-    const b=current.settings.scaleBar,p=current.settings.panelLabel;
+    const b=current.settings.scaleBar,p=settingTarget(current.settings,'panelLabel');
     for(const id of ['cropX','cropY','cropWidth','cropHeight'])$(id).disabled=value||current.settings.cropOptions.application!=='selection';
     for(const input of document.querySelectorAll('[data-setting^="scaleBar."]')) input.disabled=value||!current.settings.calibration;
     for(const id of ['barBackgroundColor','barOpacity']) $(id).disabled=value||!current.settings.calibration||!b.background;
     $('barOutsideTransparent').disabled=value||!current.settings.calibration||!b.visible||!b.anchor.startsWith('outside-');
     $('barOutsideColor').disabled=$('barOutsideTransparent').disabled||b.outsideTransparent;
-    for(const input of document.querySelectorAll('[data-setting^="panelLabel."]')) input.disabled=value||!p.visible;
+    for(const input of document.querySelectorAll('[data-setting^="panelLabel."]')) input.disabled=value||!p.visible&&input.id!=='panelLabelVisible';
+    $('removePanelLabel').disabled=value||selectedPanelLabelId===PRIMARY_LABEL_ID;
+    $('addPanelLabel').disabled=value||panelLabels(current.settings).length>=MAX_PANEL_LABELS;
     for(const id of ['labelBackgroundColor','labelOpacity']) $(id).disabled=value||!p.visible||!p.background;
     $('labelOutsideTransparent').disabled=value||!p.visible||!p.anchor.startsWith('outside-');$('labelOutsideColor').disabled=$('labelOutsideTransparent').disabled||p.outsideTransparent;
   }
@@ -292,15 +344,16 @@ async function action(fn) {
 
 function syncInputs() {
   if (!current) return;
+  syncPanelLabelControls();
   for (const input of document.querySelectorAll('[data-setting]')) {
-    const [section, key] = input.dataset.setting.split('.'), value = current.settings[section][key];
+    const [section, key] = input.dataset.setting.split('.'), value = settingTarget(current.settings,section)[key];
     if (input.type === 'checkbox') input.checked = value; else input.value = value ?? '';
   }
   syncOpacityFields();
-  $('labelFontPtField').hidden=current.settings.panelLabel.fontUnit!=='pt';
-  $('labelFontPercentField').hidden=current.settings.panelLabel.fontUnit==='pt';
+  $('labelFontPtField').hidden=settingTarget(current.settings,'panelLabel').fontUnit!=='pt';
+  $('labelFontPercentField').hidden=settingTarget(current.settings,'panelLabel').fontUnit==='pt';
   syncStudioSizeControls(true);
-  $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = current.settings.panelLabel.anchor;
+  $('barAnchor').value = current.settings.scaleBar.anchor; $('labelAnchor').value = settingTarget(current.settings,'panelLabel').anchor;
   const c = current.settings.crop;
   const imageCrop=current.imageCrop;
   $('selectSvgImageCrop').hidden=!imageCrop||imageCrop.x<c.x||imageCrop.y<c.y||imageCrop.x+imageCrop.width>c.x+c.width||imageCrop.y+imageCrop.height>c.y+c.height;
@@ -360,7 +413,8 @@ for(const input of document.querySelectorAll('[data-opacity-for]')){
     try{
       if(!input.checkValidity()||!Number.isFinite(input.valueAsNumber))throw new Error('不透明度は0〜100%の整数で入力してください。');
       const [section,key]=slider.dataset.setting.split('.'),settings=copy(current.settings);
-      settings[section][key]=input.valueAsNumber/100;commit(settings,section);
+      if(section==='panelLabel')commitPanelLabel(key,input.valueAsNumber/100);
+      else {settings[section][key]=input.valueAsNumber/100;commit(settings,section);}
     }catch(error){notify(error.message,true);syncOpacityFields();}
   });
 }
@@ -492,6 +546,7 @@ async function addFiles(files) {
       if(current){
         settings.scaleBar={...copy(current.settings.scaleBar),visible:true,length:null,position:null,fontPercent:9,thicknessPercent:.8,gapPercent:1,verticalPaddingPercent:3};
         settings.panelLabel={...copy(current.settings.panelLabel),visible:true,text:'',subtext:'',position:null};
+        settings.additionalPanelLabels=copy(current.settings.additionalPanelLabels??[]).map(label=>({...label,position:null}));
         settings.output=copy(current.settings.output);
       }
       const imageId=crypto.randomUUID();
@@ -700,7 +755,7 @@ $('previewArea').addEventListener('pointerdown', event => {
     try { const edit=cropStart?null:cropHit(p);drag={mode:'crop',start:cropStart||p,down:p,downView:{x:event.clientX,y:event.clientY},ratio:aspect(),edit,origin:pendingCrop?copy(pendingCrop):null,moved:false,secondClick:!!cropStart}; } catch (error) { notify(error.message, true); }
   } else {
     const q = canvasPoint(event), hit = [...plan.annotations].reverse().find(box => q.x >= box.x && q.x <= box.x + box.width && q.y >= box.y && q.y <= box.y + box.height);
-    if (hit) { drag = { mode: 'move', kind: hit.kind, offset: { x: q.x - hit.x, y: q.y - hit.y }, before: copy(current.settings) }; canvas.style.cursor = 'grabbing'; }
+    if (hit) { if(hit.kind==='panelLabel'){selectedPanelLabelId=panelLabelId(panelLabels(current.settings)[hit.labelIndex],hit.labelIndex);syncInputs();} drag = { mode: 'move', kind: hit.kind, labelIndex:hit.labelIndex, offset: { x: q.x - hit.x, y: q.y - hit.y }, before: copy(current.settings) }; canvas.style.cursor = 'grabbing'; }
     else drag={mode:'pan',x:event.clientX,y:event.clientY,left:$('previewArea').scrollLeft,top:$('previewArea').scrollTop};
   }
 });
@@ -721,8 +776,9 @@ $('previewArea').addEventListener('pointermove', event => {
     if(drag.edit){const r=editCrop({...drag.origin,x:drag.origin.x-c.x,y:drag.origin.y-c.y},drag.edit,{x:drag.down.x-c.x,y:drag.down.y-c.y},{x:p.x-c.x,y:p.y-c.y},c.width,c.height,drag.ratio);pendingCrop={...r,x:r.x+c.x,y:r.y+c.y};}else pendingCrop=cropFromDrag(drag.start,p,drag.ratio);
     drag.moved ||= Math.hypot(event.clientX-drag.downView.x,event.clientY-drag.downView.y)>3;updateCropInputs(pendingCrop);
   } else {
-    const q = canvasPoint(event), box = plan.annotations.find(annotation => annotation.kind === drag.kind), c = current.settings.crop;
-    current.settings[drag.kind].position = { x: clamp(q.x - drag.offset.x-(plan.left??0), 0, Math.max(0,c.width - box.width)), y: clamp(q.y - drag.offset.y, box.area.y, Math.max(box.area.y,box.area.y+box.area.height-box.height))-(box.band==='top'?(plan.offsetY??0):plan.top) };
+    const q = canvasPoint(event), box = plan.annotations.find(annotation => annotation.kind === drag.kind && annotation.labelIndex === drag.labelIndex), c = current.settings.crop;
+    const style=drag.kind==='panelLabel'?panelLabels(current.settings)[drag.labelIndex]:current.settings[drag.kind];
+    style.position = { x: clamp(q.x - drag.offset.x-(plan.left??0), 0, Math.max(0,c.width - box.width)), y: clamp(q.y - drag.offset.y, box.area.y, Math.max(box.area.y,box.area.y+box.area.height-box.height))-(box.band==='top'?(plan.offsetY??0):plan.top) };
   }
   render();
 });
@@ -812,6 +868,10 @@ for (const input of document.querySelectorAll('[data-setting]')) {
   input.addEventListener('change', () => {
   if (!current || busy) return;
   const [section, key] = input.dataset.setting.split('.'), settings = copy(current.settings);
+  if(section==='panelLabel'){
+    try{if(!input.checkValidity())throw new Error('入力値が範囲外です。');commitPanelLabel(key,input.type==='checkbox'?input.checked:input.type==='number'||input.type==='range'?input.valueAsNumber:input.value);}catch(error){notify(error.message,true);syncInputs();}
+    return;
+  }
     settings[section][key] = input.type === 'checkbox' ? input.checked : input.type === 'number' || input.type === 'range' || input.hasAttribute('data-number') ? (section==='scaleBar'&&key==='length'&&!input.value?null:Number(input.value)) : input.value;
   if (key === 'anchor') {
     settings[section].position = null;
@@ -907,7 +967,7 @@ function undo(redo = false) {
       if(JSON.stringify(old)!==JSON.stringify(next))shareSettings(section);
     }
   }
-  current.barVisible=current.settings.scaleBar.visible;current.labelVisible=current.settings.panelLabel.visible;current.labelText=current.settings.panelLabel.text;current.subtext=current.settings.panelLabel.subtext;
+  for(const item of items){item.barVisible=item.settings.scaleBar.visible;item.labelVisible=item.settings.panelLabel.visible;item.labelText=item.settings.panelLabel.text;item.subtext=item.settings.panelLabel.subtext;}
   measurement=measurementStart=drag=cropStart=null;pendingCrop=current.settings.cropOptions.pending??null;syncInputs();render();
 }
 $('undoButton').addEventListener('click', () => undo()); $('redoButton').addEventListener('click', () => undo(true));
@@ -985,7 +1045,7 @@ async function removeItems(removed) {
 }
 $('removeAllButton').addEventListener('click',()=>action(()=>removeItems([...items])));
 for(const [id,offset] of [['moveImageUp',-1],['moveImageDown',1]]) $(id).addEventListener('click',()=>{if(busy||!current)return;const index=items.indexOf(current),target=index+offset;if(target<0||target>=items.length)return;[items[index],items[target]]=[items[target],items[index]];renderList();});
-for(const [id,key,value] of [['batchAll','enabled',true],['batchNone','enabled',false],['batchBarsOn','barVisible',true],['batchBarsOff','barVisible',false],['batchLabelsOn','labelVisible',true],['batchLabelsOff','labelVisible',false]]) $(id).addEventListener('click',()=>{if(busy)return;for(const item of items){item[key]=value;if(key!=='enabled')item.settings[key==='barVisible'?'scaleBar':'panelLabel'].visible=value;}renderList();syncInputs();render();});
+for(const [id,key,value] of [['batchAll','enabled',true],['batchNone','enabled',false],['batchBarsOn','barVisible',true],['batchBarsOff','barVisible',false],['batchLabelsOn','labelVisible',true],['batchLabelsOff','labelVisible',false]]) $(id).addEventListener('click',()=>{if(busy)return;for(const item of items){item[key]=value;if(key==='labelVisible')for(const label of panelLabels(item.settings))label.visible=value;else if(key==='barVisible')item.settings.scaleBar.visible=value;}renderList();syncInputs();render();});
 $('batchBarFirst').addEventListener('click',()=>{if(busy)return;let first=true;for(const item of items){item.barVisible=item.enabled&&first;if(item.enabled)first=false;item.settings.scaleBar.visible=item.barVisible;}renderList();syncInputs();render();});
 function numbering(){
   return { ...panelNumbering($('panelFormat').value,{parent:$('panelBranchParent').value,mode:$('batchSequence').value,start:$('batchStart').valueAsNumber,startLetter:$('batchStartLetter').value,prefix:$('batchPrefix').value,separator:$('batchSeparator').value,uppercase:$('batchUppercase').checked}), parentheses:$('labelParentheses').checked };
@@ -1005,13 +1065,12 @@ updateLabelFormat();
 function applyPanelLabels(onlyEnabled) {
   if(busy||!current)return;
   try {
-    const n=numbering(), changes=labelSequenceChanges(items,n,onlyEnabled).map(({item,text})=>{
-      const settings=copy(item.settings);settings.panelLabel.text=text;settings.panelLabel.parentheses=n.parentheses;
+    const n=numbering(), changes=labelSequenceChanges(items,n,onlyEnabled,selectedPanelLabelId).map(({item,text})=>{
+      const settings=copy(item.settings),label=findPanelLabel(settings,selectedPanelLabelId);label.text=text;label.parentheses=n.parentheses;
       const next=validateSettings(settings,item.width,item.height);buildPlan(next,context);
       return {item,text,settings:next};
     });
-    for(const {item,text,settings} of changes){item.labelText=text;item.settings=settings;item.history.push(settings);}
-    renderList();syncInputs();render();notify('ラベル形式を適用しました。');
+    applyPanelLabelUpdates(changes);notify('選択中のラベルに連番を適用しました。');
   }catch(error){notify(error.message,true);}
 }
 $('applyPanelLabels').addEventListener('click',()=>applyPanelLabels($('labelApplySelected').checked));
@@ -1036,7 +1095,7 @@ function newProject(options={}){
   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
   if(source)releaseImage(source);
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
-  items.length=0;source=current=plan=null;previewMode='single';
+  items.length=0;source=current=plan=null;previewMode='single';selectedPanelLabelId=PRIMARY_LABEL_ID;
   projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
   figureStudioProjectId=nextProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
@@ -1112,7 +1171,7 @@ function saveProject(saveAs){return action(async()=>{
 // records and file handles. Temporary updates never mark a project as saved.
 async function captureUpdateSession(extra={}){
   const snapshot=structuredClone({ui:projectUI(),items:[...items],activeIndex:items.indexOf(current),transactions:settingsTransactions.snapshot(items),checkpoint:workSaveState.checkpoint,
-    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,recentColors:[...recentColors],
+    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,selectedPanelLabelId,recentColors:[...recentColors],
     annotation:{selected:[...annotationUI.selected],clipboard:annotationUI.clipboard,formState:annotationUI.formState},
     inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:!!input.checked})),
     details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
@@ -1159,7 +1218,7 @@ async function restoreUpdateSession(saved){
     input.value=entry.value;if(input.type==='checkbox'||input.type==='radio')input.checked=entry.checked;
   }};
   for(const input of document.querySelectorAll('[data-export-format]'))input.checked=saved.ui.formats.includes(input.dataset.exportFormat);
-  $('studioSizeAll').checked=saved.ui.studioSizeScope!=='individual';restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;recentColors.splice(0,recentColors.length,...saved.recentColors);
+  selectedPanelLabelId=saved.selectedPanelLabelId??PRIMARY_LABEL_ID;$('labelScope').value=saved.ui.labelScope??'batch';$('studioSizeAll').checked=saved.ui.studioSizeScope!=='individual';restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;recentColors.splice(0,recentColors.length,...saved.recentColors);
   if(items.length)activateItem(items[saved.activeIndex],activeDecoded);
   else{if(source)releaseImage(source);source=current=null;renderList();}
   pendingCrop=saved.pendingCrop;measurement=saved.measurement;measurementStart=saved.measurementStart;setTool(saved.tool);previewMode=saved.previewMode==='all'?'all':'single';
@@ -1238,7 +1297,7 @@ async function openProject(file,options={}){
   }
   $('labelApplySelected').checked=project.ui.labelApplySelected===true;
   $('cropScope').value=project.ui.cropScope??'batch';
-  $('barScope').value=project.ui.barScope??'batch';
+  $('barScope').value=project.ui.barScope??'batch';$('labelScope').value=project.ui.labelScope??'batch';selectedPanelLabelId=PRIMARY_LABEL_ID;
   $('calibrationScope').value=project.ui.calibrationScope??'individual';
   $('mapRangeScope').value=project.ui.mapRangeScope??'individual';
   $('studioSizeAll').checked=project.ui.studioSizeScope!=='individual';
@@ -1366,7 +1425,7 @@ refreshSaveUI();
 $('downloadAllButton').addEventListener('click',()=>action(async()=>{const count=await downloadAll();$('batchProgress').textContent=`${count}ファイルのダウンロードを開始しました。`;}));
 $('copyButton').addEventListener('click',()=>action(async()=>{
   if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('このブラウザでは画像コピーを利用できません。PNGを保存してください。');
-  const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.panelLabel.visible=settings.mapColorbar.visible=false;settings.output.scale=1;}
+  const settings=copy(current.settings);if(previewRaw){settings.crop={x:0,y:0,width:current.width,height:current.height};settings.scaleBar.visible=settings.mapColorbar.visible=false;for(const label of panelLabels(settings))label.visible=false;settings.output.scale=1;}
   const image=source,png=document.fonts.ready.then(()=>exportImage(image,settings,'png'));
   // Start the clipboard write in the click event; Safari requires user activation.
   // Encode with the same resolution and native annotation rendering as PNG save.
@@ -1584,6 +1643,8 @@ function validateMiFiToWorkspaceState(snapshot){
  if(!ui||!id(ui.figureStudioProjectId)||!list(ui.formats,formats.length)||ui.formats.some(value=>!formats.includes(value))||![300,600,1200].includes(ui.dpi)||typeof ui.includeSettings!=='boolean'||!['simple','detailed'].includes(ui.colorMode)||typeof ui.labelApplySelected!=='boolean')fail();
  for(const key of ['cropScope','barScope','calibrationScope','mapRangeScope'])if(!['batch','individual'].includes(ui[key]))fail();
  if(ui.studioSizeScope!==undefined&&!['batch','individual'].includes(ui.studioSizeScope))fail();
+ if(ui.labelScope!==undefined&&!['batch','individual'].includes(ui.labelScope))fail();
+ if(state.selectedPanelLabelId!==undefined&&!id(state.selectedPanelLabelId))fail();
  if(!ui.labelControls||Object.keys(ui.labelControls).some(key=>!projectLabelControls.includes(key)||!(typeof ui.labelControls[key]==='boolean'||text(ui.labelControls[key]))))fail();
  const itemIds=new Set(),imageIds=new Set(),entries=new Set(),inputIds=new Set(workspaceStaticInputs);let total=0;
  for(const item of state.items){

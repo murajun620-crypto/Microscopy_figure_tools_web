@@ -1,4 +1,4 @@
-import { LIMITS, validateSettings, validateSize } from './core.js?v=9f03e07fb447';
+import { LIMITS, validateSettings, validateSize } from './core.js?v=d76443bdcb06';
 import {identifyManifest} from './mifito-sync.mjs?v=79b671978f24';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
@@ -28,6 +28,7 @@ function validateManifest(data) {
   if (!ui || !Array.isArray(ui.formats) || ui.formats.length > FORMATS.length || ui.formats.some(format=>!FORMATS.includes(format)) || ![300,600,1200].includes(ui.dpi) || typeof ui.includeSettings !== 'boolean' || !['simple','detailed'].includes(ui.colorMode)) fail();
   if(ui.cropScope!==undefined&&!['batch','individual'].includes(ui.cropScope))fail();
   if(ui.barScope!==undefined&&!['batch','individual'].includes(ui.barScope))fail();
+  if(ui.labelScope!==undefined&&!['batch','individual'].includes(ui.labelScope))fail();
   if(ui.calibrationScope!==undefined&&!['batch','individual'].includes(ui.calibrationScope))fail();
   if(ui.mapRangeScope!==undefined&&!['batch','individual'].includes(ui.mapRangeScope))fail();
   if(ui.studioSizeScope!==undefined&&!['batch','individual'].includes(ui.studioSizeScope))fail();

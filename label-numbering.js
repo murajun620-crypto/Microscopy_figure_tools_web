@@ -1,4 +1,5 @@
-import { sequenceLabel } from './core.js?v=9f03e07fb447';
+import { sequenceLabel } from './core.js?v=d76443bdcb06';
+import {findPanelLabel, PRIMARY_LABEL_ID} from './panel-labels.js?v=d76443bdcb06';
 
 // Mirrors SectionSettingsDialog.panel_numbering_settings in the Python app.
 export function panelNumbering(preset, values = {}) {
@@ -26,11 +27,12 @@ export function numberedLabel(index, settings) {
   return settings.parentheses ? `(${text})` : text;
 }
 
-export function labelSequenceChanges(items, settings, onlyEnabled = false) {
+export function labelSequenceChanges(items, settings, onlyEnabled = false, labelId = PRIMARY_LABEL_ID) {
   let index = 0;
   return items.flatMap(item => {
     if (onlyEnabled && !item.enabled) return [];
-    const visible = item.labelVisible ?? item.settings.panelLabel.visible;
+    const label=findPanelLabel(item.settings,labelId);if(!label)return [];
+    const visible = labelId===PRIMARY_LABEL_ID ? item.labelVisible ?? label.visible : label.visible;
     if (settings.mode === 'none' || !visible) return [{ item, text:'' }];
     return [{ item, text:numberedLabel(index++, settings) }];
   });

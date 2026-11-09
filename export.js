@@ -1,11 +1,12 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=9f03e07fb447';
-import { numberedLabel } from './label-numbering.js?v=9f03e07fb447';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=9f03e07fb447';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=9f03e07fb447';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=d76443bdcb06';
+import { numberedLabel } from './label-numbering.js?v=d76443bdcb06';
+import {panelLabels} from './panel-labels.js?v=d76443bdcb06';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=d76443bdcb06';
+import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=d76443bdcb06';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';
-import { outputBase, extensionFor } from './save-files.js?v=9f03e07fb447';
+import { outputBase, extensionFor } from './save-files.js?v=d76443bdcb06';
 
 export async function exportImage(source, settings, format,options={}) {
   if (format === 'svg') {
@@ -34,7 +35,7 @@ export async function exportImage(source, settings, format,options={}) {
         if(box.barRect)draw(box.barRect,box.style.color);
         // Preserve the browser's Arial/TeX appearance without embedding a
         // proprietary system font. Bars and backgrounds remain PDF vectors.
-        const textLayer=renderCanvas(source,settings,{image:false,annotationShapes:false,onlyAnnotationKind:box.kind});
+        const textLayer=renderCanvas(source,settings,{image:false,annotationShapes:false,onlyAnnotationKind:box.kind,onlyLabelIndex:box.labelIndex??null});
         try{const text=await doc.embedPng(await(await canvasBlob(textLayer.canvas)).arrayBuffer());page.drawImage(text,{x:0,y:0,width,height});}
         finally{textLayer.canvas.width=textLayer.canvas.height=0;}
       }
@@ -92,7 +93,7 @@ export function batchSettings(template, original, target, index, numbering) {
   settings.cropOptions.pending=null;
   // Preserve physical length per pixel, not the original image's physical width.
   // This assumes all selected images have the same acquisition calibration.
-  if(!individual) for (const name of ['scaleBar', 'panelLabel']) settings[name].position = null;
+  if(!individual) {settings.scaleBar.position=null;for(const label of panelLabels(settings))label.position=null;}
   settings.scaleBar.visible = target.barVisible ?? template.scaleBar.visible;
   settings.panelLabel.visible = target.labelVisible ?? template.panelLabel.visible;
   if(target.labelText!==undefined) settings.panelLabel.text=target.labelText;
