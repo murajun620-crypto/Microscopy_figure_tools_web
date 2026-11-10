@@ -1,5 +1,5 @@
 // Coordinate and settings logic is independent of the DOM and image renderer.
-import { validateAnnotations } from './annotations.js?v=57c42d5b1bd8';
+import { validateAnnotations, ANNOTATION_FONTS } from './annotations.js?v=5a795d503d07';
 import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=79b671978f24';
 import {validateStudioSize} from './studio-size.mjs?v=5f27e729adf3';
 import {MAX_PANEL_LABELS} from './panel-labels.js?v=ffbc761e0d41';
@@ -113,7 +113,7 @@ export function defaultSettings(width, height) {
     crop: { x: 0, y: 0, width, height }, calibration: null, annotations: [], additionalPanelLabels: [], mapColorbar:defaultMapColorbar(),
     cropOptions: { aspect: 'free', application: 'selection', width: 5, height: 4, pending: null },
     scaleBar: { visible: true, length: null, unit: 'µm', anchor: 'bottom-right', position: null, fontPercent: 9, thicknessPercent: 0.8, gapPercent: 1, verticalPaddingPercent: 3, color: '#ffffff', textColor: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.5, showText: true, outsideTransparent: true, outsideColor: '#ffffff' },
-    panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontUnit: 'pt', fontPt: 9, fontPercent: 9, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
+    panelLabel: { visible: true, text: '', subtext: '', parentheses: true, anchor: 'top-left', position: null, fontUnit: 'pt', fontPt: 9, fontPercent: 9, fontFamily:'Arial', textMode:'auto', italic:false, underline:false, color: '#ffffff', background: false, backgroundColor: '#000000', opacity: 0.65, bold: false, outsideTransparent: true, outsideColor: '#ffffff' },
     output: { scale: 1, resampling: 'smooth', sizeCm: 4, sizeAxis: 'width', dpi:600, outsideTransparent: true, outsideColor: '#ffffff', pptEditable: false, pptIncludeLabel: true, studioSize:{axis:'height',mm:40} },
   };
 }
@@ -174,6 +174,9 @@ export function validateSettings(value, width, height) {
       target.fontPt = numberRange(settings.fontPt ?? 9, 0.1, 200, 'ラベル文字サイズ（pt）');
       target.text = text(settings.text); target.subtext = text(settings.subtext); target.bold = boolean(settings.bold);
       target.parentheses = boolean(settings.parentheses ?? true);
+      target.fontFamily=settings.fontFamily??'Arial';target.textMode=settings.textMode??'auto';
+      if(!ANNOTATION_FONTS.includes(target.fontFamily)||!['auto','tex','plain'].includes(target.textMode))throw new Error('ラベルの文字書式が不正です。');
+      target.italic=boolean(settings.italic??false);target.underline=boolean(settings.underline??false);
     }
     return target;
   }
@@ -189,7 +192,8 @@ export function validateSettings(value, width, height) {
   const output = value.output;
   if (!output || ![1, 2, 4].includes(output.scale) || !['nearest', 'smooth'].includes(output.resampling) || !['width', 'height'].includes(output.sizeAxis)) throw new Error('出力設定が不正です。');
   if (![300,600,1200].includes(output.dpi ?? 600)) throw new Error('保存解像度が不正です。');
-  result.output = { scale: output.scale, resampling: output.resampling, sizeCm: numberRange(output.sizeCm, 0.01, 100, '出力サイズ'), sizeAxis: output.sizeAxis, dpi:output.dpi ?? 600, outsideTransparent: boolean(output.outsideTransparent), outsideColor: color(output.outsideColor), pptEditable: boolean(output.pptEditable), pptIncludeLabel: boolean(output.pptIncludeLabel ?? true), studioSize:validateStudioSize(output.studioSize) };
+  if(!['image','colorbar'].includes(output.content??'image'))throw new Error('出力内容が不正です。');
+  result.output = {content:output.content??'image', scale: output.scale, resampling: output.resampling, sizeCm: numberRange(output.sizeCm, 0.01, 100, '出力サイズ'), sizeAxis: output.sizeAxis, dpi:output.dpi ?? 600, outsideTransparent: boolean(output.outsideTransparent), outsideColor: color(output.outsideColor), pptEditable: boolean(output.pptEditable), pptIncludeLabel: boolean(output.pptIncludeLabel ?? true), studioSize:validateStudioSize(output.studioSize) };
   result.annotations=validateAnnotations(value.annotations??[],width,height);
   result.mapColorbar=validateMapColorbar(value.mapColorbar);
   return result;

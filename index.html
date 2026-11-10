@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=b307f808f67c">
   <link rel="stylesheet" href="./colors.css?v=unified-palette-1">
-  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.21" data-release-build="705a347dd546" data-release-entry="./app.js?v=705a347dd546"></script>
+  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.22" data-release-build="5a795d503d07" data-release-entry="./app.js?v=5a795d503d07"></script>
 </head>
 <body>
   <header class="app-header">
@@ -122,7 +122,7 @@
             <div class="field-row"><button id="addPanelLabel" class="button" type="button">＋ ラベルを追加</button><button id="removePanelLabel" class="button" type="button" title="追加ラベルを削除します。ラベル1は表示をオフにできます。">削除</button></div>
             <p class="hint">位置・書式・追加・削除は設定対象へ適用します。文字列・表示・ドラッグ移動はこの画像だけに適用します。</p>
             <label class="check"><input id="panelLabelVisible" type="checkbox" data-setting="panelLabel.visible">このラベルを表示</label>
-            <div class="field-row"><label>文字列<input id="panelLabelText" type="text" maxlength="200" data-setting="panelLabel.text"></label><label>補足文字<input id="panelLabelSubtext" type="text" maxlength="200" data-setting="panelLabel.subtext"></label></div>
+            <div class="field-row"><label>文字列<textarea id="panelLabelText" rows="2" maxlength="200" data-setting="panelLabel.text"></textarea></label><label>補足文字<textarea id="panelLabelSubtext" rows="2" maxlength="200" data-setting="panelLabel.subtext"></textarea></label></div>
             <details class="label-format-card"><summary>連番の設定</summary><div class="detail-body">
               <label>パネルラベルの種別<select id="panelFormat"><option value="alpha">1. (a), (b), (c)</option><option value="branch-number">2. (a-1), (a-2), (a-3)</option><option value="branch-roman">3. (a-i), (a-ii), (a-iii)</option><option value="number">4. (1), (2), (3)</option><option value="custom">5. カスタム...</option><option value="none">6. なし</option></select></label>
               <label id="panelBranchRow" hidden>親文字<input id="panelBranchParent" type="text" maxlength="3" value="a"></label>
@@ -144,13 +144,17 @@
               <label id="labelFontPtField" title="保存画像、またはStudioに貼る画像サイズに対する文字サイズです。"><span>文字サイズ（pt）</span><input id="labelFontPt" type="number" min="0.1" max="200" step="0.1" value="9" data-setting="panelLabel.fontPt"></label>
               <label id="labelFontPercentField" hidden title="トリミング後の画像の短辺を基準にした割合です。細長い画像ではpt指定をお使いください。">文字サイズ（短辺の%）<input id="labelFont" type="number" min="0.1" max="20" step="0.1" value="9" data-setting="panelLabel.fontPercent"></label>
             </div>
+            <label>入力形式<select data-setting="panelLabel.textMode"><option value="auto">自動（$…$ を数式）</option><option value="tex">TeX数式</option><option value="plain">通常の文字</option></select></label>
+            <label>フォント<select data-setting="panelLabel.fontFamily"><option>Arial</option><option>Helvetica</option><option>Times New Roman</option><option>Georgia</option><option value="Yu Gothic">游ゴシック</option><option value="Meiryo">メイリオ</option><option>Courier New</option></select></label>
+            <div class="field-row"><label class="check"><input type="checkbox" data-setting="panelLabel.bold">太字</label><label class="check"><input type="checkbox" data-setting="panelLabel.italic">斜体</label><label class="check"><input type="checkbox" data-setting="panelLabel.underline">下線</label></div>
+            <p class="hint">Studioと同じTeX記法：$a_1$、$\frac{a}{b}$、$\micro$。文字列・補足文字は改行できます。</p>
             <label class="check"><input id="labelParentheses" type="checkbox" data-setting="panelLabel.parentheses" checked>ラベルに括弧を付ける</label>
             <label>位置<select id="labelAnchor" data-setting="panelLabel.anchor" class="anchor-select"></select></label>
             <div class="field-row"><label class="color-field">文字色<input id="labelColor" type="color" value="#ffffff" data-setting="panelLabel.color"></label><label class="color-field">背景色<input id="labelBackgroundColor" type="color" value="#000000" data-setting="panelLabel.backgroundColor"></label></div>
             <label class="check"><input id="labelBackground" type="checkbox" data-setting="panelLabel.background">個別背景を表示</label>
             <div class="opacity-field"><label for="labelOpacity">背景の不透明度</label><div class="opacity-controls"><input id="labelOpacity" type="range" min="0" max="1" step="0.01" value="0.65" data-setting="panelLabel.opacity"><div class="opacity-value"><input id="labelOpacityValue" type="number" min="0" max="100" step="1" value="65" data-opacity-for="labelOpacity" aria-label="パネルラベルの背景の不透明度（%）"><span aria-hidden="true">%</span></div></div></div>
             <div class="field-row"><label class="check"><input id="labelOutsideTransparent" type="checkbox" data-setting="panelLabel.outsideTransparent" checked>外側領域を透明</label><label class="color-field">外側領域の色<input id="labelOutsideColor" type="color" value="#ffffff" data-setting="panelLabel.outsideColor"></label></div>
-            <p class="hint">図中文字はArial・標準です。pt指定は画像の縦横比に依存しません。補足文字は $_2$・$^2$・$\alpha$ などを使用できます。画像1枚にラベルを10個まで追加できます。</p>
+            <p class="hint">既定のフォントはArialです。pt指定は画像の縦横比に依存しません。文字色・書式とTeXの入力形式を指定できます。画像1枚にラベルを10個まで追加できます。</p>
           </div>
         </details>
         <details id="annotationsSection" open>
@@ -196,6 +200,7 @@
             <label id="mapTextGapField">バーと文字の間隔（短辺の%）<input id="mapTextGap" type="number" min="0" max="20" step="0.1" value="3" data-setting="mapColorbar.labelGapPercent"></label><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
             <div class="field-row"><label class="color-field">文字・目盛り色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
             <label class="check"><input id="mapTransparent" type="checkbox" data-setting="mapColorbar.transparent">背景を透明にする</label>
+            <button id="sendColorbarToStudio" class="button full" type="button" disabled>Studioへカラーバーだけ追加</button>
             <button id="applyMapToAll" class="button full">このデザインを全画像に適用</button>
             <p class="map-help">各画像の最小値・最大値は保持します。</p>
           </div>
@@ -264,6 +269,7 @@
     <div class="dialog-heading"><strong id="annotationEditorTitle">注釈の設定</strong><button id="closeAnnotationEditor" class="button quiet">閉じる</button></div>
     <p id="annotationResult" class="readout" role="status"></p>
     <div class="detail-body">
+      <label>入力形式<select data-ann-field="textMode"><option value="auto">自動（$…$ を数式）</option><option value="tex">TeX数式</option><option value="plain">通常の文字</option></select></label>
       <label>文字・測定名<textarea id="annotationText" data-ann-field="text" rows="3" maxlength="1000" placeholder="Enterで改行できます"></textarea></label>
       <div class="field-row" data-ann-measured><label>単位<select data-ann-field="unit"><option value="auto">校正と同じ</option><option>nm</option><option>µm</option><option>mm</option></select></label><label>小数桁数<input data-ann-field="digits" type="number" min="0" max="6" step="1"></label></div>
       <div class="field-row"><label>始点X（px）<input data-ann-coordinate="0.x" type="number" min="0" step="any"></label><label>始点Y（px）<input data-ann-coordinate="0.y" type="number" min="0" step="any"></label></div>
@@ -298,7 +304,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。補足文字にはPython版と同じ簡易TeX構文を使えます（例：CeO$\_2$）。</p><p>マップのカラーバーは「6 マップのカラーバー」で追加します。表示はバーのみ・マップ名と単位・単位のみから選べます。マップ名、単位、値の範囲は自由に変更できます。目盛りは線形です。元画像の色・測定値は変更しないため、元のマップに合わせて設定してください。「画像から配色を推定」で元画像の色に近い配色を選べます。判別できない場合は設定を変更しません。最小・最大値・単位・配色の向きは元のマップで確認してください。文字サイズはスケールバーと共通です。配色はGwyddion.net・MetroPro再現を含む標準8種類のほか、文字や目盛りを除いたバー画像（PNG・JPEG・WebP）、Gwyddionのgradient、CSV・JSONを読み込めます。読み込んだ配色も画像ごとにプロジェクトへ保存します。</p><p><a href="./COLORBAR_PALETTES.md" target="_blank" rel="noopener">カラーバー配色の出典と利用条件</a></p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。パネルラベル・補足文字・テキスト注釈にはStudioと同じTeX構文を使えます（例：CeO$_2$、$\frac{a}{b}$）。ダブルクリックした文字編集パネルで入力形式・フォント・文字色を変更できます。数式を含むPPTXの編集可能ラベルはSVGとして配置します。</p><p>マップのカラーバーは「6 マップのカラーバー」で追加します。表示はバーのみ・マップ名と単位・単位のみから選べます。マップ名、単位、値の範囲は自由に変更できます。目盛りは線形です。元画像の色・測定値は変更しないため、元のマップに合わせて設定してください。「画像から配色を推定」で元画像の色に近い配色を選べます。判別できない場合は設定を変更しません。最小・最大値・単位・配色の向きは元のマップで確認してください。文字サイズはスケールバーと共通です。配色はGwyddion.net・MetroPro再現を含む標準8種類のほか、文字や目盛りを除いたバー画像（PNG・JPEG・WebP）、Gwyddionのgradient、CSV・JSONを読み込めます。読み込んだ配色も画像ごとにプロジェクトへ保存します。</p><p><a href="./COLORBAR_PALETTES.md" target="_blank" rel="noopener">カラーバー配色の出典と利用条件</a></p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <dialog id="updateDialog" class="save-dialog" aria-labelledby="updateTitle">
     <div class="dialog-heading"><h2 id="updateTitle">アプリの更新</h2><button id="closeUpdateDialog" class="button quiet">閉じる</button></div>
     <p id="updateMessage" role="status" aria-live="polite"></p>

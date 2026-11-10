@@ -1,14 +1,17 @@
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=ffbc761e0d41';
-import { numberedLabel } from './label-numbering.js?v=ffbc761e0d41';
+import {richTextSvg} from './rich-text.mjs?v=5a795d503d07';
+const xmlEscape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=5a795d503d07';
+import { numberedLabel } from './label-numbering.js?v=5a795d503d07';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=ffbc761e0d41';
-import { buildPlan, renderCanvas, renderRaster, renderSvg } from './render.js?v=ffbc761e0d41';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=5a795d503d07';
+import { buildPlan, renderCanvas, renderRaster, renderSvg, prepareFigureText } from './render.js?v=5a795d503d07';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';
-import { outputBase, extensionFor } from './save-files.js?v=ffbc761e0d41';
+import { outputBase, extensionFor } from './save-files.js?v=5a795d503d07';
 
 export async function exportImage(source, settings, format,options={}) {
+  await prepareFigureText(settings);
   if (format === 'svg') {
     const { markup } = renderSvg(source, settings,options);
     return new Blob([markup], { type: 'image/svg+xml' });
@@ -62,7 +65,8 @@ export async function createPresentation() {
   return presentation;
 }
 
-export function addFigureSlide(presentation, source, settings, imageName, availableBytes = 256 * 1024 * 1024) {
+export async function addFigureSlide(presentation, source, settings, imageName, availableBytes = 256 * 1024 * 1024) {
+  await prepareFigureText(settings);
   const { canvas, plan, metrics } = renderCanvas(source, settings, { panelText: !settings.output.pptEditable, includeLabel:settings.output.pptIncludeLabel });
   try {
     const imageData = canvas.toDataURL('image/png'), bytes = Math.ceil(imageData.length * 0.75);
@@ -73,7 +77,8 @@ export function addFigureSlide(presentation, source, settings, imageName, availa
     slide.addImage({ data: imageData, x, y, w: width, h: height, altText: imageName });
     if (settings.output.pptEditable) for (const box of plan.annotations.filter(box => box.kind === 'panelLabel')) {
       const s = box.style;
-      const options = { fontFace: 'Arial', color: s.color.slice(1), margin: 0, breakLine: false, valign: 'mid', paraSpaceAfter: 0, lineSpacingMultiple: 1, fit: 'shrink', transparency: 0 };
+      const options = { fontFace: s.fontFamily||'Arial', bold:!!s.bold, italic:!!s.italic, underline:!!s.underline, color: s.color.slice(1), margin: 0, breakLine: false, valign: 'mid', paraSpaceAfter: 0, lineSpacingMultiple: 1, fit: 'shrink', transparency: 0 };
+      if(box.runs.some(run=>run.rich)){const markup=`<svg xmlns="http://www.w3.org/2000/svg" width="${box.width}" height="${box.height}" viewBox="0 0 ${box.width} ${box.height}">${box.runs.map(run=>run.rich?richTextSvg(run.rich,run.x,run.y,s.color):`<text x="${run.x}" y="${run.y}" font-family="${s.fontFamily||'Arial'}" font-size="${run.size}" fill="${s.color}">${xmlEscape(run.text)}</text>`).join('')}</svg>`;slide.addImage({data:'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(markup))),x:x+box.x*scale,y:y+box.y*scale,w:box.width*scale,h:box.height*scale});continue;}
       if (box.main) slide.addText(box.main, { ...options, x:x+(box.x+box.pad)*scale,y:y+box.y*scale,w:Math.max(.01,box.labelWidth*scale+.02),h:box.height*scale,fontSize:box.fontSize*scale*72 });
       if (box.supplemental) slide.addText(inlinePlain(box.supplemental), { ...options,x:x+(box.x+box.pad+box.labelWidth+box.gap)*scale,y:y+box.y*scale,w:Math.max(.01,(box.width-2*box.pad-box.labelWidth-box.gap)*scale+.02),h:box.height*scale,fontSize:box.fontSize*scale*72 });
     }
@@ -127,7 +132,7 @@ export async function batchExport(items, template, original, format, numbering, 
         if(signal.aborted)throw new Error('保存を中止しました。保存済みファイルは残ります。');
         let blob;
         if (outputFormat==='pptx') {
-          const presentation=await createPresentation(); addFigureSlide(presentation,source,settings,item.name);
+          const presentation=await createPresentation(); await addFigureSlide(presentation,source,settings,item.name);
           blob=await presentationBlob(presentation);
         } else blob=await exportImage(source,settings,outputFormat);
         await write(blob,`${base}.${extensionFor(outputFormat)}`,item);

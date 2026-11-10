@@ -1,29 +1,31 @@
+import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
+import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
 import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=source-save-v0717-1';
-import {setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
+import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=ffbc761e0d41';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=ffbc761e0d41';
-import { buildPlan, paint } from './render.js?v=ffbc761e0d41';
-import { batchExport, exportImage } from './export.js?v=ffbc761e0d41';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=5a795d503d07';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=5a795d503d07';
+import { buildPlan, paint } from './render.js?v=5a795d503d07';
+import { batchExport, exportImage } from './export.js?v=5a795d503d07';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=ffbc761e0d41';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=ffbc761e0d41';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=5a795d503d07';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5a795d503d07';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=ffbc761e0d41';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=705a347dd546';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ffbc761e0d41';
-import { prepareScaleBar } from './bar-workflow.js?v=ffbc761e0d41';
-import { prepareCalibration } from './calibration-workflow.js?v=ffbc761e0d41';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=ffbc761e0d41';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=705a347dd546';
-import { ImageOverview } from './overview.js?v=ffbc761e0d41';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=ffbc761e0d41';
-import { SamplePicker } from './sample-picker.js?v=ffbc761e0d41';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=ffbc761e0d41';
+import { createProject, readProject } from './project.js?v=5a795d503d07';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=5a795d503d07';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5a795d503d07';
+import { prepareScaleBar } from './bar-workflow.js?v=5a795d503d07';
+import { prepareCalibration } from './calibration-workflow.js?v=5a795d503d07';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5a795d503d07';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=5a795d503d07';
+import { ImageOverview } from './overview.js?v=5a795d503d07';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5a795d503d07';
+import { SamplePicker } from './sample-picker.js?v=5a795d503d07';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=5a795d503d07';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
-import { AnnotationUI } from './annotation-ui.js?v=57c42d5b1bd8';
+import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
 import { estimateSourcePalette } from './palette-estimation.js?v=b307f808f67c';
 import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=b307f808f67c';
@@ -185,7 +187,7 @@ function syncMapColorbar(){
   $('estimateMapPalette').disabled=busy||!current;
   $('mapEstimateResult').hidden=!mapEstimate||mapEstimate.imageId!==current?.id||mapEstimate.signature!==JSON.stringify([current?.settings.crop,s.palette,s.customPalette]);
   if(mapEstimate)$('mapEstimateResult').textContent=mapEstimate.text;
-  $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;
+  $('uploadMapPalette').disabled=busy||!current;$('applyMapToAll').disabled=busy||!current||items.length<2;$('sendColorbarToStudio').disabled=busy||!current||!s.visible;
 }
 $('mapRangeScope').addEventListener('change',syncMapColorbar);
 for(const button of document.querySelectorAll('[data-map-style]'))button.addEventListener('click',()=>{if(busy||!current)return;const s=copy(current.settings);s.mapColorbar.style=button.dataset.mapStyle;commit(s);});
@@ -558,6 +560,7 @@ function setPreviewMode(mode){
 $('singlePreviewButton').addEventListener('click',()=>setPreviewMode('single'));
 $('allPreviewButton').addEventListener('click',()=>setPreviewMode('all'));
 
+onRichTextReady(()=>{for(const card of imageOverview?.cards.values()??[])card.signature=null;render();});
 function labelPlanOptions(){return {forStudio:new URLSearchParams(location.search).get('figureWorkspace')==='1'||!!getFigureBridgeContext()};}
 function render() {
   scheduleWorkState();imageTable?.sync();
@@ -1439,7 +1442,7 @@ async function loadSample(id,count){
 const samplePicker=new SamplePicker({busy:()=>busy,dirty:hasUnsavedWork,load:loadSample});
 for(const id of ['demoButton','emptySingleDemoButton'])$(id).addEventListener('click',()=>samplePicker.open(1));
 for(const id of ['multiDemoButton','emptyDemoButton'])$(id).addEventListener('click',()=>samplePicker.open(3));
-annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields});
+annotationUI=new AnnotationUI({current:()=>current,busy:()=>busy,plan:()=>plan,scale:()=>previewScale,sourcePoint,active:()=>previewMode==='single'&&!!current&&!busy&&tool==='move'&&!previewRaw,panning:()=>spacePan,placeMode:()=>setTool('move'),commit,render,notify,colors:syncColorFields,openColor:openColorPanel,closeColor:()=>colorPanel.close(),colorOpen:()=>$('color-panel').open});
 imageTable=new ImageSettingsTable({items:()=>items,current:()=>current,busy:()=>busy,edit:editImageTable,select:item=>action(()=>selectItem(item)),notify});
 imageOverview=new ImageOverview($('imageOverview'),{items:()=>items,current:()=>current,busy:()=>busy,planOptions:labelPlanOptions,select:item=>action(()=>selectItem(item))});
 appUpdater=new AppUpdater({version:APP_VERSION,busy:()=>busy||projectSaving,versionChecking:()=>projectVersionChecking,hasWork:()=>!!items.length,lock:setBusy,capture:captureUpdateSession,restore:restoreUpdateSession,backup:downloadUpdateBackup,notify});
@@ -1504,6 +1507,24 @@ async function captureFigureStudioImages(batch=false) {
     const {preview,...image}=images[0];return {...result,preview,image:{projectId:identity.projectId,...image}};
   } finally {setBusy(false);}
 }
+async function captureColorbarForStudio(){
+ if(busy||projectSaving||!current||!source||pendingInputEdit())throw Error('入力中の設定を確定してから送信してください。');
+ setBusy(true);
+ try{
+  await document.fonts.ready;
+  const settings=copy(current.settings),full=buildPlan({...settings,output:{...settings.output,content:'image'}},context,false,1,true,{forStudio:true}),physical=studioSvgSize(full,settings.output.studioSize);
+  settings.output.content='colorbar';
+  const bar=buildPlan(settings,context),mmPerUnit=physical.bodyWidthMm/full.imageWidth;
+  settings.output.studioSize={axis:'height',mm:bar.height*mmPerUnit};
+  settings.output.sizeCm*=settings.output.sizeAxis==='width'?bar.width/full.imageWidth:bar.height/full.imageHeight;
+  const name=current.name.replace(/(\.[^.]+)$/,'_colorbar$1'),file=new File([current.file],name,{type:current.file.type,lastModified:current.file.lastModified});
+  const record={...current,name,file,settings},ui={...projectUI(),figureStudioProjectId:`colorbar-${figureStudioProjectId}-${current.id}`};
+  const project=await createProject([record],0,ui),identity=await readMifitoIdentity(project),preview=await exportImage(source,settings,'svg',{forStudio:true});
+  return {project,preview,sourceName:name.replace(/\.[^.]+$/,'.mifito'),image:{projectId:identity.projectId,...identity.images[0]}};
+ }finally{setBusy(false);}
+}
+const colorbarSender=createDirectSender({app:'mifito',captureResult:captureColorbarForStudio,onStatus:({state,message})=>{if(message)notify(message,state==='error');if(state==='sent'){try{window.parent.FigureStudioWorkspace?.show('studio');}catch{}}}});
+$('sendColorbarToStudio').addEventListener('click',()=>{if(!busy)colorbarSender.send({intent:'add'}).catch(error=>notify(error.message,true));});
 const captureFigureStudioResult=()=>captureFigureStudioImages(false);
 const captureFigureStudioBatch=()=>captureFigureStudioImages(true);
 async function chooseFigureStudioImage(imageId){

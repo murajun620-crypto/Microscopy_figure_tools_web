@@ -1,5 +1,6 @@
+import {richTextLayout} from './rich-text.mjs?v=5a795d503d07';
 export const ANNOTATION_NAMES={distance:'2点間距離',diameter:'円の直径',text:'テキスト',segment:'線',arrow:'矢印'};
-export const ANNOTATION_FONTS=['Arial','Times New Roman','Courier New','sans-serif','serif','monospace'];
+export const ANNOTATION_FONTS=['Arial','Helvetica','Times New Roman','Georgia','Yu Gothic','Meiryo','Courier New','sans-serif','serif','monospace'];
 const units={nm:.001,'µm':1,mm:1000};
 const finite=(n,min,max)=>{if(!Number.isFinite(n)||n<min||n>max)throw new Error('注釈の数値が範囲外です。');return n;};
 const color=s=>{if(typeof s!=='string'||!/^#[a-f\d]{6}$/i.test(s))throw new Error('注釈の色が不正です。');return s;};
@@ -10,7 +11,7 @@ export function defaultAnnotationFontPt(settings,plan){
   return plan.barFontSize*(settings.output.sizeCm/2.54*72)/axis;
 }
 export function newAnnotation(type,a,b=a,id=crypto.randomUUID(),fontPt=9){
-  return {id,type,points:[{...a},{...b}],text:type==='text'?'テキスト':'',visible:true,locked:false,color:'#ffffff',opacity:1,fontPt,fontFamily:'Arial',bold:false,italic:false,underline:false,rotation:0,align:type==='text'?'left':'center',linePt:.5,lineStyle:'-',arrowStyle:type==='distance'||type==='diameter'?'<->':'->',arrowSizePt:5,unit:'auto',digits:3,labelOffset:{x:0,y:0},background:false,backgroundColor:'#000000',backgroundOpacity:.65};
+  return {id,type,points:[{...a},{...b}],text:type==='text'?'テキスト':'',visible:true,locked:false,color:'#ffffff',opacity:1,fontPt,fontFamily:'Arial',textMode:'auto',bold:false,italic:false,underline:false,rotation:0,align:type==='text'?'left':'center',linePt:.5,lineStyle:'-',arrowStyle:type==='distance'||type==='diameter'?'<->':'->',arrowSizePt:5,unit:'auto',digits:3,labelOffset:{x:0,y:0},background:false,backgroundColor:'#000000',backgroundOpacity:.65};
 }
 export function validateAnnotations(value=[],width,height){
   if(!Array.isArray(value)||value.length>200)throw new Error('注釈は200個以内にしてください。');
@@ -21,7 +22,7 @@ export function validateAnnotations(value=[],width,height){
     const point=p=>({x:finite(p?.x,0,width),y:finite(p?.y,0,height)});
     const a={...newAnnotation(raw.type,{x:0,y:0},{x:0,y:0},raw.id),...raw};
     if(typeof a.text!=='string'||a.text.length>1000)throw new Error('注釈の文字は1000文字以内にしてください。');
-    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,.000001,10000),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),underline:bool(a.underline),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right','justify']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>','o-','o-o']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
+    return {id:a.id,type:a.type,points:a.points.map(point),text:a.text,textMode:choice(a.textMode??'auto',['auto','tex','plain']),visible:bool(a.visible),locked:bool(a.locked),color:color(a.color),opacity:finite(a.opacity,0,1),fontPt:finite(a.fontPt,.000001,10000),fontFamily:choice(a.fontFamily,ANNOTATION_FONTS),bold:bool(a.bold),italic:bool(a.italic),underline:bool(a.underline),rotation:finite(a.rotation,-360,360),align:choice(a.align,['left','center','right','justify']),linePt:finite(a.linePt,.05,20),lineStyle:choice(a.lineStyle,['-','--','-.',':']),arrowStyle:choice(a.arrowStyle,['->','<->','-|>','o-','o-o']),arrowSizePt:finite(a.arrowSizePt,1,40),unit:choice(a.unit,['auto','nm','µm','mm']),digits:finite(a.digits,0,6),labelOffset:{x:finite(a.labelOffset?.x,-width,width),y:finite(a.labelOffset?.y,-height,height)},background:bool(a.background),backgroundColor:color(a.backgroundColor),backgroundOpacity:finite(a.backgroundOpacity,0,1)};
   });
 }
 export function annotationValue(a,calibration){
@@ -46,7 +47,7 @@ export function measurementLayout(settings,plan,context){
     const left=plan.left??0,right=left+(plan.imageWidth??plan.width);
     const points=a.points.map(p=>({x:(p.x-c.x)*scale+left,y:(p.y-c.y)*scale+plan.top})),[p,q]=points,mid={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
     const fontSize=a.fontPt*pt,font=`${a.italic?'italic ':''}${a.bold?'bold ':''}${fontSize}px ${a.fontFamily}`;
-    context.font=font;const text=annotationValue(a,settings.calibration),lines=text.replace(/\r\n?/g,'\n').split('\n'),lineHeight=fontSize*1.2,tw=Math.max(...lines.map(line=>context.measureText(line).width)),th=lineHeight*lines.length;
+    context.font=font;const text=annotationValue(a,settings.calibration),rich=richTextLayout(text,{...a,fontSize}),lines=text.replace(/\r\n?/g,'\n').split('\n'),lineHeight=fontSize*1.2,tw=rich?rich.width:Math.max(...lines.map(line=>context.measureText(line).width)),th=rich?rich.height:lineHeight*lines.length;
     let anchor={...p};
     if(a.type==='diameter'){
       const radius=Math.hypot(q.x-p.x,q.y-p.y)/2,gap=fontSize*.3;
@@ -68,7 +69,7 @@ export function measurementLayout(settings,plan,context){
       anchor.y=Math.max(plan.top+fontSize,Math.min(plan.top+plan.imageHeight-th+fontSize,anchor.y));
     }
     const label={x:anchor.x+a.labelOffset.x*scale,y:anchor.y+a.labelOffset.y*scale};
-    const tx=label.x-(a.align==='center'?tw/2:a.align==='right'?tw:0),ty=label.y-fontSize;
+    const tx=label.x-(a.align==='center'?tw/2:a.align==='right'?tw:0),ty=label.y-(rich?rich.baseline:fontSize);
     const primitives=[],lineWidth=a.linePt*pt,head=a.arrowSizePt*pt;
     const line=(from,to)=>primitives.push({type:'line',from,to,color:a.color,width:lineWidth,dash:a.lineStyle,opacity:a.opacity});
     if(a.type==='diameter')primitives.push({type:'circle',center:mid,radius:Math.hypot(q.x-p.x,q.y-p.y)/2,color:a.color,width:lineWidth,dash:a.lineStyle,opacity:a.opacity});
@@ -88,7 +89,7 @@ export function measurementLayout(settings,plan,context){
     const hasText=['text','distance','diameter'].includes(a.type);
     if(hasText&&text){
       if(a.background)primitives.push({type:'rect',x:tx-fontSize*.15,y:ty-fontSize*.1,width:tw+fontSize*.3,height:th+fontSize*.2,color:a.backgroundColor,opacity:a.opacity*a.backgroundOpacity,rotation:a.rotation,origin:label});
-      primitives.push({type:'text',x:label.x,y:label.y,text,lines,lineHeight,color:a.color,opacity:a.opacity,font,fontSize,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,underline:a.underline,align:a.align,width:tw,rotation:a.rotation});
+      primitives.push({type:'text',x:label.x,y:label.y,rich,richX:tx-label.x,richY:ty-label.y,text,lines,lineHeight,color:a.color,opacity:a.opacity,font,fontSize,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,underline:a.underline,align:a.align,width:tw,rotation:a.rotation});
     }
     const corners=[[tx,ty],[tx+tw,ty],[tx+tw,ty+th],[tx,ty+th]].map(([x,y])=>{const r=a.rotation*Math.PI/180;return {x:label.x+(x-label.x)*Math.cos(r)-(y-label.y)*Math.sin(r),y:label.y+(x-label.x)*Math.sin(r)+(y-label.y)*Math.cos(r)};});
     const textBox=hasText?{x:Math.min(...corners.map(p=>p.x)),y:Math.min(...corners.map(p=>p.y)),width:Math.max(...corners.map(p=>p.x))-Math.min(...corners.map(p=>p.x)),height:Math.max(...corners.map(p=>p.y))-Math.min(...corners.map(p=>p.y))}:null;

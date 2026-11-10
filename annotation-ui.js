@@ -1,7 +1,7 @@
-import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=57c42d5b1bd8';
-import { paintMeasurements } from './annotation-render.js?v=57c42d5b1bd8';
+import { ANNOTATION_NAMES, ANNOTATION_FONTS, newAnnotation, defaultAnnotationFontPt, annotationValue, translateAnnotations, measurementLayout, hitAnnotation } from './annotations.js?v=5a795d503d07';
+import { paintMeasurements } from './annotation-render.js?v=5a795d503d07';
 import { showDialog } from './movable-dialog.js?v=79b671978f24';
-import {createAnnotationTextEditor} from './annotation-editor.mjs?v=57c42d5b1bd8';
+import {createAnnotationTextEditor} from './annotation-editor.mjs?v=5a795d503d07';
 import {createShortcutHandler} from './shortcuts.mjs?v=57c42d5b1bd8';
 import {formatText,TEXT_FORMAT_ACTIONS} from './text-format.mjs?v=57c42d5b1bd8';
 const clone=value=>structuredClone(value),$=id=>document.getElementById(id);
@@ -9,7 +9,7 @@ export class AnnotationUI {
   constructor(api){
     this.api=api;this.selected=new Set();this.itemId=null;this.mode=null;this.gesture=null;this.draft=null;this.clipboard=[];this.formState='';
     this.dialog=$('annotationEditor');
-    this.textEditor=createAnnotationTextEditor();this.shortcut=createShortcutHandler({execute:(action,payload)=>this.command(action,payload),isEditing:()=>false,isCanvasActive:()=>this.api.active(),supportsAction:action=>TEXT_FORMAT_ACTIONS.includes(action)||['edit-text','escape','text','select','line','arrow','front','back','cycle-selection','nudge','duplicate','delete','select-all','copy-format','paste-format'].includes(action)||action.startsWith('align-')||action.startsWith('distribute-'),onHint:text=>{if(text)$('annotationStatus').textContent=text;}});
+    this.textEditor=createAnnotationTextEditor({openColor:api.openColor,closeColor:api.closeColor,colorOpen:api.colorOpen});this.shortcut=createShortcutHandler({execute:(action,payload)=>this.command(action,payload),isEditing:()=>false,isCanvasActive:()=>this.api.active(),supportsAction:action=>TEXT_FORMAT_ACTIONS.includes(action)||['edit-text','escape','text','select','line','arrow','front','back','cycle-selection','nudge','duplicate','delete','select-all','copy-format','paste-format'].includes(action)||action.startsWith('align-')||action.startsWith('distribute-'),onHint:text=>{if(text)$('annotationStatus').textContent=text;}});
     for(const family of ANNOTATION_FONTS)$('annotationFont').add(new Option(family,family));
     for(const button of document.querySelectorAll('[data-add-annotation]'))button.addEventListener('click',()=>this.begin(button.dataset.addAnnotation));
     $('closeAnnotationEditor').onclick=()=>this.dialog.close();
@@ -133,8 +133,8 @@ export class AnnotationUI {
       if(!box.annotation.locked)for(const p of box.annotation.type==='text'?[box.points[0]]:box.points){context.beginPath();context.arc(p.x,p.y,4/scale,0,Math.PI*2);context.fill();context.stroke();}
     }context.restore();
   }
-  textValue(a){return {text:a.text,fontSize:a.fontPt,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,underline:a.underline,textAlign:a.align};}
-  textPatch(a,value){Object.assign(a,{text:value.text,fontPt:value.fontSize,fontFamily:value.fontFamily,bold:value.bold,italic:value.italic,underline:value.underline,align:value.textAlign});}
+  textValue(a){return {text:a.text,textMode:a.textMode??'auto',color:a.color,fontSize:a.fontPt,fontFamily:a.fontFamily,bold:a.bold,italic:a.italic,underline:a.underline,textAlign:a.align};}
+  textPatch(a,value){Object.assign(a,{text:value.text,textMode:value.textMode??'auto',color:value.color??a.color,fontPt:value.fontSize,fontFamily:value.fontFamily,bold:value.bold,italic:value.italic,underline:value.underline,align:value.textAlign});}
   edit(id=this.focused?.id){
     if(!id||this.api.busy())return;const a=this.annotations.find(a=>a.id===id);if(!a||a.locked)return;
     if(a.type!=='text')return this.editDetails(id);
@@ -157,7 +157,7 @@ export class AnnotationUI {
     for(const input of this.dialog.querySelectorAll('[data-ann-offset]'))input.value=a.labelOffset[input.dataset.annOffset];
     this.dialog.querySelector('[data-ann-measured]').hidden=!['distance','diameter'].includes(a.type);this.dialog.querySelector('[data-ann-end]').hidden=a.type==='text';
     const measured=['distance','diameter'].includes(a.type),hasText=measured||a.type==='text';
-    for(const field of ['text','fontPt','fontFamily','rotation','align','bold','italic','underline','background','backgroundColor'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!hasText;
+    for(const field of ['text','textMode','fontPt','fontFamily','rotation','align','bold','italic','underline','background','backgroundColor'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!hasText;
     for(const field of ['linePt','lineStyle'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=a.type==='text';
     for(const field of ['arrowStyle','arrowSizePt'])this.dialog.querySelector(`[data-ann-field="${field}"]`).closest('label').hidden=!measured&&a.type!=='arrow';
     for(const input of this.dialog.querySelectorAll('[data-ann-offset]'))input.closest('label').hidden=!measured;
