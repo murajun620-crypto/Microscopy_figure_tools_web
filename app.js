@@ -1,3 +1,4 @@
+import {createColorPanel} from './colors.mjs?v=unified-palette-1';
 import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=source-save-v0717-1';
 import {setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
@@ -11,12 +12,12 @@ import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPic
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=ffbc761e0d41';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
 import { createProject, readProject } from './project.js?v=ffbc761e0d41';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b7a3c8d091ef';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=705a347dd546';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=ffbc761e0d41';
 import { prepareScaleBar } from './bar-workflow.js?v=ffbc761e0d41';
 import { prepareCalibration } from './calibration-workflow.js?v=ffbc761e0d41';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=ffbc761e0d41';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=b7a3c8d091ef';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=705a347dd546';
 import { ImageOverview } from './overview.js?v=ffbc761e0d41';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=ffbc761e0d41';
 import { SamplePicker } from './sample-picker.js?v=ffbc761e0d41';
@@ -132,17 +133,8 @@ function scheduleWorkState() {
 for(const name of ['input','change'])document.addEventListener(name,scheduleWorkState);
 function cancelWheelZoom() { cancelAnimationFrame(wheelZoomFrame); wheelZoomFrame = 0; wheelZoomAnchor = null; }
 const outsideAnchors = [['outside-bottom-center','画像外・下中央'],['outside-bottom-left','画像外・左下'],['outside-bottom-right','画像外・右下']];
-const COLOR_PALETTE = {
-    blue:["#D8EBFF","#BFE0FF","#A5D5FF","#8BC9FF","#70BEFF","#56B2FF","#3CA6F5","#1F8FE0","#0C74C2","#0052A8"],
-    red:["#FFD1CC","#FFB9B1","#FFA198","#FF897F","#FF7166","#F7574A","#E93E31","#D4291E","#BC170C","#A10000"],
-    green:["#D8F5DF","#BFEECB","#A6E7B7","#8DDEA2","#74D68D","#5BCC77","#43C262","#2BA84D","#158E38","#009F22"],
-    orange:["#FFE3C2","#FFD4A2","#FFC582","#FFB662","#FFA742","#FF9822","#F28610","#D77207","#BC5E03","#A14B00"],
-    purple:["#E8D9FF","#DAC3FF","#CCADFF","#BE97FF","#AF81F8","#A06BEB","#9155DD","#7D3EDD","#6725C3","#5A1FA8"],
-    gray:["#E0E0E0","#D2D2D2","#C4C4C4","#B6B6B6","#A8A8A8","#9A9A9A","#8A8A8A","#787878","#626262","#4A4A4A"],
-    black:["#E6E6E6","#D5D5D5","#C4C4C4","#B3B3B3","#A2A2A2","#8F8F8F","#7C7C7C","#666666","#4A4A4A","#2A2A2A"],
-  };
 const colorFields = [], recentColors = [];
-let colorTarget = null;
+let colorTarget = null, colorPanel;
 for (const input of document.querySelectorAll('input[type="color"][data-setting],input[type="color"][data-ann-field]')) {
   const title = input.parentElement.firstChild.textContent.trim();
   const section = input.dataset.setting?.split('.')[0];
@@ -153,45 +145,25 @@ for (const input of document.querySelectorAll('input[type="color"][data-setting]
   const button = document.createElement('button'); button.type = 'button'; button.className = 'color-icon';
   button.setAttribute('aria-label',`${name}を選ぶ`); button.setAttribute('aria-haspopup','dialog');
   button.addEventListener('click',()=>openColorPanel(input,name)); wrapper.append(button);
-  input.addEventListener('change',()=>rememberColor(input.value));
   colorFields.push({input,button});
 }
 function syncColorFields() {
+  colorPanel?.update();
   for (const {input,button} of colorFields) {
     button.disabled=input.matches(':disabled'); button.style.backgroundColor=input.value;
     button.title=`${input.getAttribute('aria-label')}：${input.value}（色を選ぶ）`;
   }
 }
-function rememberColor(value) {
-  const hex=value.toLowerCase();
-  recentColors.splice(0,recentColors.length,hex,...recentColors.filter(color=>color!==hex).slice(0,7));
-}
-function colorSwatch(hex,name=hex) {
-  const button=document.createElement('button'); button.type='button'; button.className='color-swatch';
-  button.style.backgroundColor=hex; button.title=name; button.setAttribute('aria-label',name);
-  button.setAttribute('aria-pressed',String(hex.toLowerCase()===colorTarget?.value.toLowerCase()));
-  button.addEventListener('click',()=>chooseColor(hex)); return button;
-}
+colorPanel=createColorPanel({dialog:$('color-panel'),onChoose:chooseColor,isDisabled:()=>busy||!current,onRecentChange:colors=>recentColors.splice(0,recentColors.length,...colors)});
 function openColorPanel(input,title) {
   if(busy||!current||input.matches(':disabled'))return;
-  colorTarget=input; $('color-panel-title').textContent=`${title}を選ぶ`;
-  const names={black:'黒',gray:'灰',blue:'青',orange:'橙',red:'赤',green:'緑',purple:'紫'};
-  $('color-swatches').replaceChildren(...Array.from({length:10},(_,shade)=>Object.keys(names).map(base=>colorSwatch(COLOR_PALETTE[base][shade],`${names[base]} ${shade} ${COLOR_PALETTE[base][shade]}`))).flat());
-  $('basic-colors').replaceChildren(...['#000000','#ffffff'].map(hex=>colorSwatch(hex)));
-  $('recent-colors').replaceChildren(...recentColors.map(hex=>colorSwatch(hex)));
-  $('custom-color').value=input.value; $('color-code').value=input.value; $('color-error').textContent='';
-  showDialog($('color-panel'));
+  colorTarget=input;colorPanel.open(input,title);
 }
 function chooseColor(value) {
-  if(!/^#[0-9a-f]{6}$/i.test(value)){$('color-error').textContent='#RRGGBB形式で入力してください。';return;}
-  if(!current||busy||!colorTarget?.isConnected||colorTarget.matches(':disabled')){$('color-panel').close();return;}
-  colorTarget.value=value; colorTarget.dispatchEvent(new Event('change',{bubbles:true}));
-  $('color-panel').close();
+  if(!/^#[0-9a-f]{6}$/i.test(value))return;
+  if(!current||busy||!colorTarget?.isConnected||colorTarget.matches(':disabled')){colorPanel.close();return;}
+  colorTarget.value=value;colorTarget.dispatchEvent(new Event('change',{bubbles:true}));
 }
-$('close-color-panel').addEventListener('click',()=>$('color-panel').close());
-$('custom-color').addEventListener('change',event=>chooseColor(event.target.value));
-$('apply-color-code').addEventListener('click',()=>chooseColor($('color-code').value.trim()));
-$('color-code').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();chooseColor(event.target.value.trim());}});
 syncColorFields();
 compactHelp();
 setupMovableDialogs();
@@ -1100,7 +1072,7 @@ function newProject(options={}){
   projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
   figureStudioProjectId=nextProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
-  colorTarget=null;recentColors.length=0;clearDownloads();
+  colorTarget=null;colorPanel.close();clearDownloads();
   for(const input of document.querySelectorAll('input,select,textarea')){
     if(input.tagName==='SELECT')input.selectedIndex=Math.max(0,[...input.options].findIndex(option=>option.defaultSelected));
     else if(input.type==='checkbox'||input.type==='radio')input.checked=input.defaultChecked;
@@ -1219,14 +1191,14 @@ async function restoreUpdateSession(saved){
     input.value=entry.value;if(input.type==='checkbox'||input.type==='radio')input.checked=entry.checked;
   }};
   for(const input of document.querySelectorAll('[data-export-format]'))input.checked=saved.ui.formats.includes(input.dataset.exportFormat);
-  selectedPanelLabelId=saved.selectedPanelLabelId??PRIMARY_LABEL_ID;$('labelScope').value=saved.ui.labelScope??'batch';$('studioSizeAll').checked=saved.ui.studioSizeScope!=='individual';restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;recentColors.splice(0,recentColors.length,...saved.recentColors);
+  selectedPanelLabelId=saved.selectedPanelLabelId??PRIMARY_LABEL_ID;$('labelScope').value=saved.ui.labelScope??'batch';$('studioSizeAll').checked=saved.ui.studioSizeScope!=='individual';restoreInputs();previewRaw=saved.previewRaw;mapEstimate=saved.mapEstimate;colorPanel.replaceRecentColors(saved.recentColors);
   if(items.length)activateItem(items[saved.activeIndex],activeDecoded);
   else{if(source)releaseImage(source);source=current=null;renderList();}
   pendingCrop=saved.pendingCrop;measurement=saved.measurement;measurementStart=saved.measurementStart;setTool(saved.tool);previewMode=saved.previewMode==='all'?'all':'single';
   annotationUI.itemId=current?.id;annotationUI.selected=new Set(saved.annotation.selected);annotationUI.clipboard=saved.annotation.clipboard;
   annotationUI.sync();render();
   for(const entry of saved.details){const node=entry.id?$(entry.id):document.querySelectorAll('details')[entry.index];if(node)node.open=entry.open;}
-  for(const entry of saved.dialogs){const node=$(entry.id);if(node){showDialog(node);if(entry.left&&entry.top)Object.assign(node.style,{position:'fixed',inset:'auto',margin:'0',left:entry.left,top:entry.top});}}
+  for(const entry of saved.dialogs){const node=$(entry.id);if(node&&entry.id!=='color-panel'){showDialog(node);if(entry.left&&entry.top)Object.assign(node.style,{position:'fixed',inset:'auto',margin:'0',left:entry.left,top:entry.top});}}
   // Keep uncommitted input text as well as the committed image settings.
   return ()=>{
     restoreInputs();annotationUI.formState=saved.annotation.formState;
