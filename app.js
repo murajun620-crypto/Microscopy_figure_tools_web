@@ -1,7 +1,7 @@
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=source-save-v0717-1';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=c0ff30663e0c';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
@@ -14,12 +14,12 @@ import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPic
 import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5a795d503d07';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
 import { createProject, readProject } from './project.js?v=5a795d503d07';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=5a795d503d07';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c0ff30663e0c';
 import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5a795d503d07';
 import { prepareScaleBar } from './bar-workflow.js?v=5a795d503d07';
 import { prepareCalibration } from './calibration-workflow.js?v=5a795d503d07';
 import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5a795d503d07';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=5a795d503d07';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=c0ff30663e0c';
 import { ImageOverview } from './overview.js?v=5a795d503d07';
 import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5a795d503d07';
 import { SamplePicker } from './sample-picker.js?v=5a795d503d07';
