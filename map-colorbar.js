@@ -10,7 +10,7 @@ export const MAP_PALETTES=[
   palette('blue-red','青・白・赤',['#164792','#ffffff','#b51d30']),
   palette('blue','ブルー',['#07142b','#174f91','#2ba8bc','#e3f8ed']),
 ];
-export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,labelGapPercent:3,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
+export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,labelGapPercent:3,titleGapPercent:null,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
 const bad=()=>{throw new Error('カラーバーの設定または配色データが不正です。');};
 const num=(n,a,b)=>Number.isFinite(n)&&n>=a&&n<=b?n:bad();
 const col=s=>typeof s==='string'&&/^#[a-f\d]{6}$/i.test(s)?s:bad();
@@ -29,7 +29,7 @@ export function validateMapColorbar(raw){
   const customPalette=s.customPalette===null?null:validateMapPalette(s.customPalette);
   if(s.palette==='custom'&&!customPalette)bad();
   if(!(s.max>s.min)||!Number.isInteger(s.ticks)||!Number.isInteger(s.digits))bad();
-  return {visible:bool(s.visible),side:choice(s.side,['right','bottom','top','left']),palette:choice(s.palette,[...MAP_PALETTES.map(p=>p.id),'custom']),customPalette,reverse:bool(s.reverse),lengthPercent:num(s.lengthPercent,10,100),widthPercent:num(s.widthPercent,.1,30),gapPercent:num(s.gapPercent,0,20),labelGapPercent:num(s.labelGapPercent,0,20),min:num(s.min,-1e15,1e15),max:num(s.max,-1e15,1e15),title:str(s.title,100),unit:str(s.unit,30),style:choice(s.style,['full','unit','bar-only']),ticks:num(s.ticks,2,9),digits:num(s.digits,0,8),textColor:col(s.textColor),backgroundColor:col(s.backgroundColor),transparent:bool(s.transparent)};
+  return {visible:bool(s.visible),side:choice(s.side,['right','bottom','top','left']),palette:choice(s.palette,[...MAP_PALETTES.map(p=>p.id),'custom']),customPalette,reverse:bool(s.reverse),lengthPercent:num(s.lengthPercent,10,100),widthPercent:num(s.widthPercent,.1,30),gapPercent:num(s.gapPercent,0,20),labelGapPercent:num(s.labelGapPercent,0,20),titleGapPercent:s.titleGapPercent===null?null:num(s.titleGapPercent,0,20),min:num(s.min,-1e15,1e15),max:num(s.max,-1e15,1e15),title:str(s.title,100),unit:str(s.unit,30),style:choice(s.style,['full','unit','bar-only']),ticks:num(s.ticks,2,9),digits:num(s.digits,0,8),textColor:col(s.textColor),backgroundColor:col(s.backgroundColor),transparent:bool(s.transparent)};
 }
 export function mapStops(s){const stops=(s.palette==='custom'?s.customPalette:MAP_PALETTES.find(p=>p.id===s.palette)).stops;return s.reverse?[...stops].reverse().map(p=>({...p,position:1-p.position})):stops;}
 export function parseMapPalette(text,name='アップロード配色'){
@@ -101,9 +101,12 @@ export function extendMapPlan(plan,s,context){
     const baseline=tickBaseline(p.t);
     return baseline+descent+textGap<=verticalTitleStart||baseline-ascent-textGap>=verticalTitleEnd;
   });
-  const titleOffset=shareTitleColumn?Math.min(labelGap,textGap):labelGap+labelWidth+textGap;
+  const titleGap=s.titleGapPercent==null?null:short*s.titleGapPercent/100;
+  const titleOffset=shareTitleColumn?(titleGap??Math.min(labelGap,textGap)):labelGap+labelWidth+(titleGap??textGap);
+  const horizontalTitleOffset=shareTitleRow?(titleGap??labelGap):labelGap+textHeight+(titleGap??textGap);
   const verticalTextExtent=Math.max(labels.length?labelGap+labelWidth:0,titleHeight?titleOffset+titleHeight:0);
-  const extent=gap+thickness+pad+(vertical?verticalTextExtent:(show?labelGap+textHeight:0)+(titleHeight&&!shareTitleRow?textGap+titleHeight:0));
+  const horizontalTextExtent=Math.max(show?labelGap+textHeight:0,titleHeight?horizontalTitleOffset+titleHeight:0);
+  const extent=gap+thickness+pad+(vertical?verticalTextExtent:horizontalTextExtent);
   const left=s.side==='left'?Math.ceil(extent):0,offsetY=s.side==='top'?Math.ceil(extent):0;
   const width=plan.width+(vertical?Math.ceil(extent):0),height=plan.height+(!vertical?Math.ceil(extent):0);
   const imageWidth=plan.width,top=plan.top+offsetY;
@@ -127,7 +130,7 @@ export function extendMapPlan(plan,s,context){
       const xx=s.side==='right'?x+thickness+offset:x-offset;
       add(text,xx,y+length/2,'center',-90);
     }
-    else{const baseline=s.side==='bottom'?y+thickness+labelGap+ascent+(shareTitleRow?0:textHeight+textGap+i*lineHeight):y-labelGap-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
+    else{const baseline=s.side==='bottom'?y+thickness+horizontalTitleOffset+ascent+i*lineHeight:y-horizontalTitleOffset-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
   });
   const background=vertical?{x:s.side==='left'?0:imageWidth,y:0,width:width-imageWidth,height}:{x:0,y:s.side==='top'?0:plan.height,width,height:height-plan.height};
   const fills=plan.fills.map(r=>({...r,x:r.x+left,y:r.y+offsetY}));if(!s.transparent)fills.push({...background,color:s.backgroundColor});

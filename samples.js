@@ -1,5 +1,5 @@
-import { defaultSettings, validateSettings } from './core.js?v=5a795d503d07';
-import { MAP_PALETTES } from './map-colorbar.js?v=79b671978f24';
+import { defaultSettings, validateSettings } from './core.js?v=e326b16982bb';
+import { MAP_PALETTES } from './map-colorbar.js?v=e326b16982bb';
 import { newAnnotation } from './annotations.js?v=5a795d503d07';
 
 // Original, deterministic synthetic images. These illustrate editing, not measurements of real specimens.

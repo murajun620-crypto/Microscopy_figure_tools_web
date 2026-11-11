@@ -1,34 +1,34 @@
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=c86a00c5f06a';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=e326b16982bb';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=5a795d503d07';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=5a795d503d07';
-import { buildPlan, paint } from './render.js?v=c86a00c5f06a';
-import { batchExport, exportImage } from './export.js?v=c86a00c5f06a';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=e326b16982bb';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=e326b16982bb';
+import { buildPlan, paint } from './render.js?v=e326b16982bb';
+import { batchExport, exportImage } from './export.js?v=e326b16982bb';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=5a795d503d07';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=5a795d503d07';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=e326b16982bb';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=e326b16982bb';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=5a795d503d07';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=c86a00c5f06a';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=5a795d503d07';
-import { prepareScaleBar } from './bar-workflow.js?v=5a795d503d07';
-import { prepareCalibration } from './calibration-workflow.js?v=5a795d503d07';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=5a795d503d07';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=c86a00c5f06a';
-import { ImageOverview } from './overview.js?v=c86a00c5f06a';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=5a795d503d07';
-import { SamplePicker } from './sample-picker.js?v=5a795d503d07';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=5a795d503d07';
+import { createProject, readProject } from './project.js?v=e326b16982bb';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e326b16982bb';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=e326b16982bb';
+import { prepareScaleBar } from './bar-workflow.js?v=e326b16982bb';
+import { prepareCalibration } from './calibration-workflow.js?v=e326b16982bb';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=e326b16982bb';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=e326b16982bb';
+import { ImageOverview } from './overview.js?v=e326b16982bb';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=e326b16982bb';
+import { SamplePicker } from './sample-picker.js?v=e326b16982bb';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=e326b16982bb';
 import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=b307f808f67c';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=c86a00c5f06a';
+import { estimateSourcePalette } from './palette-estimation.js?v=e326b16982bb';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=e326b16982bb';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -848,7 +848,7 @@ for (const input of document.querySelectorAll('[data-setting]')) {
     try{if(!input.checkValidity())throw new Error('入力値が範囲外です。');commitPanelLabel(key,input.type==='checkbox'?input.checked:input.type==='number'||input.type==='range'?input.valueAsNumber:input.value);}catch(error){notify(error.message,true);syncInputs();}
     return;
   }
-    settings[section][key] = input.type === 'checkbox' ? input.checked : input.type === 'number' || input.type === 'range' || input.hasAttribute('data-number') ? (section==='scaleBar'&&key==='length'&&!input.value?null:Number(input.value)) : input.value;
+    settings[section][key] = input.type === 'checkbox' ? input.checked : input.type === 'number' || input.type === 'range' || input.hasAttribute('data-number') ? ((section==='scaleBar'&&key==='length'||section==='mapColorbar'&&key==='titleGapPercent')&&!input.value?null:Number(input.value)) : input.value;
   if (key === 'anchor') {
     settings[section].position = null;
   }
@@ -1591,7 +1591,7 @@ figureStudioDirectSender?.setBridgeConnected(figureStudioBridge?.isConnected===t
 
 // Portable workspace state keeps editing history and unfinished form text. It
 // never exports a preview or sends a change back to the Studio canvas.
-const workspaceTableFields=['enabled','calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','crop.x','crop.y','crop.width','crop.height'];
+const workspaceTableFields=['enabled','calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','mapColorbar.titleGapPercent','crop.x','crop.y','crop.width','crop.height'];
 const workspaceItemFields=['barVisible','labelVisible','labelText','subtext'];
 const workspaceStaticInputs=new Set([...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file'&&!input.dataset.imageField).map(input=>input.id));
 // The bridge controls mount only when Studio opens a source image. Validation

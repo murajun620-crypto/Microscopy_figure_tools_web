@@ -1,6 +1,6 @@
 // Coordinate and settings logic is independent of the DOM and image renderer.
 import { validateAnnotations, ANNOTATION_FONTS } from './annotations.js?v=5a795d503d07';
-import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=79b671978f24';
+import { defaultMapColorbar, validateMapColorbar } from './map-colorbar.js?v=e326b16982bb';
 import {validateStudioSize} from './studio-size.mjs?v=5f27e729adf3';
 import {MAX_PANEL_LABELS} from './panel-labels.js?v=ffbc761e0d41';
 export const UNITS = { nm: 0.001, 'µm': 1, mm: 1000 };

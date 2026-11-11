@@ -1,14 +1,14 @@
 import {richTextSvg} from './rich-text.mjs?v=5a795d503d07';
 const xmlEscape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=5a795d503d07';
-import { numberedLabel } from './label-numbering.js?v=5a795d503d07';
+import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueName } from './core.js?v=e326b16982bb';
+import { numberedLabel } from './label-numbering.js?v=e326b16982bb';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
-import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=5a795d503d07';
-import { buildPlan, renderCanvas, renderRaster, renderSvg, prepareFigureText } from './render.js?v=c86a00c5f06a';
+import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=e326b16982bb';
+import { buildPlan, renderCanvas, renderRaster, renderSvg, prepareFigureText } from './render.js?v=e326b16982bb';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';
-import { outputBase, extensionFor } from './save-files.js?v=5a795d503d07';
+import { outputBase, extensionFor } from './save-files.js?v=e326b16982bb';
 
 export async function exportImage(source, settings, format,options={}) {
   await prepareFigureText(settings);

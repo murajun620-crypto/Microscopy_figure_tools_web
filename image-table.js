@@ -1,7 +1,7 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=5a795d503d07';
-import { prepareCrop } from './crop-workflow.js?v=5a795d503d07';
+import { copy, validateCrop, validateSettings } from './core.js?v=e326b16982bb';
+import { prepareCrop } from './crop-workflow.js?v=e326b16982bb';
 
-const fields=new Set(['calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','crop.x','crop.y','crop.width','crop.height']);
+const fields=new Set(['calibration.pixelSize','calibration.unit','scaleBar.visible','scaleBar.length','scaleBar.unit','panelLabel.visible','panelLabel.text','panelLabel.subtext','mapColorbar.visible','mapColorbar.min','mapColorbar.max','mapColorbar.title','mapColorbar.unit','mapColorbar.labelGapPercent','mapColorbar.titleGapPercent','crop.x','crop.y','crop.width','crop.height']);
 export function prepareImageTableEdit(item,path,value){
   if(!fields.has(path))throw new Error('画像表の設定項目が不正です。');
   const settings=copy(item.settings),[section,key]=path.split('.');
@@ -42,7 +42,8 @@ export class ImageSettingsTable {
       ...[['x','トリミングX'],['y','トリミングY'],['width','トリミング幅'],['height','トリミング高さ']].map(([key,label])=>[`${label}（px）`,row=>this.field(row,`crop.${key}`,label,'number',{min:key==='x'||key==='y'?0:1,step:1}),true]),
       ['マップ名',row=>this.field(row,'mapColorbar.title','マップ名','text',{maxLength:100}),true],
       ['マップの単位',row=>this.field(row,'mapColorbar.unit','マップの単位','text',{maxLength:30}),true],
-      ['バーと文字の間隔（%）',row=>this.field(row,'mapColorbar.labelGapPercent','バーと文字の間隔','number',{min:0,max:20,step:.1}),true],
+      ['目盛数字の余白（%）',row=>this.field(row,'mapColorbar.labelGapPercent','目盛数字の余白','number',{min:0,max:20,step:.1}),true],
+      ['名称・単位の余白（%）',row=>this.field(row,'mapColorbar.titleGapPercent','名称・単位の余白（未入力はAuto）','number',{min:0,max:20,step:.1,nullable:true}),true],
       ['設定',row=>{const button=document.createElement('button');button.className='button quiet small';button.textContent='編集';button.onclick=()=>this.api.select(row.item);return button;}]
     ];
     const head=document.createElement('tr');

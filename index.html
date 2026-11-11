@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
   <link rel="stylesheet" href="./styles.css?v=b307f808f67c">
   <link rel="stylesheet" href="./colors.css?v=unified-palette-1">
-  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.25" data-release-build="c86a00c5f06a" data-release-entry="./app.js?v=c86a00c5f06a"></script>
+  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.26" data-release-build="e326b16982bb" data-release-entry="./app.js?v=e326b16982bb"></script>
 </head>
 <body>
   <header class="app-header">
@@ -197,7 +197,7 @@
             <p class="map-help">値・単位・配色は元のマップに合わせて設定してください。元画像の色や測定値は変更しません。</p>
             <div class="field-row"><label>長さ（画像の辺の%）<input id="mapLength" type="number" min="10" max="100" step="any" value="100" data-setting="mapColorbar.lengthPercent"></label><label>幅（バーの長さの%）<input id="mapWidth" type="number" min="0.1" max="30" step="any" value="5.555555555555555" data-setting="mapColorbar.widthPercent"></label></div>
             <label>画像との間隔（%）<input id="mapGap" type="number" min="0" max="20" step="any" value="2" data-setting="mapColorbar.gapPercent"></label>
-            <label id="mapTextGapField">バーと文字の間隔（短辺の%）<input id="mapTextGap" type="number" min="0" max="20" step="0.1" value="3" data-setting="mapColorbar.labelGapPercent"></label><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
+            <div id="mapTextGapField" class="field-row"><label>目盛数字の余白（短辺の%）<input id="mapTextGap" type="number" min="0" max="20" step="0.1" value="3" data-setting="mapColorbar.labelGapPercent"></label><label title="未入力はAuto。数字と重なる場合は、その外側からの余白です。">名称・単位の余白（短辺の%）<input id="mapTitleGap" type="number" min="0" max="20" step="0.1" placeholder="Auto" data-setting="mapColorbar.titleGapPercent"></label></div><p class="map-help">文字サイズは「スケールバー」の文字サイズと共通です。</p>
             <div class="field-row"><label class="color-field">文字・目盛り色<input id="mapTextColor" type="color" value="#000000" data-setting="mapColorbar.textColor"></label><label class="color-field">背景色<input id="mapBackground" type="color" value="#ffffff" data-setting="mapColorbar.backgroundColor"></label></div>
             <label class="check"><input id="mapTransparent" type="checkbox" data-setting="mapColorbar.transparent">背景を透明にする</label>
             <button id="sendColorbarToStudio" class="button full" type="button" disabled>Studioへカラーバーだけ追加</button>

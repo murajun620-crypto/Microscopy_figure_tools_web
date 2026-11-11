@@ -1,4 +1,4 @@
-import { MAP_PALETTES } from './map-colorbar.js?v=79b671978f24';
+import { MAP_PALETTES } from './map-colorbar.js?v=e326b16982bb';
 
 // Compare the source image with the RGB ramps in perceptual Lab space.
 // Values/units and gradient direction cannot be recovered from image colors.

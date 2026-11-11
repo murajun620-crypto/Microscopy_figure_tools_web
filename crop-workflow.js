@@ -1,4 +1,4 @@
-import { copy, validateCrop, validateSettings } from './core.js?v=5a795d503d07';
+import { copy, validateCrop, validateSettings } from './core.js?v=e326b16982bb';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 
 export function cropTargets(items,current,scope) {

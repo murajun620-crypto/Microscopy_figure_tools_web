@@ -1,9 +1,9 @@
 import {colorbarOnlyPlan} from './colorbar-only.mjs?v=5a795d503d07';
 import {richTextLayout,paintRichText,richTextSvg,prepareRichText} from './rich-text.mjs?v=5a795d503d07';
-import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=5a795d503d07';
+import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=e326b16982bb';
 import { measurementLayout, annotationValue } from './annotations.js?v=5a795d503d07';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=5a795d503d07';
-import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=c86a00c5f06a';
+import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=e326b16982bb';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 
