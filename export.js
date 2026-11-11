@@ -4,7 +4,7 @@ import { copy, outputMetrics, pyRound, relativeCrop, serializeProject, uniqueNam
 import { numberedLabel } from './label-numbering.js?v=5a795d503d07';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 import { canvasBlob, decodeImage, encodeTiff, loadScript, releaseImage } from './io.js?v=5a795d503d07';
-import { buildPlan, renderCanvas, renderRaster, renderSvg, prepareFigureText } from './render.js?v=8d48a5f5b8d8';
+import { buildPlan, renderCanvas, renderRaster, renderSvg, prepareFigureText } from './render.js?v=c86a00c5f06a';
 import { inlinePlain } from './inline-text.js?v=79b671978f24';
 import { pngWithDpi } from './png.js?v=79b671978f24';
 import { jpegWithDpi } from './jpeg.js?v=79b671978f24';

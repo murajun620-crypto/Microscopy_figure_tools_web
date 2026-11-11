@@ -121,9 +121,11 @@ export function extendMapPlan(plan,s,context){
   }
   titleLines.forEach((text,i)=>{
     if(vertical){
-      const offset=titleOffset+descent+(titleLines.length-1-i)*lineHeight;
+      // Match the same visible gap after rotating: the right edge uses
+      // glyph ascent, while the left edge uses descent.
+      const offset=titleOffset+(s.side==='right'?ascent+i*lineHeight:descent+(titleLines.length-1-i)*lineHeight);
       const xx=s.side==='right'?x+thickness+offset:x-offset;
-      add(text,xx,y+length/2,'center',s.side==='right'?90:-90);
+      add(text,xx,y+length/2,'center',-90);
     }
     else{const baseline=s.side==='bottom'?y+thickness+labelGap+ascent+(shareTitleRow?0:textHeight+textGap+i*lineHeight):y-labelGap-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
   });
