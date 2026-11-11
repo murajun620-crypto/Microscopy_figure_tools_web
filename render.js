@@ -3,7 +3,7 @@ import {richTextLayout,paintRichText,richTextSvg,prepareRichText} from './rich-t
 import { clamp, formatLength, outputMetrics, pyRound, rasterMetrics, scaleBarPixels } from './core.js?v=5a795d503d07';
 import { measurementLayout, annotationValue } from './annotations.js?v=5a795d503d07';
 import { paintMeasurements, measurementsSvg } from './annotation-render.js?v=5a795d503d07';
-import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=79b671978f24';
+import { extendMapPlan, paintMapColorbar, mapColorbarSvg } from './map-colorbar.js?v=8d48a5f5b8d8';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {panelLabels} from './panel-labels.js?v=ffbc761e0d41';
 

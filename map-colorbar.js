@@ -92,7 +92,18 @@ export function extendMapPlan(plan,s,context){
     return a+w+fontSize*.25<=titleStart||a-fontSize*.25>=titleEnd;
   });
   const titleHeight=titleLines.length?textHeight+(titleLines.length-1)*lineHeight:0;
-  const extent=gap+thickness+pad+(show?labelGap+(vertical?labelWidth:textHeight):0)+(titleHeight&&!shareTitleRow?textGap+titleHeight:0);
+  const tickBaseline=t=>Math.max(ascent,Math.min(length-descent,length*(1-t)+(ascent-descent)/2));
+  // A vertical title can share the empty column between endpoint labels.
+  // Keep it outside the tick numbers if intermediate ticks would overlap it.
+  const verticalTitleWidth=Math.max(0,...titleLines.map(text=>context.measureText(text).width));
+  const verticalTitleStart=(length-verticalTitleWidth)/2,verticalTitleEnd=(length+verticalTitleWidth)/2;
+  const shareTitleColumn=vertical&&titleLines.length>0&&labels.every(p=>{
+    const baseline=tickBaseline(p.t);
+    return baseline+descent+textGap<=verticalTitleStart||baseline-ascent-textGap>=verticalTitleEnd;
+  });
+  const titleOffset=shareTitleColumn?Math.min(labelGap,textGap):labelGap+labelWidth+textGap;
+  const verticalTextExtent=Math.max(labels.length?labelGap+labelWidth:0,titleHeight?titleOffset+titleHeight:0);
+  const extent=gap+thickness+pad+(vertical?verticalTextExtent:(show?labelGap+textHeight:0)+(titleHeight&&!shareTitleRow?textGap+titleHeight:0));
   const left=s.side==='left'?Math.ceil(extent):0,offsetY=s.side==='top'?Math.ceil(extent):0;
   const width=plan.width+(vertical?Math.ceil(extent):0),height=plan.height+(!vertical?Math.ceil(extent):0);
   const imageWidth=plan.width,top=plan.top+offsetY;
@@ -104,12 +115,16 @@ export function extendMapPlan(plan,s,context){
   const add=(text,x,y,align='center',rotation=0)=>texts.push({text,x,y,align,rotation,size:fontSize,ascent,descent});
   for(const p of labels){
     if(vertical){const yy=y+length*(1-p.t),xx=s.side==='right'?x+thickness:x,sign=s.side==='right'?1:-1;
-      if(p.t>0&&p.t<1)lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*labelGap,Math.max(y+ascent,Math.min(y+length-descent,yy+(ascent-descent)/2)),sign===1?'left':'right');
+      if(p.t>0&&p.t<1)lines.push({x1:xx,y1:yy,x2:xx+sign*tick,y2:yy});add(p.text,xx+sign*labelGap,y+tickBaseline(p.t),sign===1?'left':'right');
     }else{const xx=x+length*p.t,yy=s.side==='bottom'?y+thickness:y,sign=s.side==='bottom'?1:-1;
       if(p.t>0&&p.t<1)lines.push({x1:xx,y1:yy,x2:xx,y2:yy+sign*tick});add(p.text,xx,sign===1?yy+labelGap+ascent:yy-labelGap-descent,p.t===0?'left':p.t===1?'right':'center');}
   }
   titleLines.forEach((text,i)=>{
-    if(vertical){const xx=s.side==='right'?x+thickness+labelGap+labelWidth+textGap+descent+i*lineHeight:pad+descent+(titleLines.length-1-i)*lineHeight;add(text,xx,y+length/2,'center',-90);}
+    if(vertical){
+      const offset=titleOffset+descent+(titleLines.length-1-i)*lineHeight;
+      const xx=s.side==='right'?x+thickness+offset:x-offset;
+      add(text,xx,y+length/2,'center',s.side==='right'?90:-90);
+    }
     else{const baseline=s.side==='bottom'?y+thickness+labelGap+ascent+(shareTitleRow?0:textHeight+textGap+i*lineHeight):y-labelGap-textHeight-textGap-descent-(titleLines.length-1-i)*lineHeight;add(text,x+length/2,baseline);}
   });
   const background=vertical?{x:s.side==='left'?0:imageWidth,y:0,width:width-imageWidth,height}:{x:0,y:s.side==='top'?0:plan.height,width,height:height-plan.height};
