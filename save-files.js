@@ -1,4 +1,4 @@
-import { uniqueName } from './core.js?v=e326b16982bb';
+import { uniqueName } from './core.js?v=f1d1856b1b31';
 
 export const extensionFor = format => format === 'jpeg' ? 'jpg' : format === 'tiff' ? 'tif' : format;
 export function outputBase(name, used = new Set()) { return `${uniqueName(name, used)}_mifito`; }

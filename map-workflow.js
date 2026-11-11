@@ -1,4 +1,4 @@
-import { copy, validateSettings } from './core.js?v=e326b16982bb';
+import { copy, validateSettings } from './core.js?v=f1d1856b1b31';
 
 // Numerical ranges belong to individual images; sharing a design preserves them.
 export function prepareMapRange(items,current,range,scope) {

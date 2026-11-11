@@ -10,7 +10,7 @@ export const MAP_PALETTES=[
   palette('blue-red','青・白・赤',['#164792','#ffffff','#b51d30']),
   palette('blue','ブルー',['#07142b','#174f91','#2ba8bc','#e3f8ed']),
 ];
-export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,labelGapPercent:3,titleGapPercent:null,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
+export const defaultMapColorbar=()=>({visible:false,side:'right',palette:'thermal',customPalette:null,reverse:false,lengthPercent:100,widthPercent:100/18,gapPercent:2,labelGapPercent:3,titleGapPercent:5,min:0,max:1,title:'Height',unit:'nm',style:'full',ticks:2,digits:3,textColor:'#000000',backgroundColor:'#ffffff',transparent:false});
 const bad=()=>{throw new Error('カラーバーの設定または配色データが不正です。');};
 const num=(n,a,b)=>Number.isFinite(n)&&n>=a&&n<=b?n:bad();
 const col=s=>typeof s==='string'&&/^#[a-f\d]{6}$/i.test(s)?s:bad();
@@ -25,7 +25,7 @@ export function validateMapPalette(raw){
 }
 export function validateMapColorbar(raw){
   if(raw===undefined)return defaultMapColorbar();
-  if(!raw||typeof raw!=='object')bad();const s={...defaultMapColorbar(),...raw};
+  if(!raw||typeof raw!=='object')bad();const s={...defaultMapColorbar(),...raw,titleGapPercent:raw.titleGapPercent===undefined?null:raw.titleGapPercent};
   const customPalette=s.customPalette===null?null:validateMapPalette(s.customPalette);
   if(s.palette==='custom'&&!customPalette)bad();
   if(!(s.max>s.min)||!Number.isInteger(s.ticks)||!Number.isInteger(s.digits))bad();

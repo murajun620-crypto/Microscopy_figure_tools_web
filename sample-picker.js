@@ -1,4 +1,4 @@
-import { SAMPLES, SAMPLE_GROUPS, sampleRaster } from './samples.js?v=e326b16982bb';
+import { SAMPLES, SAMPLE_GROUPS, sampleRaster } from './samples.js?v=f1d1856b1b31';
 import { showDialog } from './movable-dialog.js?v=79b671978f24';
 
 const $=id=>document.getElementById(id);

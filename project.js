@@ -1,4 +1,4 @@
-import { LIMITS, validateSettings, validateSize } from './core.js?v=e326b16982bb';
+import { LIMITS, validateSettings, validateSize } from './core.js?v=f1d1856b1b31';
 import {identifyManifest} from './mifito-sync.mjs?v=79b671978f24';
 
 // A small UTF-8 manifest followed by unchanged original file bytes. No base64,
