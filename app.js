@@ -1,34 +1,35 @@
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=49159dc8d005';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=49159dc8d005';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=f1d1856b1b31';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=49159dc8d005';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=f1d1856b1b31';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=f1d1856b1b31';
-import { buildPlan, paint } from './render.js?v=f1d1856b1b31';
-import { batchExport, exportImage } from './export.js?v=f1d1856b1b31';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=49159dc8d005';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=49159dc8d005';
+import { buildPlan, paint } from './render.js?v=49159dc8d005';
+import { batchExport, exportImage } from './export.js?v=49159dc8d005';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=f1d1856b1b31';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=f1d1856b1b31';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=49159dc8d005';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=49159dc8d005';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=f1d1856b1b31';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=f1d1856b1b31';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=f1d1856b1b31';
-import { prepareScaleBar } from './bar-workflow.js?v=f1d1856b1b31';
-import { prepareCalibration } from './calibration-workflow.js?v=f1d1856b1b31';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=f1d1856b1b31';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=f1d1856b1b31';
-import { ImageOverview } from './overview.js?v=f1d1856b1b31';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=f1d1856b1b31';
-import { SamplePicker } from './sample-picker.js?v=f1d1856b1b31';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=f1d1856b1b31';
-import { prepareProjectSave } from './project-save.js?v=b307f808f67c';
+import { createProject, readProject } from './project.js?v=49159dc8d005';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=49159dc8d005';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=49159dc8d005';
+import { prepareScaleBar } from './bar-workflow.js?v=49159dc8d005';
+import { prepareCalibration } from './calibration-workflow.js?v=49159dc8d005';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=49159dc8d005';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=49159dc8d005';
+import { ImageOverview } from './overview.js?v=49159dc8d005';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=49159dc8d005';
+import { SamplePicker } from './sample-picker.js?v=49159dc8d005';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=49159dc8d005';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=f1d1856b1b31';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=f1d1856b1b31';
+import { estimateSourcePalette } from './palette-estimation.js?v=49159dc8d005';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=49159dc8d005';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -40,7 +41,8 @@ const sourceFolders=new WeakMap();
 const sourceHandles=new WeakMap();
 let saveDirectory=null;
 let projectHandle=null;
-let projectName='';
+let projectName='',projectFileLink=null;
+const projectFiles=createProjectFileLinks({app:'mifito',choose:chooseProjectFileAction,identify:readMifitoIdentity});
 let figureStudioProjectId=crypto.randomUUID(),figurePreviewProjectId='';
 const figurePreviewCache=new Map(),FIGURE_PREVIEW_LIMIT=96*1024*1024;
 let figureAcknowledgements=createMifitoAcknowledgements(),figureWorkspaceSavedSignature=null,figureWorkspaceFinishRestore=null,figureWorkspaceEditSerial=0;
@@ -1013,7 +1015,7 @@ async function removeItems(removed) {
   }
   for(const item of removed)URL.revokeObjectURL(item.thumbnail);
   items.splice(0,items.length,...retained);
-  if(!items.length){projectHandle=null;projectName='';}
+  if(!items.length){projectHandle=null;projectName='';projectFileLink=null;}
   measurement=measurementStart=pendingCrop=drag=cropStart=null;
   renderList();syncInputs();render();setBusy(busy);
   if(!current){$('imageName').textContent='画像なし';$('imageDimensions').textContent=$('outputInfo').textContent='—';}
@@ -1072,7 +1074,7 @@ function newProject(options={}){
   if(source)releaseImage(source);
   for(const item of items)URL.revokeObjectURL(item.thumbnail);
   items.length=0;source=current=plan=null;previewMode='single';selectedPanelLabelId=PRIMARY_LABEL_ID;
-  projectHandle=null;projectName='';saveDirectory=null;saveBatch=false;
+  projectHandle=null;projectName='';projectFileLink=null;saveDirectory=null;saveBatch=false;
   figureStudioProjectId=nextProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   measurement=measurementStart=pendingCrop=drag=cropStart=null;hoverPixel=null;spacePan=false;previewScale=1;
   colorTarget=null;colorPanel.close();clearDownloads();
@@ -1128,18 +1130,22 @@ $('saveProjectAsButton').addEventListener('click',()=>saveProject(true));
 function saveProject(saveAs){return action(async()=>{
   closeProjectSaveMenu();
   const name=projectHandle?.name||projectName||`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
-  let target;
-  try {target=await prepareProjectSave({handle:projectHandle,saveAs,name,startIn:projectHandle||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});}
+  let target;notify('元ファイルと保存先を確認しています…');
+  try {target=await projectFiles.prepare({projectId:figureStudioProjectId,handle:projectHandle,link:projectFileLink,saveAs,name,knownSource:!!projectName,startIn:projectHandle||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});}
   catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
-  const ui=projectUI(), savedSnapshot=workspaceSnapshot(items,ui);
+  let savedId=figureStudioProjectId;
+  if(target.saveAs){let same=false;try{same=!!projectHandle&&!!target.handle&&await projectHandle.isSameEntry(target.handle);}catch{}if(!same)savedId=crypto.randomUUID();}
+  if(savedId!==figureStudioProjectId&&figureStudioDirectSender?.sender.busy)throw Error('Studioへの送信が完了してから保存してください。');
+  const ui={...projectUI(),figureStudioProjectId:savedId},savedSnapshot=workspaceSnapshot(items,ui);
   notify('元画像と編集設定をプロジェクトに保存しています…');
   projectSaving=true;scheduleWorkState();
   try {
     const blob=await createProject(items,items.indexOf(current),ui);
-    await target.write(blob);
+    const hash=await target.write(blob),remembered=await target.remember(savedId,hash);
     const overwritten=target.handle===projectHandle&&!!projectHandle;
-    projectHandle=target.handle;projectName=target.name;
-    notify(target.handle?`${target.name} に${overwritten?'上書き':''}保存しました（元画像${items.length}枚と編集設定）。`:'プロジェクトをダウンロードしました。このブラウザではファイルへ直接上書きできません。');
+    prepareFigureStudioProjectReplacement(savedId);figureStudioProjectId=savedId;
+    projectHandle=target.handle;projectName=target.name;projectFileLink=remembered.link;
+    notify(target.handle?`${target.name} に${overwritten?'上書き':''}保存しました（元画像${items.length}枚と編集設定）。${remembered.remembered?'':'保存先を記憶できなかったため、Studioから開き直す際は元ファイルを選び直してください。'}`:'プロジェクトをダウンロードしました。このブラウザではファイルへ直接上書きできません。');
     workSaveState.markSaved(savedSnapshot);
   }finally{projectSaving=false;scheduleWorkState();}
 });}
@@ -1147,7 +1153,7 @@ function saveProject(saveAs){return action(async()=>{
 // records and file handles. Temporary updates never mark a project as saved.
 async function captureUpdateSession(extra={}){
   const snapshot=structuredClone({ui:projectUI(),items:[...items],activeIndex:items.indexOf(current),transactions:settingsTransactions.snapshot(items),checkpoint:workSaveState.checkpoint,
-    projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,selectedPanelLabelId,recentColors:[...recentColors],
+    projectFileLink,projectHandle,projectName,saveDirectory,pendingCrop,measurement,measurementStart,previewRaw,tool,previewMode,mapEstimate,selectedPanelLabelId,recentColors:[...recentColors],
     annotation:{selected:[...annotationUI.selected],clipboard:annotationUI.clipboard,formState:annotationUI.formState},
     inputs:[...document.querySelectorAll('input[id],select[id],textarea[id]')].filter(input=>input.type!=='file').map(input=>({id:input.id,value:input.value,checked:!!input.checked})),
     details:[...document.querySelectorAll('details')].map((node,index)=>({id:node.id,index,open:node.open})),
@@ -1185,7 +1191,8 @@ async function restoreUpdateSession(saved){
   items.splice(0,items.length,...restored);settingsTransactions.restore(saved.transactions);
   figureStudioProjectId=saved.ui.figureStudioProjectId||crypto.randomUUID();figurePreviewCache.clear();figurePreviewProjectId='';
   for(const item of items)item.figureStudioImageId??=item.id;
-  ({projectHandle,projectName,saveDirectory}=saved);
+  ({projectHandle,projectName,saveDirectory}=saved);projectFileLink=portableFileLink(saved.projectFileLink);
+  if(!projectHandle&&projectName)projectHandle=await projectFiles.resolve({projectId:figureStudioProjectId,name:projectName,link:projectFileLink});
   let checkpoint=saved.checkpoint;
   if(!saved.ui.figureStudioProjectId&&typeof checkpoint==='string')try{const value=JSON.parse(checkpoint);value.ui={figureStudioProjectId,...value.ui};checkpoint=JSON.stringify(value);}catch{}
   workSaveState.restoreCheckpoint(checkpoint);
@@ -1238,7 +1245,7 @@ async function openProject(file,options={}){
   finally{projectVersionChecking=false;if(!appUpdater?.reloading)setBusy(wasBusy);}
   notify('プロジェクトを読み込んでいます…');
   const project=await readProject(file),restored=[];
-  let activeDecoded=null;
+  let activeDecoded=null,fileTarget;
   try{
     for(const record of project.images){
       const original=new File([record.blob],record.name,{type:record.type,lastModified:record.lastModified});
@@ -1252,6 +1259,7 @@ async function openProject(file,options={}){
       }finally{if(decoded!==activeDecoded)releaseImage(decoded.source);}
       await new Promise(resolve=>requestAnimationFrame(resolve));
     }
+    fileTarget=await projectFiles.opened({file,projectId:project.ui.figureStudioProjectId,handle:sourceHandles.get(file)||null,embedded:!!options.fromBridge,link:project.ui.sourceFileLink});
     prepareFigureStudioProjectReplacement(project.ui.figureStudioProjectId,options);
   }catch(error){for(const item of restored)URL.revokeObjectURL(item.thumbnail);if(activeDecoded)releaseImage(activeDecoded.source);throw error;}
   // Replace the current work only after every embedded image/settings pair is valid.
@@ -1264,7 +1272,7 @@ async function openProject(file,options={}){
   items.splice(0,items.length,...restored);
   figureStudioProjectId=project.ui.figureStudioProjectId;figurePreviewCache.clear();figurePreviewProjectId='';
   clearDownloads();saveDirectory=null;previewRaw=false;$('zoomSelect').value='fit';
-  projectHandle=sourceHandles.get(file)||null;
+  projectHandle=fileTarget.handle;projectFileLink=fileTarget.link;
   projectName=file.name;
   $('saveDestination').value=folderSupported?'source':'download';
   $('saveDpi').value=String(project.ui.dpi);$('includeSettings').checked=project.ui.includeSettings;
@@ -1434,7 +1442,7 @@ async function loadSample(id,count){
     const ui={...projectUI(),figureStudioProjectId:crypto.randomUUID(),formats:['png'],dpi:600,includeSettings:true,cropScope:'batch',barScope:'batch',calibrationScope:'individual',mapRangeScope:'individual',studioSizeScope:'batch',labelApplySelected:false,labelControls};
     const blob=await createProject(records,0,ui);
     await openProject(new File([blob],`sample_${id}.mifito`,{type:'application/octet-stream'}));
-    projectName='';projectHandle=null;workSaveState.restoreCheckpoint(null);
+    projectName='';projectHandle=null;projectFileLink=null;workSaveState.restoreCheckpoint(null);
     imageTable.setCollapsed(false);previewMode=count===3?'all':'single';render();scheduleWorkState();
     notify(`${SAMPLES.find(s=>s.id===id).title}を読み込みました（${count}枚）。模擬画像・校正済みです。`);
   }finally{setBusy(false);}
@@ -1483,7 +1491,7 @@ async function captureFigureStudioImages(batch=false) {
   setBusy(true);
   try {
     await document.fonts.ready;
-    const activeIndex=items.indexOf(current),ui=projectUI(),bridgeState=figureBridgeEditState();
+    const activeIndex=items.indexOf(current),ui={...projectUI(),...(projectFileLink?{sourceFileLink:projectFileLink}:{})},bridgeState=figureBridgeEditState();
     const records=items.map(item=>({...item,settings:copy(item.settings)}));
     const project=await createProject(records,activeIndex,ui),identity=await readMifitoIdentity(project);
     syncFigurePreviewCache(identity);
@@ -1625,6 +1633,7 @@ function validateMiFiToWorkspaceState(snapshot){
  if(snapshot===null)return null;
  if(!snapshot||snapshot.version!==1||snapshot.app!=='mifito')fail();
  const state=snapshot.state;if(state===null)return null;
+ if(state?.projectFileLink!=null&&!portableFileLink(state.projectFileLink))fail();
  const id=value=>typeof value==='string'&&/^[a-zA-Z0-9-]{1,200}$/.test(value);
  const text=(value,max=65536)=>typeof value==='string'&&value.length<=max;
  const finite=(value,max=1e9)=>Number.isFinite(value)&&Math.abs(value)<=max;
