@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=778e77a41ad6';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=778e77a41ad6';
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=4c317c0f83e1';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=4c317c0f83e1';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=778e77a41ad6';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=4c317c0f83e1';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=778e77a41ad6';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=778e77a41ad6';
-import { buildPlan, paint } from './render.js?v=778e77a41ad6';
-import { batchExport, exportImage } from './export.js?v=778e77a41ad6';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=4c317c0f83e1';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=4c317c0f83e1';
+import { buildPlan, paint } from './render.js?v=4c317c0f83e1';
+import { batchExport, exportImage } from './export.js?v=4c317c0f83e1';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=778e77a41ad6';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=778e77a41ad6';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=4c317c0f83e1';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=4c317c0f83e1';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=778e77a41ad6';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=778e77a41ad6';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=778e77a41ad6';
-import { prepareScaleBar } from './bar-workflow.js?v=778e77a41ad6';
-import { prepareCalibration } from './calibration-workflow.js?v=778e77a41ad6';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=778e77a41ad6';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=778e77a41ad6';
-import { ImageOverview } from './overview.js?v=778e77a41ad6';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=778e77a41ad6';
-import { SamplePicker } from './sample-picker.js?v=778e77a41ad6';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=778e77a41ad6';
+import { createProject, readProject } from './project.js?v=4c317c0f83e1';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4c317c0f83e1';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=4c317c0f83e1';
+import { prepareScaleBar } from './bar-workflow.js?v=4c317c0f83e1';
+import { prepareCalibration } from './calibration-workflow.js?v=4c317c0f83e1';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=4c317c0f83e1';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=4c317c0f83e1';
+import { ImageOverview } from './overview.js?v=4c317c0f83e1';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=4c317c0f83e1';
+import { SamplePicker } from './sample-picker.js?v=4c317c0f83e1';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=4c317c0f83e1';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=778e77a41ad6';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=778e77a41ad6';
+import { estimateSourcePalette } from './palette-estimation.js?v=4c317c0f83e1';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=4c317c0f83e1';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -1127,28 +1127,54 @@ $('projectSaveDropdown').addEventListener('focusout',event=>{if(!$('projectSaveD
 $('projectSaveDropdown').addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('projectSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeProjectSaveMenu();$('projectSaveMenuButton').focus();}});
 $('saveProjectButton').addEventListener('click',()=>saveProject(false));
 $('saveProjectAsButton').addEventListener('click',()=>saveProject(true));
-function saveProject(saveAs){return action(async()=>{
-  closeProjectSaveMenu();
-  const name=projectHandle?.name||projectName||`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
-  let target;notify('元ファイルと保存先を確認しています…');
-  try {target=await projectFiles.prepare({projectId:figureStudioProjectId,handle:projectHandle,link:projectFileLink,saveAs,name,knownSource:!!projectName,startIn:projectHandle||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});}
-  catch(error){if(error.name==='AbortError'){notify('プロジェクトの保存をキャンセルしました。');return;}throw error;}
-  let savedId=figureStudioProjectId;
-  if(target.saveAs){let same=false;try{same=!!projectHandle&&!!target.handle&&await projectHandle.isSameEntry(target.handle);}catch{}if(!same)savedId=crypto.randomUUID();}
-  if(savedId!==figureStudioProjectId&&figureStudioDirectSender?.sender.busy)throw Error('Studioへの送信が完了してから保存してください。');
-  const ui={...projectUI(),figureStudioProjectId:savedId},savedSnapshot=workspaceSnapshot(items,ui);
-  notify('元画像と編集設定をプロジェクトに保存しています…');
-  projectSaving=true;scheduleWorkState();
-  try {
+function sourceProjectSaveReady(){
+  if(projectVersionChecking||busy||projectSaving)throw Error('MiFiToの読み込みや保存が完了してから保存してください。');
+  if(!items.length)return false;
+  workspaceReady();checkWorkspaceRawInputs();
+  if(pendingInputEdit()||measurementStart)throw Error('MiFiToの入力中の編集や描画を確定してから保存してください。');
+  return true;
+}
+async function prepareSourceProjectSave({saveAs=false,host=window,choose=chooseProjectFileAction,requireFile=false}={}){
+  if(requireFile&&!sourceProjectSaveReady())return null;
+  if(projectVersionChecking||busy||projectSaving||!current)return null;
+  setBusy(true);projectSaving=true;scheduleWorkState();closeProjectSaveMenu();
+  let released=false,written=false,writing=false;
+  const release=()=>{if(released)return;released=true;projectSaving=false;setBusy(false);scheduleWorkState();};
+  try{
+    const name=projectHandle?.name||projectName||`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
+    notify('元ファイルと保存先を確認しています…');
+    const target=await projectFiles.prepare({projectId:figureStudioProjectId,handle:projectHandle,link:projectFileLink,saveAs,name,knownSource:!!projectName,host,choose,requireFile,startIn:projectHandle||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});
+    let savedId=figureStudioProjectId;
+    if(target.saveAs){let same=false;try{same=!!projectHandle&&!!target.handle&&await projectHandle.isSameEntry(target.handle);}catch{}if(!same)savedId=crypto.randomUUID();}
+    if(savedId!==figureStudioProjectId&&figureStudioDirectSender?.sender.busy)throw Error('Studioへの送信が完了してから保存してください。');
+    const before=workspaceSnapshot(items,projectUI()),savingItems=[...items],savingFiles=items.map(item=>item.file);
+    const ui={...projectUI(),figureStudioProjectId:savedId},savedSnapshot=workspaceSnapshot(items,ui);
+    notify('元画像と編集設定をプロジェクトに準備しています…');
     const blob=await createProject(items,items.indexOf(current),ui);
-    const hash=await target.write(blob),remembered=await target.remember(savedId,hash);
-    const overwritten=target.handle===projectHandle&&!!projectHandle;
-    prepareFigureStudioProjectReplacement(savedId);figureStudioProjectId=savedId;
-    projectHandle=target.handle;projectName=target.name;projectFileLink=remembered.link;
-    notify(target.handle?`${target.name} に${overwritten?'上書き':''}保存しました（元画像${items.length}枚と編集設定）。${remembered.remembered?'':'保存先を記憶できなかったため、Studioから開き直す際は元ファイルを選び直してください。'}`:'プロジェクトをダウンロードしました。このブラウザではファイルへ直接上書きできません。');
-    workSaveState.markSaved(savedSnapshot);
-  }finally{projectSaving=false;scheduleWorkState();}
-});}
+    const validate=()=>{
+      if(released||written||writing)throw Error('MiFiToの保存準備は終了しています。');
+      if(workspaceSnapshot(items,projectUI())!==before||items.length!==savingItems.length||items.some((item,index)=>item!==savingItems[index]||item.file!==savingFiles[index]))throw Error('MiFiToの保存準備中に内容が変わりました。もう一度保存してください。');
+    };
+    validate();
+    return {name:target.name,handle:target.handle,validate,cancel:release,async write({hold=false}={}){
+      validate();writing=true;
+      try{
+        const hash=await target.write(blob),remembered=await target.remember(savedId,hash);
+        const overwritten=target.handle===projectHandle&&!!projectHandle;
+        prepareFigureStudioProjectReplacement(savedId);figureStudioProjectId=savedId;
+        projectHandle=target.handle;projectName=target.name;projectFileLink=remembered.link;
+        notify(target.handle?`${target.name} に${overwritten?'上書き':''}保存しました（元画像${items.length}枚と編集設定）。${remembered.remembered?'':'保存先を記憶できなかったため、Studioから開き直す際は元ファイルを選び直してください。'}`:'プロジェクトをダウンロードしました。このブラウザではファイルへ直接上書きできません。');
+        workSaveState.markSaved(savedSnapshot);written=true;return {app:'mifito',name:target.name};
+      }finally{if(!hold)release();}
+    }};
+  }catch(error){release();throw error;}
+}
+async function saveProject(saveAs){
+  let plan;
+  try{plan=await prepareSourceProjectSave({saveAs});if(plan)return await plan.write();}
+  catch(error){notify(error.name==='AbortError'?'プロジェクトの保存をキャンセルしました。':error.message||'プロジェクトを保存できませんでした。',error.name!=='AbortError');}
+  finally{plan?.cancel();}
+}
 // IndexedDB preserves one shared object graph, including histories, grouped undo
 // records and file handles. Temporary updates never mark a project as saved.
 async function captureUpdateSession(extra={}){
@@ -1696,7 +1722,7 @@ function validateMiFiToWorkspaceState(snapshot){
  return state;
 }
 window.FigureStudioWorkspaceState={
- version:1,app:'mifito',
+ version:1,app:'mifito',sourceSaveReady:sourceProjectSaveReady,prepareSourceSave:prepareSourceProjectSave,
  release:{version:APP_VERSION,build:APP_BUILD},
  setUpdateReloading(value){if(appUpdater)appUpdater.reloading=!!value;},
  captureReloadHandles(){return items.length?structuredClone({projectId:figureStudioProjectId,projectHandle,saveDirectory,items:items.map(item=>({id:item.id,sourceHandle:item.sourceHandle??null,sourceDirectory:item.sourceDirectory??null}))}):null;},
