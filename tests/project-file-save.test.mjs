@@ -4,10 +4,10 @@ import {readFile} from 'node:fs/promises';
 import {defaultSettings} from '../core.js';
 import {createProject,readProject} from '../project.js';
 import {readMifitoIdentity} from '../mifito-sync.mjs';
-import {workspaceSnapshot} from '../work-state.js';
+import {WorkSaveState,workspaceSnapshot} from '../work-state.js';
 import {createProjectFileLinks} from '../project-file-links.mjs';
 
-const source=await readFile(new URL('../app.js',import.meta.url),'utf8'),start=source.indexOf('function sourceProjectSaveReady()'),end=source.indexOf('// IndexedDB preserves',start),saver=source.slice(start,end);
+const source=await readFile(new URL('../app.js',import.meta.url),'utf8'),start=source.indexOf('function sourceProjectSaveReady('),end=source.indexOf('// IndexedDB preserves',start),saver=source.slice(start,end);
 const projectId='test-source-project-000001';
 function handle(name,blob){let bytes=blob;return {name,kind:'file',fail:false,async getFile(){return new File([bytes],name);},async queryPermission(){return 'granted';},async isSameEntry(other){return this===other;},async createWritable(){let pending;const h=this;return {async write(blob){if(h.fail)throw Error('disk full');pending=blob;},async close(){bytes=pending;},async abort(){}};}};}
 async function fixture({fail=false,cancel=false,unbound=false}={}){
@@ -18,7 +18,7 @@ async function fixture({fail=false,cancel=false,unbound=false}={}){
   const pickerHost={async showSaveFilePicker(){if(cancel)throw new DOMException('cancelled','AbortError');return copy;}};
   const projectFiles=createProjectFileLinks({app:'mifito',store,host:pickerHost,choose:()=>assert.fail('Unexpected confirmation'),identify:readMifitoIdentity});
   const opened=await projectFiles.opened({file:await native.getFile(),projectId,handle:native});
-  const events=[],env={projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:{markSaved:snapshot=>events.push({saved:snapshot})}};
+  const events=[],env={projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
   if(unbound){env.projectHandle=null;env.projectName='';env.projectFileLink=null;records.clear();}
   const keys=Object.keys(env),api=Function(...keys,`function setBusy(value){busy=value;}
 function projectUI(){return {...${JSON.stringify(ui)},figureStudioProjectId};}\n${saver}\nreturn {prepare:prepareSourceProjectSave,ready:sourceProjectSaveReady,save:saveProject,state:()=>({busy,projectHandle,projectName,projectFileLink,figureStudioProjectId,projectSaving}),expected:()=>workspaceSnapshot(items,projectUI())};`)(...keys.map(key=>env[key]));
@@ -45,6 +45,15 @@ test('MiFiTo embedded snapshots reopen with a safe file token while old projects
   const f=await fixture(),snapshot=await createProject(f.items,0,{...f.ui,sourceFileLink:f.opened.link}),saved=await readProject(snapshot);
   assert.deepEqual(saved.ui.sourceFileLink,f.opened.link);assert.equal((await readProject(await f.native.getFile())).ui.sourceFileLink,undefined);
   const target=await f.projectFiles.opened({file:new File([snapshot],f.native.name),projectId,embedded:true,link:saved.ui.sourceFileLink});assert.equal(target.handle,f.native);
+});
+test('Studio skips an unchanged saved MiFiTo source and includes it after a new edit',async()=>{
+ const f=await fixture();
+ assert.equal(f.api.ready({editedOnly:true}),true);
+ await f.api.save(false);
+ assert.equal(f.api.ready({editedOnly:true}),false);
+ assert.equal(f.api.ready(),true);
+ f.items[0].settings.panelLabel.text='(b) edited after reopening';
+ assert.equal(f.api.ready({editedOnly:true}),true);
 });
 test('MiFiTo bulk save prepares unchanged original bytes without writing and holds its editor lock until release',async()=>{
   const f=await fixture(),before=await (await f.native.getFile()).arrayBuffer(),plan=await f.api.prepare({requireFile:true});

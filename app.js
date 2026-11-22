@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=4c317c0f83e1';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=4c317c0f83e1';
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=b4e71b6c3a29';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=b4e71b6c3a29';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=4c317c0f83e1';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b4e71b6c3a29';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
 import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b307f808f67c';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=4c317c0f83e1';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=4c317c0f83e1';
-import { buildPlan, paint } from './render.js?v=4c317c0f83e1';
-import { batchExport, exportImage } from './export.js?v=4c317c0f83e1';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=b4e71b6c3a29';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=b4e71b6c3a29';
+import { buildPlan, paint } from './render.js?v=b4e71b6c3a29';
+import { batchExport, exportImage } from './export.js?v=b4e71b6c3a29';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=4c317c0f83e1';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=4c317c0f83e1';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=b4e71b6c3a29';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=b4e71b6c3a29';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=4c317c0f83e1';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=4c317c0f83e1';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=4c317c0f83e1';
-import { prepareScaleBar } from './bar-workflow.js?v=4c317c0f83e1';
-import { prepareCalibration } from './calibration-workflow.js?v=4c317c0f83e1';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=4c317c0f83e1';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=4c317c0f83e1';
-import { ImageOverview } from './overview.js?v=4c317c0f83e1';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=4c317c0f83e1';
-import { SamplePicker } from './sample-picker.js?v=4c317c0f83e1';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=4c317c0f83e1';
+import { createProject, readProject } from './project.js?v=b4e71b6c3a29';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b4e71b6c3a29';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=b4e71b6c3a29';
+import { prepareScaleBar } from './bar-workflow.js?v=b4e71b6c3a29';
+import { prepareCalibration } from './calibration-workflow.js?v=b4e71b6c3a29';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=b4e71b6c3a29';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=b4e71b6c3a29';
+import { ImageOverview } from './overview.js?v=b4e71b6c3a29';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=b4e71b6c3a29';
+import { SamplePicker } from './sample-picker.js?v=b4e71b6c3a29';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=b4e71b6c3a29';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=4c317c0f83e1';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=4c317c0f83e1';
+import { estimateSourcePalette } from './palette-estimation.js?v=b4e71b6c3a29';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=b4e71b6c3a29';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -1127,12 +1127,12 @@ $('projectSaveDropdown').addEventListener('focusout',event=>{if(!$('projectSaveD
 $('projectSaveDropdown').addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('projectSaveMenu').hidden){event.preventDefault();event.stopPropagation();closeProjectSaveMenu();$('projectSaveMenuButton').focus();}});
 $('saveProjectButton').addEventListener('click',()=>saveProject(false));
 $('saveProjectAsButton').addEventListener('click',()=>saveProject(true));
-function sourceProjectSaveReady(){
+function sourceProjectSaveReady({editedOnly=false}={}){
   if(projectVersionChecking||busy||projectSaving)throw Error('MiFiToの読み込みや保存が完了してから保存してください。');
   if(!items.length)return false;
   workspaceReady();checkWorkspaceRawInputs();
   if(pendingInputEdit()||measurementStart)throw Error('MiFiToの入力中の編集や描画を確定してから保存してください。');
-  return true;
+  return !editedOnly||!projectFileLink?.token||workSaveState.isDirty(workspaceSnapshot(items,projectUI()),true);
 }
 async function prepareSourceProjectSave({saveAs=false,host=window,choose=chooseProjectFileAction,requireFile=false}={}){
   if(requireFile&&!sourceProjectSaveReady())return null;
