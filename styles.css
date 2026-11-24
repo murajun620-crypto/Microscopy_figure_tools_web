@@ -177,6 +177,15 @@ canvas{display:block;cursor:default}
 .editor-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 4px 13px;font-size:11px}
 .editor-footer strong{font-size:12px;display:block;font-weight:400}
 .editor-footer span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.editor-footer .image-info,.editor-footer .output-info{min-width:0;overflow-wrap:anywhere}
+.editing-file{display:flex;align-items:center;justify-content:center;gap:5px;flex:0 1 44%;min-width:0;color:var(--muted);white-space:nowrap}
+.editing-file svg{width:13px;height:13px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7}
+.editor-footer .editing-file span{margin:0;font-size:11px}
+.editing-file-label{flex:none}
+#editingFileName{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:860px){
+  .editing-file-label{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+}
 #pointerCoordinates{height:15px;line-height:15px;white-space:nowrap}
 .crop-help{font-size:11px;line-height:1.6;margin:0;color:var(--muted)}
 #cropScopeInfo.error{color:#a34329}

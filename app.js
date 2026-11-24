@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=3a0d6fb241ce';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=3a0d6fb241ce';
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=1d120b7661a3';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=1d120b7661a3';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=3a0d6fb241ce';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=1d120b7661a3';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=3a0d6fb241ce';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=1d120b7661a3';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=3a0d6fb241ce';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=3a0d6fb241ce';
-import { buildPlan, paint } from './render.js?v=3a0d6fb241ce';
-import { batchExport, exportImage } from './export.js?v=3a0d6fb241ce';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=1d120b7661a3';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=1d120b7661a3';
+import { buildPlan, paint } from './render.js?v=1d120b7661a3';
+import { batchExport, exportImage } from './export.js?v=1d120b7661a3';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=3a0d6fb241ce';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=3a0d6fb241ce';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=1d120b7661a3';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=1d120b7661a3';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=3a0d6fb241ce';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3a0d6fb241ce';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=3a0d6fb241ce';
-import { prepareScaleBar } from './bar-workflow.js?v=3a0d6fb241ce';
-import { prepareCalibration } from './calibration-workflow.js?v=3a0d6fb241ce';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=3a0d6fb241ce';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=3a0d6fb241ce';
-import { ImageOverview } from './overview.js?v=3a0d6fb241ce';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=3a0d6fb241ce';
-import { SamplePicker } from './sample-picker.js?v=3a0d6fb241ce';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=3a0d6fb241ce';
+import { createProject, readProject } from './project.js?v=1d120b7661a3';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=1d120b7661a3';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=1d120b7661a3';
+import { prepareScaleBar } from './bar-workflow.js?v=1d120b7661a3';
+import { prepareCalibration } from './calibration-workflow.js?v=1d120b7661a3';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=1d120b7661a3';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=1d120b7661a3';
+import { ImageOverview } from './overview.js?v=1d120b7661a3';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=1d120b7661a3';
+import { SamplePicker } from './sample-picker.js?v=1d120b7661a3';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=1d120b7661a3';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=3a0d6fb241ce';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=3a0d6fb241ce';
+import { estimateSourcePalette } from './palette-estimation.js?v=1d120b7661a3';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=1d120b7661a3';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -131,6 +131,10 @@ function refreshWorkState() {
   $('saveProjectButton').title=projectHandle?`${projectHandle.name} に上書き保存します（Ctrl/Cmd＋S）`:'元画像と編集設定をプロジェクトに保存します（Ctrl/Cmd＋S）';
   if(status.textContent!==text)status.textContent=text;
   status.dataset.dirty=String(dirty);
+  const editingName=projectName||(items.length?'未保存のプロジェクト':'—');
+  const editingFileName=$('editingFileName'),editingFile=$('editingFile');
+  if(editingFileName.textContent!==editingName)editingFileName.textContent=editingName;
+  if(editingFile.title!==projectName)editingFile.title=projectName;
 }
 function scheduleWorkState() {
   if(!workStateQueued){workStateQueued=true;queueMicrotask(refreshWorkState);}
@@ -962,7 +966,13 @@ let resizeFrame; new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); r
 document.addEventListener('keydown', event => {
   if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.getModifierState?.('AltGraph'))return;
   if(document.querySelector('dialog[open]'))return;
-  const editing = event.target.matches('input, textarea, select');
+  const editing = event.target.isContentEditable || event.target.matches('input, textarea, select');
+  if(!editing && current && !busy && !projectVersionChecking && !drag && !pendingCrop && !cropStart && event.shiftKey &&
+     !event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase()==='l'){
+    event.preventDefault();
+    if(!event.repeat)applyPanelLabels($('labelApplySelected').checked,{emptyOnly:true});
+    return;
+  }
   if(!editing && current && !busy && event.code==='Space' && (event.target===canvas || event.target===document.body)) {event.preventDefault();spacePan=true;canvas.style.cursor='grab';return;}
   if(!editing && current && !busy && tool==='crop' && pendingCrop && !drag && !event.ctrlKey && !event.metaKey && !event.altKey && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
     event.preventDefault();const step=event.shiftKey?10:1,base=current.settings.crop;
@@ -1041,15 +1051,20 @@ for(const id of ['panelFormat','panelBranchParent','batchSequence','batchStart',
   $(id).addEventListener('input',updateLabelFormat); $(id).addEventListener('change',updateLabelFormat);
 }
 updateLabelFormat();
-function applyPanelLabels(onlyEnabled) {
+function applyPanelLabels(onlyEnabled,{emptyOnly=false}={}) {
   if(busy||!current)return;
   try {
-    const n=numbering(), changes=labelSequenceChanges(items,n,onlyEnabled,selectedPanelLabelId).map(({item,text})=>{
-      const settings=copy(item.settings),label=findPanelLabel(settings,selectedPanelLabelId);label.text=text;label.parentheses=n.parentheses;
-      const next=validateSettings(settings,item.width,item.height);buildPlan(next,context);
-      return {item,text,settings:next};
+    const n=numbering();
+    const sequence=labelSequenceChanges(items,n,onlyEnabled,selectedPanelLabelId);
+    const changes=emptyOnly?sequence.filter(({item,text})=>text&&!findPanelLabel(item.settings,selectedPanelLabelId).text.trim()):sequence;
+    if(emptyOnly&&!changes.length){notify('連番を付ける空欄のラベルがありません。');return;}
+    const updates=changes.map(({item,text})=>{
+      const settings=copy(item.settings),label=findPanelLabel(settings,selectedPanelLabelId);
+      label.text=text;label.parentheses=n.parentheses;
+      return {item,settings};
     });
-    applyPanelLabelUpdates(changes);notify('選択中のラベルに連番を適用しました。');
+    applyPanelLabelUpdates(updates);
+    notify(emptyOnly?'空欄のラベルに連番を付けました。':'選択中のラベルに連番を適用しました。');
   }catch(error){notify(error.message,true);}
 }
 $('applyPanelLabels').addEventListener('click',()=>applyPanelLabels($('labelApplySelected').checked));

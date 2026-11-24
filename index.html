@@ -8,9 +8,9 @@
   <meta name="application-name" content="MiFiTo">
   <title>MiFiTo · Microscopy Figure Tools</title>
   <link rel="icon" type="image/svg+xml" href="./assets/mifito.svg">
-  <link rel="stylesheet" href="./styles.css?v=b307f808f67c">
+  <link rel="stylesheet" href="./styles.css?v=1d120b7661a3">
   <link rel="stylesheet" href="./colors.css?v=unified-palette-1">
-  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.33" data-release-build="3a0d6fb241ce" data-release-entry="./app.js?v=3a0d6fb241ce"></script>
+  <script type="module" src="./release-loader.mjs?v=release-gate-1" data-release-app="mifito" data-release-version="1.9.34" data-release-build="1d120b7661a3" data-release-entry="./app.js?v=1d120b7661a3"></script>
 </head>
 <body>
   <header class="app-header">
@@ -135,7 +135,7 @@
               <label id="panelStartRow" hidden>開始番号<input id="batchStart" type="number" min="1" max="9999" step="1" value="1"></label>
               <p id="labelFormatPreview" class="readout" aria-live="polite"></p>
               <label class="check"><input id="labelApplySelected" type="checkbox">チェックした画像だけに適用</label>
-              <button id="applyPanelLabels" class="button full">選択中のラベルに連番を適用</button>
+              <button id="applyPanelLabels" class="button full" title="空欄のラベルだけに連番を付けるには Shift＋Lを押します。">選択中のラベルに連番を適用</button>
               <p class="hint">一覧順で連番を付けます。ラベル表示OFFの画像は連番を飛ばし、本文を空欄にします。補足文字は保持します。</p>
             </div></details>
             <p class="hint">画像一覧・画像設定表のラベル欄は、ラベル1を編集します。</p>
@@ -243,7 +243,15 @@
       </div>
       <div id="instruction" class="instruction" hidden></div>
       </div>
-      <div class="editor-footer"><div><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span><span id="pointerCoordinates" aria-live="off"></span></div><div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div></div>
+      <div class="editor-footer">
+        <div class="image-info"><strong id="imageName">画像なし</strong><span id="imageDimensions">—</span><span id="pointerCoordinates" aria-live="off"></span></div>
+        <div id="editingFile" class="editing-file">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5v5h5"/></svg>
+          <span class="editing-file-label">編集中のファイル</span>
+          <span id="editingFileName">—</span>
+        </div>
+        <div class="output-info"><span id="outputInfo">—</span><span id="viewInfo">プレビュー</span></div>
+      </div>
       <section id="imageTablePanel" class="image-table-panel" aria-labelledby="imageTableTitle" hidden>
         <div class="image-table-heading"><h2 id="imageTableTitle">画像設定表</h2><output id="imageTableSummary" aria-live="polite"></output><button id="toggleImageTable" class="button quiet" aria-label="画像設定表を閉じる" aria-expanded="true" aria-controls="imageTableContent">−</button></div>
         <div id="imageTableContent"><div class="image-table-toolbar"><label class="check"><input id="imageTableDetails" type="checkbox">詳細列を表示</label><span>変更はその行の画像だけに適用します。</span></div>
@@ -304,7 +312,7 @@
     <div class="save-actions"><button id="exportButton" class="button primary" disabled>この画像を保存</button><button id="cancelBatchButton" class="button" hidden>中止</button></div>
   </dialog>
   <div id="status" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。パネルラベル・補足文字・テキスト注釈にはStudioと同じTeX構文を使えます（例：CeO$_2$、$\frac{a}{b}$）。ダブルクリックした文字編集パネルで入力形式・フォント・文字色を変更できます。数式を含むPPTXの編集可能ラベルはSVGとして配置します。</p><p>マップのカラーバーは「6 マップのカラーバー」で追加します。表示はバーのみ・マップ名と単位・単位のみから選べます。マップ名、単位、値の範囲は自由に変更できます。目盛りは線形です。元画像の色・測定値は変更しないため、元のマップに合わせて設定してください。「画像から配色を推定」で元画像の色に近い配色を選べます。判別できない場合は設定を変更しません。最小・最大値・単位・配色の向きは元のマップで確認してください。文字サイズはスケールバーと共通です。配色はGwyddion.net・MetroPro再現を含む標準8種類のほか、文字や目盛りを除いたバー画像（PNG・JPEG・WebP）、Gwyddionのgradient、CSV・JSONを読み込めます。読み込んだ配色も画像ごとにプロジェクトへ保存します。</p><p><a href="./COLORBAR_PALETTES.md" target="_blank" rel="noopener">カラーバー配色の出典と利用条件</a></p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
+  <dialog id="helpDialog"><div class="dialog-heading"><h2>使い方</h2><button id="closeHelpButton" class="tool" aria-label="使い方を閉じる">✕</button></div><ol><li>画像を開きます。複数選択やフォルダ選択にも対応しています。</li><li>「測定」で2点をクリック、またはドラッグします。既知の長さを入力して校正します。</li><li>「トリミング」で範囲を選ぶか、「画像幅を使う」「画像高さを使う」を選び、適用します。</li><li>スケールバーとラベルを設定します。注釈は「配置」で、画像内・画像外の領域をドラッグできます。</li><li>プレビューを確認して保存します。プレビュー上部の「この画像を保存」または「一括保存」を押し、形式と保存先を指定します。保存形式はチェックボックスで複数選択できます。解像度はプレビュー右上で選び、保存とコピーに共通で使います。設定JSONは初期状態で保存します。PNG/TIFFは標準600 dpiで、文字とバーを保存解像度で直接描画します。ZIPにはまとめません。</li></ol><p>PC用の画面です。左の設定欄と右のプレビューを並べて操作します。表示倍率は＋／−ボタンや倍率選択で変更できます。画像を拡大したときは「配置」で注釈以外の部分をドラッグして移動します。</p><p>Ctrl/Cmd+Z：戻す · Ctrl/Cmd+Shift+Z：やり直す · Esc：選択を取り消す</p><p><kbd>Shift+L</kbd>で、表示がオンの空欄のパネルラベルに連番を付けます。「チェックした画像だけに適用」がオンのときは、その画像が対象になります。</p><p>画像は外部へ送信しません。未保存のプロジェクトがある場合、タブやウィンドウの終了・ブラウザ更新前に確認します。確認の文言はブラウザによって異なります。画像の保存やコピーではプロジェクトを保存した扱いにはなりません。ページを閉じると編集内容は失われます。画像を含めて再開する場合は、ヘッダーの「プロジェクトを保存」を使ってください。保存した.mifitoを「プロジェクトを開く」で選ぶと、元画像・校正・トリミング・ラベル・一覧順序・処理対象を復元します。Undo／Redoの履歴と保存先フォルダの権限は復元しません。設定JSONはヘッダーの「設定を開く・保存」から操作します。保存時は「この画像の設定」または「一覧の設定」を選びます。Python版の画像設定・一覧セッションJSONも読み込めます。元画像を先に開いてください。</p><p>TIFFは最初のページを8-bit RGBAに変換します。16-bitの原データや多ページ・特殊なTIFFの保持を目的とする処理には使わないでください。図中文字はArialです。Arialがない端末では代替フォントになります。SVGの文字は閲覧先のフォントに依存し、PDFの文字は画像として保存します。</p><p>PPTXは新しいファイルとして保存します。起動中のPowerPointへの直接送信には対応していません。パネルラベル・補足文字・テキスト注釈にはStudioと同じTeX構文を使えます（例：CeO$_2$、$\frac{a}{b}$）。ダブルクリックした文字編集パネルで入力形式・フォント・文字色を変更できます。数式を含むPPTXの編集可能ラベルはSVGとして配置します。</p><p>マップのカラーバーは「6 マップのカラーバー」で追加します。表示はバーのみ・マップ名と単位・単位のみから選べます。マップ名、単位、値の範囲は自由に変更できます。目盛りは線形です。元画像の色・測定値は変更しないため、元のマップに合わせて設定してください。「画像から配色を推定」で元画像の色に近い配色を選べます。判別できない場合は設定を変更しません。最小・最大値・単位・配色の向きは元のマップで確認してください。文字サイズはスケールバーと共通です。配色はGwyddion.net・MetroPro再現を含む標準8種類のほか、文字や目盛りを除いたバー画像（PNG・JPEG・WebP）、Gwyddionのgradient、CSV・JSONを読み込めます。読み込んだ配色も画像ごとにプロジェクトへ保存します。</p><p><a href="./COLORBAR_PALETTES.md" target="_blank" rel="noopener">カラーバー配色の出典と利用条件</a></p><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">使用ライブラリとライセンス</a></dialog>
   <dialog id="updateDialog" class="save-dialog" aria-labelledby="updateTitle">
     <div class="dialog-heading"><h2 id="updateTitle">アプリの更新</h2><button id="closeUpdateDialog" class="button quiet">閉じる</button></div>
     <p id="updateMessage" role="status" aria-live="polite"></p>
