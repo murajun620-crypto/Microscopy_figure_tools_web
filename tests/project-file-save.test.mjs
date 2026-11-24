@@ -8,9 +8,11 @@ import {WorkSaveState,workspaceSnapshot} from '../work-state.js';
 import {createProjectFileLinks} from '../project-file-links.mjs';
 
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8'),start=source.indexOf('function sourceProjectSaveReady('),end=source.indexOf('// IndexedDB preserves',start),saver=source.slice(start,end);
+const workFolderStart=source.indexOf('function clearStudioWorkFolderWatch()');
+const workFolder=source.slice(workFolderStart,source.indexOf('figureStudioBridge=setupFigureBridge({',workFolderStart));
 const projectId='test-source-project-000001';
 function handle(name,blob){let bytes=blob;return {name,kind:'file',fail:false,async getFile(){return new File([bytes],name);},async queryPermission(){return 'granted';},async isSameEntry(other){return this===other;},async createWritable(){let pending;const h=this;return {async write(blob){if(h.fail)throw Error('disk full');pending=blob;},async close(){bytes=pending;},async abort(){}};}};}
-async function fixture({fail=false,cancel=false,unbound=false,sourceKey}={}){
+async function fixture({fail=false,cancel=false,unbound=false,sourceKey,folderSearch,keepRegistry=false}={}){
   const items=[{id:'image-000000000000001',name:'image.png',file:new File(['independent original bytes'],'image.png',{type:'image/png',lastModified:12}),width:20,height:10,enabled:true,settings:defaultSettings(20,10)}];
   const ui={figureStudioProjectId:projectId,formats:['png'],dpi:600,includeSettings:true,colorMode:'simple'};
   const native=handle('source.mifito',await createProject(items,0,ui)),copy=handle('copy.mifito',new Blob());native.fail=copy.fail=fail;
@@ -20,10 +22,11 @@ async function fixture({fail=false,cancel=false,unbound=false,sourceKey}={}){
   const opened=await projectFiles.opened({file:await native.getFile(),projectId,handle:native});
   const preparations=[],prepare=projectFiles.prepare;
   projectFiles.prepare=options=>{preparations.push(options);return prepare(options);};
-  const events=[],env={projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,figureStudioBridge:{sourceKey},current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
+  const events=[],env={studioWorkFolderWatch:null,projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,figureStudioBridge:{sourceKey},current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
+  if(folderSearch){env.projectHandle=null;projectFiles.findInWorkFolder=folderSearch;if(!keepRegistry)records.clear();}
   if(unbound){env.projectHandle=null;env.projectName='';env.projectFileLink=null;records.clear();}
   const keys=Object.keys(env),api=Function(...keys,`function setBusy(value){busy=value;}
-function projectUI(){return {...${JSON.stringify(ui)},figureStudioProjectId};}\n${saver}\nreturn {prepare:prepareSourceProjectSave,ready:sourceProjectSaveReady,save:saveProject,state:()=>({busy,projectHandle,projectName,projectFileLink,figureStudioProjectId,projectSaving}),expected:()=>workspaceSnapshot(items,projectUI())};`)(...keys.map(key=>env[key]));
+function projectUI(){return {...${JSON.stringify(ui)},figureStudioProjectId};}\n${workFolder}\n${saver}\nreturn {watch:watchStudioWorkFolder,route:key=>{figureStudioBridge.sourceKey=key;},prepare:prepareSourceProjectSave,ready:sourceProjectSaveReady,save:saveProject,state:()=>({busy,projectHandle,projectName,projectFileLink,figureStudioProjectId,projectSaving}),expected:()=>workspaceSnapshot(items,projectUI())};`)(...keys.map(key=>env[key]));
   return {api,native,copy,opened,events,records,items,projectFiles,ui,pickerHost,preparations};
 }
 test('actual MiFiTo save keeps independent source image bytes and omits local target metadata from disk',async()=>{
@@ -101,4 +104,74 @@ test('MiFiTo rejects edits made between preparing and writing a bulk save',async
 test('the first ordinary MiFiTo save keeps its Studio project identity while establishing a native target',async()=>{
   const f=await fixture({unbound:true}),plan=await f.api.prepare({requireFile:true});await plan.write();const saved=await readProject(await f.copy.getFile());
   assert.equal(saved.ui.figureStudioProjectId,projectId);assert.equal(f.api.state().figureStudioProjectId,projectId);assert.equal(f.api.state().projectHandle,f.copy);
+});
+
+test('MiFiTo resolves a Studio work folder on connect and saves directly to the discovered file',async()=>{
+  const editKey='book/figure/panel/asset',directory={kind:'directory',name:'work'};
+  let result,lookup;
+  const f=await fixture({sourceKey:editKey,folderSearch:async options=>{lookup=options;return result;}});
+  result={handle:f.native,link:f.opened.link};
+  f.api.watch({editKey,getWorkFolder:async()=>directory});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(lookup.directory,directory);assert.equal(lookup.sourceKey,editKey);assert.equal(lookup.name,f.native.name);
+  assert.equal(f.api.state().projectHandle,f.native);
+  await f.api.save(false);
+  assert.equal(f.api.state().projectHandle,f.native);
+  assert.equal((await f.copy.getFile()).size,0);
+});
+
+test('MiFiTo saving aborts an unfinished work folder lookup without waiting or adopting its late answer',async()=>{
+  const editKey='book/figure/panel/asset',directory={kind:'directory',name:'work'};
+  let resolveLookup,notifyStarted;
+  const pending=new Promise(resolve=>resolveLookup=resolve),started=new Promise(resolve=>notifyStarted=resolve);
+  const f=await fixture({sourceKey:editKey,keepRegistry:true,folderSearch:async options=>{notifyStarted(options.signal);return pending;}});
+  f.api.watch({editKey,getWorkFolder:()=>directory});
+  const signal=await started;
+  await f.api.save(false);
+  assert.equal(signal.aborted,true);
+  assert.equal(f.api.state().projectHandle,f.native);
+  resolveLookup({handle:f.copy,link:null});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,f.native);
+});
+
+test('MiFiTo switches pending targets with the Studio work folder and keeps a completed save target',async()=>{
+  const editKey='book/figure/panel/asset',first={kind:'directory',name:'first'},second={kind:'directory',name:'second'};
+  let directory=first,folderChanged,firstHandle,secondHandle;
+  const f=await fixture({sourceKey:editKey,folderSearch:async options=>({handle:options.directory===first?firstHandle:secondHandle,link:f.opened.link})});
+  firstHandle=f.native;
+  secondHandle=handle(f.native.name,await f.native.getFile());
+  f.api.watch({editKey,getWorkFolder:()=>directory,subscribeWorkFolder:fn=>{folderChanged=fn;return ()=>{};}});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,firstHandle);
+  directory=null;folderChanged();
+  assert.equal(f.api.state().projectHandle,null);
+  directory=second;folderChanged();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,secondHandle);
+  await f.api.save(false);
+  directory=first;folderChanged();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,secondHandle);
+});
+
+test('MiFiTo cannot apply a lookup from a previous Studio attachment to a later route',async()=>{
+  const firstKey='book/figure/panel/asset',secondKey='book/figure/next/another-asset',directory={kind:'directory',name:'work'};
+  let stopCalls=0,resolveLookup,notifyStarted;
+  const pending=new Promise(resolve=>resolveLookup=resolve),started=new Promise(resolve=>notifyStarted=resolve);
+  const f=await fixture({sourceKey:firstKey,folderSearch:async options=>{
+    if(options.sourceKey===firstKey){notifyStarted(options.signal);return pending;}
+    assert.equal(options.sourceKey,secondKey);
+    return {handle:f.native,link:f.opened.link};
+  }});
+  f.api.watch({editKey:firstKey,getWorkFolder:()=>directory,subscribeWorkFolder:()=>()=>{stopCalls++;}});
+  const previousSignal=await started;
+  f.api.route(secondKey);
+  f.api.watch({editKey:secondKey,getWorkFolder:()=>directory});
+  assert.equal(previousSignal.aborted,true);assert.equal(stopCalls,1);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,f.native);
+  resolveLookup({handle:f.copy,link:null});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,f.native);
 });
