@@ -10,7 +10,7 @@ import {createProjectFileLinks} from '../project-file-links.mjs';
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8'),start=source.indexOf('function sourceProjectSaveReady('),end=source.indexOf('// IndexedDB preserves',start),saver=source.slice(start,end);
 const projectId='test-source-project-000001';
 function handle(name,blob){let bytes=blob;return {name,kind:'file',fail:false,async getFile(){return new File([bytes],name);},async queryPermission(){return 'granted';},async isSameEntry(other){return this===other;},async createWritable(){let pending;const h=this;return {async write(blob){if(h.fail)throw Error('disk full');pending=blob;},async close(){bytes=pending;},async abort(){}};}};}
-async function fixture({fail=false,cancel=false,unbound=false}={}){
+async function fixture({fail=false,cancel=false,unbound=false,sourceKey}={}){
   const items=[{id:'image-000000000000001',name:'image.png',file:new File(['independent original bytes'],'image.png',{type:'image/png',lastModified:12}),width:20,height:10,enabled:true,settings:defaultSettings(20,10)}];
   const ui={figureStudioProjectId:projectId,formats:['png'],dpi:600,includeSettings:true,colorMode:'simple'};
   const native=handle('source.mifito',await createProject(items,0,ui)),copy=handle('copy.mifito',new Blob());native.fail=copy.fail=fail;
@@ -18,15 +18,42 @@ async function fixture({fail=false,cancel=false,unbound=false}={}){
   const pickerHost={async showSaveFilePicker(){if(cancel)throw new DOMException('cancelled','AbortError');return copy;}};
   const projectFiles=createProjectFileLinks({app:'mifito',store,host:pickerHost,choose:()=>assert.fail('Unexpected confirmation'),identify:readMifitoIdentity});
   const opened=await projectFiles.opened({file:await native.getFile(),projectId,handle:native});
-  const events=[],env={projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
+  const preparations=[],prepare=projectFiles.prepare;
+  projectFiles.prepare=options=>{preparations.push(options);return prepare(options);};
+  const events=[],env={projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:()=>assert.fail('Unexpected confirmation'),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,figureStudioBridge:{sourceKey},current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
   if(unbound){env.projectHandle=null;env.projectName='';env.projectFileLink=null;records.clear();}
   const keys=Object.keys(env),api=Function(...keys,`function setBusy(value){busy=value;}
 function projectUI(){return {...${JSON.stringify(ui)},figureStudioProjectId};}\n${saver}\nreturn {prepare:prepareSourceProjectSave,ready:sourceProjectSaveReady,save:saveProject,state:()=>({busy,projectHandle,projectName,projectFileLink,figureStudioProjectId,projectSaving}),expected:()=>workspaceSnapshot(items,projectUI())};`)(...keys.map(key=>env[key]));
-  return {api,native,copy,opened,events,records,items,projectFiles,ui,pickerHost};
+  return {api,native,copy,opened,events,records,items,projectFiles,ui,pickerHost,preparations};
 }
 test('actual MiFiTo save keeps independent source image bytes and omits local target metadata from disk',async()=>{
   const f=await fixture();f.items[0].settings.panelLabel.text='(a) updated';await f.api.save(false);const state=f.api.state(),saved=await readProject(await f.native.getFile());
   assert.equal(saved.ui.figureStudioProjectId,projectId);assert.equal(saved.ui.sourceFileLink,undefined);assert.equal(saved.images[0].settings.panelLabel.text,'(a) updated');assert.equal(await saved.images[0].blob.text(),'independent original bytes');assert.equal(state.projectHandle,f.native);assert.equal(state.projectSaving,false);assert.notEqual(state.projectFileLink.fingerprint,f.opened.link.fingerprint);assert.equal(state.projectFileLink.token,f.opened.link.token);assert.equal(f.events.find(e=>e.saved)?.saved,f.api.expected());
+});
+test('a Studio-connected MiFiTo save passes the exact attachment key to the local target registry',async()=>{
+  const sourceKey='book/figure/panel/asset',f=await fixture({unbound:true,sourceKey});
+  const snapshot=await createProject(f.items,0,f.ui);
+  await f.api.save(false);
+  assert.equal(f.preparations[0].sourceKey,sourceKey);
+  assert.equal(f.api.state().projectHandle,f.copy);
+  const saved=await readProject(await f.copy.getFile());
+  assert.equal(saved.ui.figureStudioProjectId,projectId);
+  assert.equal(saved.ui.sourceKey,undefined);
+  const reopened=await f.projectFiles.opened({file:new File([snapshot],'old-attachment.mifito'),projectId,embedded:true,sourceKey});
+  assert.equal(reopened.handle,f.copy);
+  assert.equal(reopened.name,f.copy.name);
+});
+test('restoring temporary reload handles preserves an already resolved project target',async()=>{
+  const start=source.indexOf(' restoreReloadHandles(saved){'),end=source.indexOf('\n async capture(){',start);
+  const restore=Function('figureStudioProjectId','projectHandle','items','scheduleWorkState',
+    'let saveDirectory;const api={'+source.slice(start,end)+'};return {restore:saved=>api.restoreReloadHandles(saved),target:()=>projectHandle};');
+  const recovered={kind:'file',name:'recovered.mifito'},previous={kind:'file',name:'previous.mifito'};
+  const f=restore(projectId,recovered,[],()=>{});
+  f.restore({projectId,projectHandle:null,items:[]});
+  assert.equal(f.target(),recovered);
+  const unavailable=restore(projectId,null,[],()=>{});
+  unavailable.restore({projectId,projectHandle:previous,items:[]});
+  assert.equal(unavailable.target(),previous);
 });
 test('actual MiFiTo Save As assigns a new identity after successful write and retains the old source mapping',async()=>{
   const f=await fixture(),before=await (await f.native.getFile()).arrayBuffer();await f.api.save(true);const state=f.api.state(),saved=await readProject(await f.copy.getFile());
@@ -44,6 +71,8 @@ test('cancelling MiFiTo Save As preserves the original writable binding',async()
 test('MiFiTo embedded snapshots reopen with a safe file token while old projects remain readable',async()=>{
   const f=await fixture(),snapshot=await createProject(f.items,0,{...f.ui,sourceFileLink:f.opened.link}),saved=await readProject(snapshot);
   assert.deepEqual(saved.ui.sourceFileLink,f.opened.link);assert.equal((await readProject(await f.native.getFile())).ui.sourceFileLink,undefined);
+  const identity=await readMifitoIdentity(snapshot,{includeSourceFileLink:true});
+  assert.deepEqual(identity.sourceFileLink,f.opened.link);assert.equal((await readMifitoIdentity(snapshot)).sourceFileLink,undefined);
   const target=await f.projectFiles.opened({file:new File([snapshot],f.native.name),projectId,embedded:true,link:saved.ui.sourceFileLink});assert.equal(target.handle,f.native);
 });
 test('Studio skips an unchanged saved MiFiTo source and includes it after a new edit',async()=>{

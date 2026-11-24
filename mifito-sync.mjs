@@ -38,7 +38,7 @@ export async function identifyManifest(data){
  return {projectId,activeImageId:images[data.activeIndex].imageId,images,legacy:!data.ui.figureStudioProjectId||data.images.some(image=>!image.figureStudioImageId)};
 }
 
-export async function readMifitoIdentity(blob){
+export async function readMifitoIdentity(blob,{includeSourceFileLink=false}={}){
  if(!(blob instanceof Blob)||blob.size<HEADER_BYTES||blob.size>HEADER_BYTES+MANIFEST_LIMIT+DATA_LIMIT)fail();
  const header=new Uint8Array(await blob.slice(0,HEADER_BYTES).arrayBuffer());
  if(!MAGIC.every((byte,index)=>byte===header[index]))fail();
@@ -46,7 +46,8 @@ export async function readMifitoIdentity(blob){
  if(length<=0||length>MANIFEST_LIMIT||HEADER_BYTES+length>blob.size)fail();
  let data;try{data=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await blob.slice(HEADER_BYTES,HEADER_BYTES+length).arrayBuffer()));}catch{fail();}
  if(HEADER_BYTES+length+validate(data)!==blob.size)fail();
- return identifyManifest(data);
+ const identity=await identifyManifest(data);
+ return includeSourceFileLink?{...identity,sourceFileLink:data.ui.sourceFileLink}:identity;
 }
 
 // A single-image acknowledgement cannot mark edits to other images as synced.
