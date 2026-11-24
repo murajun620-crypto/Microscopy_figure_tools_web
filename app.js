@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=e284b7fc105d';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=e284b7fc105d';
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=3a0d6fb241ce';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=3a0d6fb241ce';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=e284b7fc105d';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=3a0d6fb241ce';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=e284b7fc105d';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=3a0d6fb241ce';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=e284b7fc105d';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=e284b7fc105d';
-import { buildPlan, paint } from './render.js?v=e284b7fc105d';
-import { batchExport, exportImage } from './export.js?v=e284b7fc105d';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=3a0d6fb241ce';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=3a0d6fb241ce';
+import { buildPlan, paint } from './render.js?v=3a0d6fb241ce';
+import { batchExport, exportImage } from './export.js?v=3a0d6fb241ce';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=e284b7fc105d';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=e284b7fc105d';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=3a0d6fb241ce';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=3a0d6fb241ce';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=e284b7fc105d';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=e284b7fc105d';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=e284b7fc105d';
-import { prepareScaleBar } from './bar-workflow.js?v=e284b7fc105d';
-import { prepareCalibration } from './calibration-workflow.js?v=e284b7fc105d';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=e284b7fc105d';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=e284b7fc105d';
-import { ImageOverview } from './overview.js?v=e284b7fc105d';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=e284b7fc105d';
-import { SamplePicker } from './sample-picker.js?v=e284b7fc105d';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=e284b7fc105d';
+import { createProject, readProject } from './project.js?v=3a0d6fb241ce';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=3a0d6fb241ce';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=3a0d6fb241ce';
+import { prepareScaleBar } from './bar-workflow.js?v=3a0d6fb241ce';
+import { prepareCalibration } from './calibration-workflow.js?v=3a0d6fb241ce';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=3a0d6fb241ce';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=3a0d6fb241ce';
+import { ImageOverview } from './overview.js?v=3a0d6fb241ce';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=3a0d6fb241ce';
+import { SamplePicker } from './sample-picker.js?v=3a0d6fb241ce';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=3a0d6fb241ce';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=e284b7fc105d';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=e284b7fc105d';
+import { estimateSourcePalette } from './palette-estimation.js?v=3a0d6fb241ce';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=3a0d6fb241ce';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -1138,7 +1138,7 @@ function sourceProjectSaveReady({editedOnly=false}={}){
 async function prepareSourceProjectSave({saveAs=false,host=window,choose=chooseProjectFileAction,requireFile=false}={}){
   if(requireFile&&!sourceProjectSaveReady())return null;
   if(projectVersionChecking||busy||projectSaving||!current)return null;
-  studioWorkFolderWatch?.cancel();
+  studioWorkFolderWatch?.applyMatch();
   setBusy(true);projectSaving=true;scheduleWorkState();closeProjectSaveMenu();
   let released=false,written=false,writing=false;
   const release=()=>{if(released)return;released=true;projectSaving=false;setBusy(false);scheduleWorkState();studioWorkFolderWatch?.resume();};
@@ -1597,13 +1597,13 @@ function clearStudioWorkFolderWatch(){
   studioWorkFolderWatch?.invalidate();
   studioWorkFolderWatch=null;
 }
-function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder}){
+function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder,findWorkFolderSource}){
   if(!editKey||typeof getWorkFolder!=='function'){clearStudioWorkFolderWatch();return;}
   const previous=studioWorkFolderWatch;
   const candidate=previous?.editKey===editKey?previous.candidate:null;
   if(candidate)previous.candidate=null;
   clearStudioWorkFolderWatch();
-  let controller,refreshPending=false;
+  let controller,refreshPending=false,pendingMatch=null;
   const watch={editKey,candidate,directory:null,cancel:()=>controller?.abort(),unsubscribe:null};
   watch.invalidate=()=>{
     const old=watch.candidate;watch.candidate=null;
@@ -1614,22 +1614,45 @@ function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder}){
   studioWorkFolderWatch=watch;
   const matchesRoute=()=>studioWorkFolderWatch===watch&&figureStudioBridge?.sourceKey===editKey;
   const search=()=>{
-    watch.cancel();watch.directory=null;
+    watch.cancel();watch.directory=null;pendingMatch=null;
     const projectId=figureStudioProjectId,name=projectName,link=projectFileLink;
-    if(!projectId||!name||!matchesRoute()||projectHandle||busy||projectSaving)return;
+    if(!projectId||!name||!matchesRoute()||projectHandle)return;
     controller=new AbortController();
     const {signal}=controller;
-    const stillCurrent=()=>!signal.aborted&&matchesRoute()&&figureStudioProjectId===projectId&&projectName===name&&projectFileLink===link&&!projectHandle&&!busy&&!projectSaving;
-    void (async()=>{
+    const stillCurrent=()=>!signal.aborted&&matchesRoute()&&figureStudioProjectId===projectId&&projectName===name&&projectFileLink===link&&!projectHandle;
+    const readDirectory=async()=>{
       const directory=await getWorkFolder();
-      if(!stillCurrent()||!directory)return;
+      if(!stillCurrent()||!directory)return null;
       watch.directory=directory;
-      const match=await projectFiles.findInWorkFolder({projectId,name,link,sourceKey:editKey,directory,signal});
+      return directory;
+    };
+    void (async()=>{
+      let match;
+      if(typeof findWorkFolderSource==='function'){
+        // The Studio prefetch may already have finished. Loading the picker
+        // hint independently keeps slow directory permission checks out of it.
+        void readDirectory().catch(()=>{});
+        const handle=await findWorkFolderSource({projectId,name},signal);
+        if(handle)match={handle,link};
+      }else{
+        const directory=await readDirectory();
+        if(!directory)return;
+        match=await projectFiles.findInWorkFolder({projectId,name,link,sourceKey:editKey,directory,signal});
+      }
       if(!stillCurrent()||!match?.handle)return;
-      watch.candidate={handle:match.handle,link:match.link??link,previousLink:link};
-      projectHandle=watch.candidate.handle;projectFileLink=watch.candidate.link;
-      scheduleWorkState();
+      pendingMatch={match,link,stillCurrent};
+      watch.applyMatch();
     })().catch(()=>{});
+  };
+  watch.applyMatch=()=>{
+    if(!pendingMatch)return;
+    const {match,link,stillCurrent}=pendingMatch;
+    if(!stillCurrent()){pendingMatch=null;return;}
+    if(busy||projectSaving)return;
+    pendingMatch=null;
+    watch.candidate={handle:match.handle,link:match.link??link,previousLink:link};
+    projectHandle=watch.candidate.handle;projectFileLink=watch.candidate.link;
+    scheduleWorkState();
   };
   const refresh=()=>{
     if(!matchesRoute())return;
@@ -1637,7 +1660,7 @@ function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder}){
     if(projectSaving){refreshPending=true;return;}
     refreshPending=false;watch.invalidate();search();
   };
-  watch.resume=()=>{if(refreshPending)refresh();};
+  watch.resume=()=>{if(refreshPending)refresh();else watch.applyMatch();};
   if(typeof subscribeWorkFolder==='function')watch.unsubscribe=subscribeWorkFolder(refresh);
   search();
 }
