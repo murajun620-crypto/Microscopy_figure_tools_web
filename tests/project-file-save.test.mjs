@@ -5,7 +5,7 @@ import {defaultSettings} from '../core.js';
 import {createProject,readProject} from '../project.js';
 import {readMifitoIdentity} from '../mifito-sync.mjs';
 import {WorkSaveState,workspaceSnapshot} from '../work-state.js';
-import {createProjectFileLinks} from '../project-file-links.mjs';
+import {workFolderLookup,createProjectFileLinks} from '../project-file-links.mjs';
 
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8'),start=source.indexOf('function sourceProjectSaveReady('),end=source.indexOf('// IndexedDB preserves',start),saver=source.slice(start,end);
 const workFolderStart=source.indexOf('function clearStudioWorkFolderWatch()');
@@ -25,6 +25,7 @@ async function fixture({fail=false,cancel=false,unbound=false,sourceKey,folderSe
   const events=[],env={studioWorkFolderWatch:null,projectVersionChecking:false,window:pickerHost,chooseProjectFileAction:chooseAction??(()=>assert.fail('Unexpected confirmation')),busy:false,workspaceReady(){},checkWorkspaceRawInputs(){},pendingInputEdit:()=>false,measurementStart:null,action:async fn=>{try{await fn();}catch(e){events.push({error:e.message});}},closeProjectSaveMenu(){},projectHandle:native,projectName:'source.mifito',projectFileLink:opened.link,figureStudioBridge:{sourceKey},current:items[0],items,projectFiles,figureStudioProjectId:projectId,saveDirectory:null,download(){assert.fail('Unexpected download');},figureStudioDirectSender:null,workspaceSnapshot,notify:(message,error=false)=>events.push({message,error}),projectSaving:false,scheduleWorkState(){},createProject,prepareFigureStudioProjectReplacement:id=>events.push({replacement:id}),workSaveState:Object.assign(new WorkSaveState(),{markSaved(snapshot){this.restoreCheckpoint(snapshot);events.push({saved:snapshot});}})};
   if(folderSearch){env.projectHandle=null;projectFiles.findInWorkFolder=folderSearch;if(!keepRegistry)records.clear();}
   if(unbound){env.projectHandle=null;env.projectName='';env.projectFileLink=null;records.clear();}
+  env.workFolderLookup=workFolderLookup;
   const keys=Object.keys(env),api=Function(...keys,`function setBusy(value){busy=value;}
 function projectUI(){return {...${JSON.stringify(ui)},figureStudioProjectId};}\n${workFolder}\n${saver}\nreturn {watch:watchStudioWorkFolder,route:key=>{figureStudioBridge.sourceKey=key;},prepare:prepareSourceProjectSave,ready:sourceProjectSaveReady,save:saveProject,state:()=>({busy,projectHandle,projectName,projectFileLink,figureStudioProjectId,projectSaving}),expected:()=>workspaceSnapshot(items,projectUI())};`)(...keys.map(key=>env[key]));
   return {api,native,copy,opened,events,records,items,projectFiles,ui,pickerHost,preparations};
@@ -147,6 +148,22 @@ test('MiFiTo uses a relocated original and asks before replacing its different c
   assert.equal(saved.ui.figureStudioProjectId,projectId);
   assert.equal(f.api.state().projectHandle,relocated);
   assert.equal(await f.projectFiles.resolveSource({projectId,sourceKey:editKey}),relocated);
+});
+
+test('a Studio filename-only result reaches the MiFiTo confirmation without asking for a file picker',async()=>{
+  const editKey='book/figure/panel/asset',prompts=[];
+  const f=await fixture({sourceKey:editKey,folderSearch:()=>assert.fail('unexpected fallback scan'),
+    chooseAction(info){prompts.push(info.kind);return 'cancel';}});
+  const candidate=handle(f.native.name,await createProject(f.items,0,{...f.ui,figureStudioProjectId:'other-source-project-000002'}));
+  const original=await (await candidate.getFile()).arrayBuffer();
+  f.api.watch({editKey,getWorkFolder:async()=>null,findWorkFolderSource:async()=>({
+    name:candidate.name,handle:candidate,verified:false,sameName:true,multiple:false
+  })});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(f.api.state().projectHandle,null);
+  await assert.rejects(f.api.prepare({requireFile:true}),{name:'AbortError'});
+  assert.deepEqual(prompts,['unverified']);
+  assert.deepEqual(await (await candidate.getFile()).arrayBuffer(),original);
 });
 
 test('MiFiTo never waits for an unfinished fallback lookup after the remembered file fails',async()=>{

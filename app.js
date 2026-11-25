@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=35f2ba7ed535';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=35f2ba7ed535';
+import {createProjectFileLinks,portableFileLink,workFolderLookup} from './project-file-links.mjs?v=b8766b87739a';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=b8766b87739a';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=35f2ba7ed535';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=b8766b87739a';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=35f2ba7ed535';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=b8766b87739a';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=35f2ba7ed535';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=35f2ba7ed535';
-import { buildPlan, paint } from './render.js?v=35f2ba7ed535';
-import { batchExport, exportImage } from './export.js?v=35f2ba7ed535';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=b8766b87739a';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=b8766b87739a';
+import { buildPlan, paint } from './render.js?v=b8766b87739a';
+import { batchExport, exportImage } from './export.js?v=b8766b87739a';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=35f2ba7ed535';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=35f2ba7ed535';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=b8766b87739a';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=b8766b87739a';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=35f2ba7ed535';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=35f2ba7ed535';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=35f2ba7ed535';
-import { prepareScaleBar } from './bar-workflow.js?v=35f2ba7ed535';
-import { prepareCalibration } from './calibration-workflow.js?v=35f2ba7ed535';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=35f2ba7ed535';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=35f2ba7ed535';
-import { ImageOverview } from './overview.js?v=35f2ba7ed535';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=35f2ba7ed535';
-import { SamplePicker } from './sample-picker.js?v=35f2ba7ed535';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=35f2ba7ed535';
+import { createProject, readProject } from './project.js?v=b8766b87739a';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=b8766b87739a';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=b8766b87739a';
+import { prepareScaleBar } from './bar-workflow.js?v=b8766b87739a';
+import { prepareCalibration } from './calibration-workflow.js?v=b8766b87739a';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=b8766b87739a';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=b8766b87739a';
+import { ImageOverview } from './overview.js?v=b8766b87739a';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=b8766b87739a';
+import { SamplePicker } from './sample-picker.js?v=b8766b87739a';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=b8766b87739a';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=35f2ba7ed535';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=35f2ba7ed535';
+import { estimateSourcePalette } from './palette-estimation.js?v=b8766b87739a';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=b8766b87739a';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -133,6 +133,7 @@ function refreshWorkState() {
   status.dataset.dirty=String(dirty);
   const editingName=projectName||(items.length?'未保存のプロジェクト':'—');
   const editingFileName=$('editingFileName'),editingFile=$('editingFile');
+  projectFiles.paintMatch($('editingFileMatch'),projectFileLink);
   if(editingFileName.textContent!==editingName)editingFileName.textContent=editingName;
   if(editingFile.title!==projectName)editingFile.title=projectName;
 }
@@ -1623,7 +1624,9 @@ function watchStudioWorkFolder({editKey,sourceName,getWorkFolder,subscribeWorkFo
   const watch={editKey,candidate,directory:null,cancel:()=>controller?.abort(),unsubscribe:null};
   watch.invalidate=()=>{
     const old=watch.candidate;watch.candidate=null;
+    if(!projectHandle){projectFiles.setMatch(projectFileLink,null);scheduleWorkState();}
     if(!old||projectHandle!==old.handle||projectFileLink!==old.link)return;
+    projectFiles.setMatch(old.link,null);
     projectHandle=null;projectFileLink=old.previousLink;
     scheduleWorkState();
   };
@@ -1648,28 +1651,29 @@ function watchStudioWorkFolder({editKey,sourceName,getWorkFolder,subscribeWorkFo
         // The Studio prefetch may already have finished. Loading the picker
         // hint independently keeps slow directory permission checks out of it.
         void readDirectory().catch(()=>{});
-        const handle=await findWorkFolderSource({projectId,name},signal);
-        if(handle)match={handle,link};
+        match=workFolderLookup(await findWorkFolderSource({projectId,name},signal));
       }else{
         const directory=await readDirectory();
         if(!directory)return;
-        match=await projectFiles.findInWorkFolder({projectId,name,link,sourceKey:editKey,directory,signal});
+        match=workFolderLookup(await projectFiles.findInWorkFolder({projectId,name,link,sourceKey:editKey,directory,signal}));
       }
-      if(!stillCurrent()||!match?.handle)return;
+      if(!stillCurrent()||!match)return;
       pendingMatch={match,link,stillCurrent};
       watch.applyMatch();
+      const matchStatus=await projectFiles.checkMatch({handle:projectHandle,lookup:match,link});
+      if(stillCurrent()){projectFiles.setMatch(link,matchStatus);scheduleWorkState();}
     })().catch(()=>{});
   };
   watch.getMatch=()=>{
     if(pendingMatch&&!pendingMatch.stillCurrent())pendingMatch=null;
-    return pendingMatch?.match.handle??null;
+    return pendingMatch?.match??null;
   };
   watch.applyMatch=()=>{
-    const found=watch.getMatch();
-    if(!found||projectHandle||busy||projectSaving||found.name.normalize('NFC')!==projectName.normalize('NFC'))return;
+    const lookup=watch.getMatch();
+    if(!lookup?.verified||!lookup.handle||projectHandle||busy||projectSaving||lookup.handle.name.normalize('NFC')!==projectName.normalize('NFC'))return;
     const {match,link}=pendingMatch;
     pendingMatch=null;
-    watch.candidate={handle:match.handle,link:match.link??link,previousLink:link};
+    watch.candidate={handle:match.handle,link,previousLink:link};
     projectHandle=watch.candidate.handle;projectFileLink=watch.candidate.link;
     scheduleWorkState();
   };

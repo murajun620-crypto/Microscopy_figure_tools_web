@@ -9,11 +9,13 @@ export function chooseProjectFileAction({kind,name,canBind=true},doc=globalThis.
     detail.textContent=kind==='missing'?'このブラウザで元ファイルの保存先を確認できません。このPCのOneDriveなどから元ファイルを選ぶと、次回から上書き保存できます。':kind==='changed'?'元ファイルは、この編集を開始した時点と内容が異なります。OneDrive同期や別の編集で更新された可能性があります。「上書き」を選ぶと、元ファイルの変更をこの画面の編集内容で置き換えます。':'このプロジェクトでは元ファイルの版を確認できません。「上書き」を選ぶと、選択した元ファイルをこの画面の編集内容で置き換えます。';
     if(kind==='permission')detail.textContent='開いている内容をこの元プロジェクトに保存します。続けるには、ブラウザの上書き保存の許可が必要です。';
     if(kind==='new')detail.textContent='このプロジェクトの保存先を選択してください。保存先を確認してから、一括保存を続けます。';
+    if(kind==='unverified'){heading.textContent='同名のファイルへの上書きを確認';detail.textContent='同じ名前のファイルが見つかりました。プロジェクトの識別情報または版を確認できません。「画面の内容で上書き」を選ぶと、このファイルの内容を置き換えます。';}
+    if(kind==='multiple'){heading.textContent='同名のファイルが複数あります';detail.textContent='作業フォルダ内で同じ名前のファイルが複数見つかりました。上書きしたいファイルを選んでください。';}
     dialog.append(detail);const actions=doc.createElement('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:20px';dialog.append(actions);
     let done=false;const finish=value=>{if(done)return;done=true;dialog.close();dialog.remove();resolve(value);};
     const button=(label,value,primary=false)=>{const node=doc.createElement('button');node.type='button';node.textContent=label;node.style.cssText=`padding:9px 12px;border:1px solid #9ebfba;border-radius:6px;cursor:pointer;background:${primary?'#137c70':'#fff'};color:${primary?'#fff':'#163e39'}`;node.addEventListener('click',()=>finish(value));actions.append(node);return node;};
     const cancel=button('キャンセル','cancel');button(kind==='new'?'保存先を選択':'名前を付けて保存','saveAs',kind==='new');
-    if(kind==='missing'){if(canBind)button('元ファイルを選択して上書き','bind',true);}else if(kind==='permission')button('上書き保存を許可','allow',true);else if(kind!=='new')button('画面の内容で上書き','overwrite');
+    if(kind==='missing'||kind==='multiple'){if(canBind)button('元ファイルを選択して上書き','bind',true);}else if(kind==='permission')button('上書き保存を許可','allow',true);else if(kind!=='new')button('画面の内容で上書き','overwrite');
     dialog.addEventListener('cancel',event=>{event.preventDefault();finish('cancel');});dialog.addEventListener('close',()=>{if(!done){done=true;dialog.remove();resolve('cancel');}});
     doc.body.append(dialog);dialog.showModal();cancel.focus();
   });
