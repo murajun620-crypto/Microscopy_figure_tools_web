@@ -120,6 +120,56 @@ test('MiFiTo resolves a Studio work folder on connect and saves directly to the 
   assert.equal((await f.copy.getFile()).size,0);
 });
 
+test('MiFiTo uses a relocated original and asks before replacing its different contents',async()=>{
+  const editKey='book/figure/panel/asset',prompts=[];
+  let accept=false;
+  const f=await fixture({sourceKey:editKey,chooseAction({kind}){prompts.push(kind);return accept?'overwrite':'cancel';}});
+  const additional={...f.items[0],id:'image-000000000000002',name:'another.png',file:new File(['separate image'],'another.png')};
+  const relocated=handle(f.native.name,await createProject([...f.items,additional],0,f.ui));
+  const before=await (await relocated.getFile()).arrayBuffer();
+  f.native.getFile=async()=>{throw new DOMException('The file has moved','NotFoundError');};
+  f.native.createWritable=async()=>assert.fail('The stale file must never be opened for writing');
+  f.api.watch({editKey,getWorkFolder:async()=>null,findWorkFolderSource:async()=>relocated});
+  await new Promise(resolve=>setImmediate(resolve));
+
+  await assert.rejects(f.api.prepare({requireFile:true}),{name:'AbortError'});
+  assert.deepEqual(prompts,['changed']);
+  assert.deepEqual(await (await relocated.getFile()).arrayBuffer(),before);
+  assert.equal(f.api.state().projectHandle,f.native);
+
+  accept=true;
+  const plan=await f.api.prepare({requireFile:true});
+  assert.deepEqual(prompts,['changed','changed']);
+  assert.equal(plan.handle,relocated);
+  assert.deepEqual(await (await relocated.getFile()).arrayBuffer(),before);
+  await plan.write();
+  const saved=await readProject(await relocated.getFile());
+  assert.equal(saved.ui.figureStudioProjectId,projectId);
+  assert.equal(f.api.state().projectHandle,relocated);
+  assert.equal(await f.projectFiles.resolveSource({projectId,sourceKey:editKey}),relocated);
+});
+
+test('MiFiTo never waits for an unfinished fallback lookup after the remembered file fails',async()=>{
+  const editKey='book/figure/panel/asset',prompts=[];
+  let complete;
+  const pending=new Promise(resolve=>{complete=resolve;});
+  const f=await fixture({sourceKey:editKey,chooseAction({kind}){prompts.push(kind);return 'cancel';}});
+  const relocated=handle(f.native.name,await f.native.getFile());
+  f.native.getFile=async()=>{throw new DOMException('The file has moved','NotFoundError');};
+  let signal;
+  f.api.watch({editKey,getWorkFolder:async()=>null,findWorkFolderSource:(_file,searchSignal)=>{signal=searchSignal;return pending;}});
+  await assert.rejects(f.api.prepare({requireFile:true}),{name:'AbortError'});
+  assert.deepEqual(prompts,['missing']);
+  assert.equal(signal.aborted,false);
+  complete(relocated);
+  await new Promise(resolve=>setImmediate(resolve));
+
+  const plan=await f.api.prepare({requireFile:true});
+  assert.equal(plan.handle,relocated);
+  assert.deepEqual(prompts,['missing']);
+  plan.cancel();
+});
+
 test('MiFiTo saving leaves an unfinished work folder lookup running without waiting or replacing the saved file',async()=>{
   const editKey='book/figure/panel/asset',directory={kind:'directory',name:'work'};
   let resolveLookup,notifyStarted;

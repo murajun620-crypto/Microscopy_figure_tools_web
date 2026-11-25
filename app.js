@@ -1,35 +1,35 @@
-import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=1d120b7661a3';
-import {chooseProjectFileAction} from './project-file-dialog.mjs?v=1d120b7661a3';
+import {createProjectFileLinks,portableFileLink} from './project-file-links.mjs?v=35f2ba7ed535';
+import {chooseProjectFileAction} from './project-file-dialog.mjs?v=35f2ba7ed535';
 import {studioSvgSize} from './studio-size.mjs?v=5f27e729adf3';
 import {onRichTextReady} from './rich-text.mjs?v=5a795d503d07';
 import {createColorPanel} from './colors.mjs?v=unified-palette-1';
-import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=1d120b7661a3';
+import {setupFigureBridge,getFigureBridgeContext} from './bridge-host.mjs?v=35f2ba7ed535';
 import {createDirectSender,setupDirectSendButton} from './direct-transfer.mjs?v=workspace-update-v0715-2';
-import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=1d120b7661a3';
+import {readMifitoIdentity,mergeMifitoBaseline,createMifitoAcknowledgements} from './mifito-sync.mjs?v=35f2ba7ed535';
 import { compactHelp, documentSaver, filePickerOptions } from './ui-common.js?v=b307f808f67c';
-import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=1d120b7661a3';
-import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=1d120b7661a3';
-import { buildPlan, paint } from './render.js?v=1d120b7661a3';
-import { batchExport, exportImage } from './export.js?v=1d120b7661a3';
+import { History, LIMITS, calibrationFromPoints, clamp, copy, cropFromPoints, cropPointer, defaultSettings, dimensionCrop, editCrop, fitCropAspect, parseProject, parseSession, positive, rasterMetrics, serializeProject, sessionProject, validateCrop, validateSettings, viewToImage } from './core.js?v=35f2ba7ed535';
+import { SUPPORTED, canvasBlob, decodeImage, download, downloadAll, clearDownloads, releaseImage, thumbnail } from './io.js?v=35f2ba7ed535';
+import { buildPlan, paint } from './render.js?v=35f2ba7ed535';
+import { batchExport, exportImage } from './export.js?v=35f2ba7ed535';
 import { wheelZoom, zoomText, previewTile, MIN_ZOOM, MAX_ZOOM } from './zoom.js?v=b307f808f67c';
-import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=1d120b7661a3';
-import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=1d120b7661a3';
+import { ensureWritable, writeFile, readFolder, imagePickerOptions, directoryPickerOptions, rememberSourceDirectory, restoreExportFormats } from './save-files.js?v=35f2ba7ed535';
+import { panelNumbering, numberedLabel, labelSequenceChanges } from './label-numbering.js?v=35f2ba7ed535';
 import {MAX_PANEL_LABELS, PRIMARY_LABEL_ID, panelLabels, panelLabelId, findPanelLabel, nextLabelAnchor} from './panel-labels.js?v=ffbc761e0d41';
-import { createProject, readProject } from './project.js?v=1d120b7661a3';
-import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=1d120b7661a3';
-import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=1d120b7661a3';
-import { prepareScaleBar } from './bar-workflow.js?v=1d120b7661a3';
-import { prepareCalibration } from './calibration-workflow.js?v=1d120b7661a3';
-import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=1d120b7661a3';
-import { AppUpdater, APP_BUILD } from './app-update.js?v=1d120b7661a3';
-import { ImageOverview } from './overview.js?v=1d120b7661a3';
-import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=1d120b7661a3';
-import { SamplePicker } from './sample-picker.js?v=1d120b7661a3';
-import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=1d120b7661a3';
+import { createProject, readProject } from './project.js?v=35f2ba7ed535';
+import { APP_VERSION, WorkSaveState, workspaceSnapshot } from './work-state.js?v=35f2ba7ed535';
+import { cropConflicts, prepareCrop, SettingsTransactions } from './crop-workflow.js?v=35f2ba7ed535';
+import { prepareScaleBar } from './bar-workflow.js?v=35f2ba7ed535';
+import { prepareCalibration } from './calibration-workflow.js?v=35f2ba7ed535';
+import { prepareMapRange, prepareMapDesign } from './map-workflow.js?v=35f2ba7ed535';
+import { AppUpdater, APP_BUILD } from './app-update.js?v=35f2ba7ed535';
+import { ImageOverview } from './overview.js?v=35f2ba7ed535';
+import { ImageSettingsTable, prepareImageTableEdit } from './image-table.js?v=35f2ba7ed535';
+import { SamplePicker } from './sample-picker.js?v=35f2ba7ed535';
+import { sampleRaster, sampleSettings, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLES } from './samples.js?v=35f2ba7ed535';
 import { AnnotationUI } from './annotation-ui.js?v=5a795d503d07';
 import { setupMovableDialogs, showDialog } from './movable-dialog.js?v=b307f808f67c';
-import { estimateSourcePalette } from './palette-estimation.js?v=1d120b7661a3';
-import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=1d120b7661a3';
+import { estimateSourcePalette } from './palette-estimation.js?v=35f2ba7ed535';
+import { MAP_PALETTES, defaultMapColorbar, mapStops, paletteFromFile } from './map-colorbar.js?v=35f2ba7ed535';
 
 window.FigureAppRelease?.assertRunning({version:APP_VERSION,build:APP_BUILD});
 const $ = id => document.getElementById(id);
@@ -1153,14 +1153,15 @@ function sourceProjectSaveReady({editedOnly=false}={}){
 async function prepareSourceProjectSave({saveAs=false,host=window,choose=chooseProjectFileAction,requireFile=false}={}){
   if(requireFile&&!sourceProjectSaveReady())return null;
   if(projectVersionChecking||busy||projectSaving||!current)return null;
-  studioWorkFolderWatch?.applyMatch();
+  const workFolderWatch=studioWorkFolderWatch;
+  workFolderWatch?.applyMatch();
   setBusy(true);projectSaving=true;scheduleWorkState();closeProjectSaveMenu();
   let released=false,written=false,writing=false;
   const release=()=>{if(released)return;released=true;projectSaving=false;setBusy(false);scheduleWorkState();studioWorkFolderWatch?.resume();};
   try{
     const name=projectHandle?.name||projectName||`${current.name.replace(/\.[^.]+$/, '').replace(/[\\/\x00-\x1f<>:"|?*]/g,'_')}_project.mifito`;
     notify('元ファイルと保存先を確認しています…');
-    const target=await projectFiles.prepare({projectId:figureStudioProjectId,handle:projectHandle,link:projectFileLink,sourceKey:figureStudioBridge?.sourceKey,saveAs,name,knownSource:!!projectName,host,choose,requireFile,startIn:projectHandle||studioWorkFolderWatch?.directory||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});
+    const target=await projectFiles.prepare({projectId:figureStudioProjectId,handle:projectHandle,link:projectFileLink,sourceKey:figureStudioBridge?.sourceKey,saveAs,name,knownSource:!!projectName,host,choose,requireFile,getWorkFolderTarget:workFolderWatch?.getMatch,startIn:projectHandle||workFolderWatch?.directory||saveDirectory||current.sourceDirectory||current.sourceHandle,fallback:async(blob,filename)=>{download(blob,filename);return filename;}});
     let savedId=figureStudioProjectId;
     if(target.saveAs){let same=false;try{same=!!projectHandle&&!!target.handle&&await projectHandle.isSameEntry(target.handle);}catch{}if(!same)savedId=crypto.randomUUID();}
     if(savedId!==figureStudioProjectId&&figureStudioDirectSender?.sender.busy)throw Error('Studioへの送信が完了してから保存してください。');
@@ -1177,7 +1178,7 @@ async function prepareSourceProjectSave({saveAs=false,host=window,choose=chooseP
       validate();writing=true;
       try{
         const hash=await target.write(blob),remembered=await target.remember(savedId,hash);
-        const overwritten=target.handle===projectHandle&&!!projectHandle;
+        const overwritten=!!target.handle&&(target.handle===projectHandle||(!target.saveAs&&!!projectName));
         prepareFigureStudioProjectReplacement(savedId);figureStudioProjectId=savedId;
         if(studioWorkFolderWatch)studioWorkFolderWatch.candidate=null;
         projectHandle=target.handle;projectName=target.name;projectFileLink=remembered.link;
@@ -1612,7 +1613,7 @@ function clearStudioWorkFolderWatch(){
   studioWorkFolderWatch?.invalidate();
   studioWorkFolderWatch=null;
 }
-function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder,findWorkFolderSource}){
+function watchStudioWorkFolder({editKey,sourceName,getWorkFolder,subscribeWorkFolder,findWorkFolderSource}){
   if(!editKey||typeof getWorkFolder!=='function'){clearStudioWorkFolderWatch();return;}
   const previous=studioWorkFolderWatch;
   const candidate=previous?.editKey===editKey?previous.candidate:null;
@@ -1630,11 +1631,11 @@ function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder,findWo
   const matchesRoute=()=>studioWorkFolderWatch===watch&&figureStudioBridge?.sourceKey===editKey;
   const search=()=>{
     watch.cancel();watch.directory=null;pendingMatch=null;
-    const projectId=figureStudioProjectId,name=projectName,link=projectFileLink;
-    if(!projectId||!name||!matchesRoute()||projectHandle)return;
+    const projectId=figureStudioProjectId,editingName=projectName,name=sourceName||editingName,link=projectFileLink;
+    if(!projectId||!name||!matchesRoute())return;
     controller=new AbortController();
     const {signal}=controller;
-    const stillCurrent=()=>!signal.aborted&&matchesRoute()&&figureStudioProjectId===projectId&&projectName===name&&projectFileLink===link&&!projectHandle;
+    const stillCurrent=()=>!signal.aborted&&matchesRoute()&&figureStudioProjectId===projectId&&projectName===editingName&&projectFileLink===link;
     const readDirectory=async()=>{
       const directory=await getWorkFolder();
       if(!stillCurrent()||!directory)return null;
@@ -1659,11 +1660,14 @@ function watchStudioWorkFolder({editKey,getWorkFolder,subscribeWorkFolder,findWo
       watch.applyMatch();
     })().catch(()=>{});
   };
+  watch.getMatch=()=>{
+    if(pendingMatch&&!pendingMatch.stillCurrent())pendingMatch=null;
+    return pendingMatch?.match.handle??null;
+  };
   watch.applyMatch=()=>{
-    if(!pendingMatch)return;
-    const {match,link,stillCurrent}=pendingMatch;
-    if(!stillCurrent()){pendingMatch=null;return;}
-    if(busy||projectSaving)return;
+    const found=watch.getMatch();
+    if(!found||projectHandle||busy||projectSaving||found.name.normalize('NFC')!==projectName.normalize('NFC'))return;
+    const {match,link}=pendingMatch;
     pendingMatch=null;
     watch.candidate={handle:match.handle,link:match.link??link,previousLink:link};
     projectHandle=watch.candidate.handle;projectFileLink=watch.candidate.link;
